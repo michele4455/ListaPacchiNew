@@ -66,7 +66,7 @@ button:hover { background-color: #990000; }
 
 <div class="form-group">
   <input type="text" id="codiceTracciabilita" placeholder="Codice di Tracciabilità" />
-  <input type="text" id="codiceRiconoscimento" placeholder="Codice di Riconoscimento (opzionale)" oninput="this.value=this.value.replace(/\D/g,'')" />
+  <input type="text" id="codiceRiconoscimento" placeholder="Codice di Riconoscimento (opzionale)" />
   <input type="text" id="nome" placeholder="Nome" />
   <input type="text" id="cognome" placeholder="Cognome" />
   <select id="corriereSelect"><option value="">Seleziona Corriere</option></select>
@@ -89,7 +89,7 @@ button:hover { background-color: #990000; }
   <button onclick="aggiungiPacco()">Aggiungi</button>
 </div>
 
-<input type="text" id="search" class="search-bar" placeholder="Cerca per codice, cognome o tracciabilità" oninput="aggiornaVista()" />
+<input type="text" id="search" class="search-bar" placeholder="Cerca per codice di tracciabilità, codice di riconoscimento o cognome" oninput="aggiornaVista()" />
 <div class="tabs" id="tabs"></div>
 <div class="counter" id="counter"></div>
 <div id="contenitori"></div>
@@ -110,27 +110,20 @@ function login(){
     }
     document.getElementById('loginPage').style.display='none';
     document.getElementById('mainPage').style.display='block';
-    resetTimer();
+    aggiornaUltimaAttivita(); // reset timer
   } else { alert('Codice errato'); }
 }
 if(localStorage.getItem('loggedIn')==='true'){
   document.getElementById('loginPage').style.display='none';
   document.getElementById('mainPage').style.display='block';
-  resetTimer();
+  aggiornaUltimaAttivita();
 }
 function logout(){
   localStorage.removeItem('loggedIn');
+  localStorage.removeItem('ultimaAttivita');
   document.getElementById('mainPage').style.display='none';
   document.getElementById('loginPage').style.display='flex';
 }
-
-// Logout automatico 20 minuti
-let inactivityTimer;
-function resetTimer(){
-  clearTimeout(inactivityTimer);
-  inactivityTimer=setTimeout(()=>{ alert('Tempo scaduto!'); logout(); },20*60*1000);
-}
-['click','mousemove','keydown','scroll'].forEach(evt=>{ document.addEventListener(evt, resetTimer); });
 
 // PACCHI E CORRIERI
 let pacchi = JSON.parse(localStorage.getItem('pacchi')) || [];
@@ -159,9 +152,10 @@ function rimuoviCorriere(){
   document.getElementById('nuovoCorriere').value=''; toggleInputCorriere(); 
 }
 
-// Funzioni scaffale
-function aggiungiScaffale(){ const s=prompt("Inserisci nome nuovo scaffale"); if(s) { const select=document.getElementById('scaffaleSelect'); const opt=document.createElement('option'); opt.value=s; opt.textContent=s; select.appendChild(opt); } }
-function rimuoviScaffale(){ const select=document.getElementById('scaffaleSelect'); const s=select.value; if(s && confirm(`Vuoi rimuovere lo scaffale "${s}"?`)) { for(let i=0;i<select.options.length;i++){ if(select.options[i].value===s){ select.remove(i); break; } } pacchi.forEach(p=>{ if(p.scaffale===s) p.scaffale=null; }); salvaDati(); aggiornaVista(); } }
+// SCALAFFI
+let scaffali = ["Scaffale 1","Scaffale 2","Scaffale 3","Scaffale 4","Scaffale 5","Scaffale 6","Scaffale 7","Scaffale 8","Scaffale 9","Scaffale 10","Scaffale 11","Scaffale 12","Avanti"];
+function aggiungiScaffale(){ const nuovo=prompt('Inserisci nome nuovo scaffale'); if(nuovo && !scaffali.includes(nuovo)){ scaffali.push(nuovo); alert('Scaffale aggiunto'); } }
+function rimuoviScaffale(){ const daRimuovere=prompt('Inserisci nome scaffale da rimuovere'); if(daRimuovere && scaffali.includes(daRimuovere)){ scaffali=scaffali.filter(s=>s!==daRimuovere); alert('Scaffale rimosso'); } }
 
 function aggiungiPacco(){
   const ct=document.getElementById('codiceTracciabilita').value.trim();
@@ -173,6 +167,8 @@ function aggiungiPacco(){
 
   if(!cognome || !ct){ if(!confirm('Codice tracciabilità e cognome sono obbligatori. Continuare comunque?')) return; }
   if(ct && pacchi.some(p=>p.codiceTracciabilita===ct)){ if(!confirm('Questo codice tracciabilità è già presente. Continuare?')) return; }
+
+  if(cr && isNaN(cr)){ alert('Codice di riconoscimento deve essere solo numeri'); return; }
 
   const numeri=pacchi.filter(p=>p.corriere===corriere && !p.ritirato).map(p=>parseInt(p.riconoscimento)).filter(n=>!isNaN(n));
   const riconoscimento=cr || (numeri.length?Math.max(...numeri)+1:1);
@@ -207,13 +203,15 @@ function toggleRitirato(id){
   }
 }
 
+// CANCELLA PACCHI RITIRATI
 document.getElementById('cancellaRitiratiBtn').addEventListener('click', () => {
   const selezione=sessionStorage.getItem('tab')||'Tutti';
-  let ritirati = selezione==='Tutti'?pacchi.filter(p=>p.ritirato):pacchi.filter(p=>p.ritirato && p.corriere===selezione);
-  if(ritirati.length===0){ alert('Non ci sono pacchi ritirati da cancellare.'); return; }
-  if(confirm(`Sei sicuro di voler cancellare ${ritirati.length} pacchi ritirati?`)){
-    pacchi = pacchi.filter(p=>!ritirati.includes(p));
-    salvaDati(); aggiornaVista();
+  const ritirati = pacchi.filter(p => p.ritirato && (selezione==='Tutti'?true:p.corriere===selezione));
+  if(ritirati.length === 0) { alert('Non ci sono pacchi ritirati da cancellare.'); return; }
+  if(confirm(`Sei sicuro di voler cancellare ${ritirati.length} pacchi ritirati di ${selezione}?`)) {
+    pacchi = pacchi.filter(p => !(p.ritirato && (selezione==='Tutti'?true:p.corriere===selezione)));
+    salvaDati();
+    aggiornaVista();
   }
 });
 
@@ -240,13 +238,7 @@ function aggiornaVista(){
 
   contenitori.innerHTML=''; ritiratiContainer.innerHTML='';
 
-  // FILTRO INCLUSIVO TRACCIABILITA'
-  const pacchiFiltrati=pacchi.filter(p=>
-    p.cognome.toLowerCase().includes(search) ||
-    ('' + p.riconoscimento).includes(search) ||
-    (p.codiceTracciabilita && p.codiceTracciabilita.toLowerCase().includes(search))
-  );
-
+  const pacchiFiltrati=pacchi.filter(p=>p.cognome.toLowerCase().includes(search) || (''+p.riconoscimento).includes(search) || (''+p.codiceTracciabilita).toLowerCase().includes(search));
   let visibili=selezione==='Tutti'?pacchiFiltrati.filter(p=>!p.ritirato):pacchiFiltrati.filter(p=>!p.ritirato && p.corriere===selezione);
   let ritirati=selezione==='Tutti'?pacchiFiltrati.filter(p=>p.ritirato):pacchiFiltrati.filter(p=>p.ritirato && p.corriere===selezione);
 
@@ -270,6 +262,16 @@ function aggiornaVista(){
 }
 
 aggiornaVista();
+
+// LOGOUT AUTOMATICO DOPO 20 MINUTI
+const INATTIVITA_MAX = 20 * 60 * 1000; // 20 minuti
+function aggiornaUltimaAttivita() { localStorage.setItem('ultimaAttivita', Date.now()); }
+['mousemove','keydown','click','scroll'].forEach(evt => { document.addEventListener(evt, aggiornaUltimaAttivita); });
+setInterval(()=>{
+  const ultima=parseInt(localStorage.getItem('ultimaAttivita'))||Date.now();
+  if(Date.now()-ultima>INATTIVITA_MAX){ alert('Sessione scaduta per inattività'); logout(); }
+},5000);
+
 </script>
 </body>
 </html>
