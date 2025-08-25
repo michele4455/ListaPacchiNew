@@ -21,7 +21,7 @@ button:hover { background-color: #990000; }
 .corriere-btn-container { display: flex; justify-content: flex-end; margin-bottom: 10px; }
 .corriere-btn { background-color: #cc0000; color: white; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transition: 0.2s; }
 .corriere-btn:hover { background-color: #990000; }
-.corriere-input { display: none; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.corriere-input { display: none; justify-content: center; gap: 10px; margin-bottom: 20px; }
 .sezione-ritirati { margin-top: 40px; border-top: 2px dotted #aaa; padding-top: 20px; }
 #toggleRitirati { cursor: pointer; user-select: none; margin-bottom: 10px; }
 #ritiratiContainer { max-height: 300px; overflow: auto; transition: max-height 0.3s ease; }
@@ -58,9 +58,8 @@ button:hover { background-color: #990000; }
 </div>
 <div class="corriere-input" id="corriereInputDiv">
   <input type="text" id="nuovoCorriere" placeholder="Nuovo Corriere" />
-  <button onclick="aggiungiCorriere()">Aggiungi Corriere</button>
-  <button onclick="rimuoviCorriere()">Rimuovi Corriere</button>
-  <input type="text" id="nuovoScaffale" placeholder="Nuovo Scaffale (1-12 o Avanti)" style="width:150px;">
+  <button onclick="aggiungiCorriere()">Aggiungi</button>
+  <button onclick="rimuoviCorriere()">Rimuovi</button>
   <button onclick="aggiungiScaffale()">Aggiungi Scaffale</button>
   <button onclick="rimuoviScaffale()">Rimuovi Scaffale</button>
 </div>
@@ -90,7 +89,7 @@ button:hover { background-color: #990000; }
   <button onclick="aggiungiPacco()">Aggiungi</button>
 </div>
 
-<input type="text" id="search" class="search-bar" placeholder="Cerca per codice o cognome" oninput="aggiornaVista()" />
+<input type="text" id="search" class="search-bar" placeholder="Cerca per codice, cognome o tracciabilità" oninput="aggiornaVista()" />
 <div class="tabs" id="tabs"></div>
 <div class="counter" id="counter"></div>
 <div id="contenitori"></div>
@@ -102,20 +101,22 @@ button:hover { background-color: #990000; }
 </div>
 
 <script>
-// --- LOGIN ---
+// LOGIN
 function login(){
   const codice=document.getElementById('loginCode').value.trim();
   if(codice==='2025754785478'){
-    if(document.getElementById('rememberMe').checked){ localStorage.setItem('loggedIn','true'); }
+    if(document.getElementById('rememberMe').checked){
+      localStorage.setItem('loggedIn','true');
+    }
     document.getElementById('loginPage').style.display='none';
     document.getElementById('mainPage').style.display='block';
-    resetInattivita();
+    resetTimer();
   } else { alert('Codice errato'); }
 }
 if(localStorage.getItem('loggedIn')==='true'){
   document.getElementById('loginPage').style.display='none';
   document.getElementById('mainPage').style.display='block';
-  resetInattivita();
+  resetTimer();
 }
 function logout(){
   localStorage.removeItem('loggedIn');
@@ -123,32 +124,24 @@ function logout(){
   document.getElementById('loginPage').style.display='flex';
 }
 
-// --- TIMER INATTIVITÀ 20 MINUTI ---
-let timerInattivita;
-function resetInattivita(){
-  clearTimeout(timerInattivita);
-  timerInattivita=setTimeout(()=>{ alert('Sessione scaduta per inattività'); logout(); }, 20*60*1000);
+// Logout automatico 20 minuti
+let inactivityTimer;
+function resetTimer(){
+  clearTimeout(inactivityTimer);
+  inactivityTimer=setTimeout(()=>{ alert('Tempo scaduto!'); logout(); },20*60*1000);
 }
-['mousemove','keydown','click','scroll'].forEach(evt=>{ document.addEventListener(evt, resetInattivita); });
+['click','mousemove','keydown','scroll'].forEach(evt=>{ document.addEventListener(evt, resetTimer); });
 
-// --- PACCHI, CORRIERI E SCAFFALI ---
+// PACCHI E CORRIERI
 let pacchi = JSON.parse(localStorage.getItem('pacchi')) || [];
 let corrieri = JSON.parse(localStorage.getItem('corrieri')) || [];
-let scaffali = JSON.parse(localStorage.getItem('scaffali')) || [];
 
-function salvaDati(){ 
-  localStorage.setItem('pacchi', JSON.stringify(pacchi)); 
-  localStorage.setItem('corrieri', JSON.stringify(corrieri)); 
-  localStorage.setItem('scaffali', JSON.stringify(scaffali));
-}
-
+function salvaDati(){ localStorage.setItem('pacchi', JSON.stringify(pacchi)); localStorage.setItem('corrieri', JSON.stringify(corrieri)); }
 function toggleInputCorriere(){ const div=document.getElementById('corriereInputDiv'); div.style.display=div.style.display==='flex'?'none':'flex'; }
-
 function aggiornaCorriereSelect(){
   const select=document.getElementById('corriereSelect'); select.innerHTML='<option value="">Seleziona Corriere</option>';
   corrieri.forEach(c=>{ const opt=document.createElement('option'); opt.value=c; opt.textContent=c; select.appendChild(opt); });
 }
-
 function aggiungiCorriere(){ 
   const nuovo=document.getElementById('nuovoCorriere').value.trim();
   if(nuovo && !corrieri.includes(nuovo)){ corrieri.push(nuovo); aggiornaCorriereSelect(); aggiornaVista(); salvaDati(); }
@@ -166,17 +159,9 @@ function rimuoviCorriere(){
   document.getElementById('nuovoCorriere').value=''; toggleInputCorriere(); 
 }
 
-// --- SCAFFALI ---
-function aggiungiScaffale(){
-  const s = document.getElementById('nuovoScaffale').value.trim();
-  if(s && !scaffali.includes(s)){ scaffali.push(s); salvaDati(); aggiornaVista(); }
-  document.getElementById('nuovoScaffale').value='';
-}
-function rimuoviScaffale(){
-  const s = document.getElementById('nuovoScaffale').value.trim();
-  if(s && scaffali.includes(s)){ scaffali = scaffali.filter(x=>x!==s); salvaDati(); aggiornaVista(); }
-  document.getElementById('nuovoScaffale').value='';
-}
+// Funzioni scaffale
+function aggiungiScaffale(){ const s=prompt("Inserisci nome nuovo scaffale"); if(s) { const select=document.getElementById('scaffaleSelect'); const opt=document.createElement('option'); opt.value=s; opt.textContent=s; select.appendChild(opt); } }
+function rimuoviScaffale(){ const select=document.getElementById('scaffaleSelect'); const s=select.value; if(s && confirm(`Vuoi rimuovere lo scaffale "${s}"?`)) { for(let i=0;i<select.options.length;i++){ if(select.options[i].value===s){ select.remove(i); break; } } pacchi.forEach(p=>{ if(p.scaffale===s) p.scaffale=null; }); salvaDati(); aggiornaVista(); } }
 
 function aggiungiPacco(){
   const ct=document.getElementById('codiceTracciabilita').value.trim();
@@ -255,7 +240,13 @@ function aggiornaVista(){
 
   contenitori.innerHTML=''; ritiratiContainer.innerHTML='';
 
-  const pacchiFiltrati=pacchi.filter(p=>p.cognome.toLowerCase().includes(search)||(''+p.riconoscimento).includes(search));
+  // FILTRO INCLUSIVO TRACCIABILITA'
+  const pacchiFiltrati=pacchi.filter(p=>
+    p.cognome.toLowerCase().includes(search) ||
+    ('' + p.riconoscimento).includes(search) ||
+    (p.codiceTracciabilita && p.codiceTracciabilita.toLowerCase().includes(search))
+  );
+
   let visibili=selezione==='Tutti'?pacchiFiltrati.filter(p=>!p.ritirato):pacchiFiltrati.filter(p=>!p.ritirato && p.corriere===selezione);
   let ritirati=selezione==='Tutti'?pacchiFiltrati.filter(p=>p.ritirato):pacchiFiltrati.filter(p=>p.ritirato && p.corriere===selezione);
 
