@@ -2,247 +2,296 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <title>Gestione Pacchi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gestione Pacchi Postali</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    .hidden { display: none; }
-    .login-container { display: flex; justify-content: center; align-items: center; height: 100vh; }
-    .login-box { border: 1px solid #ccc; padding: 20px; border-radius: 10px; text-align: center; }
-    select, input { padding: 5px; margin: 5px; }
-    button { padding: 5px 10px; margin: 5px; }
-    h2 { margin-top: 20px; }
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      background-color: #fefefe;
+      padding: 20px;
+      background-image: url('https://www.transparenttextures.com/patterns/postcard.png');
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 40px;
+      color: #333;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    /* LOGIN */
+    #loginContainer {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    #loginBox {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+      text-align: center;
+      width: 320px;
+    }
+    #loginBox h2 { margin-bottom: 20px; }
+    #loginCode {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: 2px solid #ccc;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+    #loginBox button {
+      padding: 10px 20px;
+      background-color: #cc0000;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    #loginBox button:hover { background-color: #990000; }
+    #logoutBtn {
+      position: fixed;
+      top: 15px; right: 15px;
+      background: #cc0000;
+      color: #fff;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: none;
+    }
+    /* SEZIONI */
+    .section { margin-bottom: 30px; }
+    label { display: block; margin-top: 10px; }
+    input, select {
+      padding: 8px;
+      border: 1px solid #aaa;
+      border-radius: 6px;
+      margin-top: 5px;
+      font-size: 14px;
+    }
+    select { min-width: 180px; }
+    button.small {
+      padding: 4px 8px;
+      margin-left: 6px;
+      font-size: 13px;
+    }
+    ul { list-style: none; padding: 0; }
+    li { 
+      background: #eee;
+      margin: 5px 0;
+      padding: 8px;
+      border-radius: 6px;
+    }
+    .counter {
+      font-weight: bold;
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
   </style>
 </head>
 <body>
-  <!-- Login -->
-  <div id="loginPage" class="login-container">
-    <div class="login-box">
-      <h2>Accesso</h2>
-      <input type="password" id="accessCode" placeholder="Inserisci codice" />
-      <br>
-      <button onclick="login()">Entra</button>
+  <!-- LOGIN -->
+  <div id="loginContainer">
+    <div id="loginBox">
+      <h2>Inserisci Codice di Accesso</h2>
+      <input type="password" id="loginCode" placeholder="Codice" />
+      <button onclick="login()">Accedi</button>
     </div>
   </div>
+  <button id="logoutBtn" onclick="logout()">Logout</button>
 
-  <!-- Pagina principale -->
-  <div id="mainPage" class="hidden">
-    <button onclick="logout()">Logout</button>
+  <h1>Gestione Pacchi Postali</h1>
 
-    <h2>Pacchi in giacenza: <span id="counterAttivi">0</span></h2>
-
-    <form id="paccoForm">
-      <input type="number" id="codiceRiconoscimento" placeholder="Codice di riconoscimento (solo numeri)" required>
-      <input type="text" id="cognome" placeholder="Cognome" required>
-      <select id="corriereSelect"></select>
-      <select id="scaffaleSelect"></select>
-      <button type="submit">Aggiungi Pacco</button>
-    </form>
-
-    <div>
-      <h3>Gestione Corrieri</h3>
-      <input type="text" id="nuovoCorriere" placeholder="Nuovo corriere">
-      <button onclick="aggiungiCorriere()">+</button>
-      <button onclick="rimuoviCorriere()">-</button>
-    </div>
-
-    <div>
-      <h3>Gestione Scaffali</h3>
-      <input type="text" id="nuovoScaffale" placeholder="Nuovo scaffale">
-      <button onclick="aggiungiScaffale()">+</button>
-      <button onclick="rimuoviScaffale()">-</button>
-    </div>
-
-    <div id="pacchiContainer"></div>
-
-    <div class="sezione-ritirati">
-      <h2>Pacchi Ritirati ▼</h2>
-      <button id="cancellaRitiratiBtn" style="font-size:14px; padding:5px 10px; margin-bottom:10px;">Cancella pacchi ritirati</button>
-      <div id="ritiratiContainer"></div>
-    </div>
+  <div class="section">
+    <div class="counter">Pacchi in giacenza: <span id="pacchiCounter">0</span></div>
+    <label>Codice di tracciabilità (solo numeri):</label>
+    <input type="number" id="tracking" />
+    <label>Cognome destinatario:</label>
+    <input type="text" id="cognome" />
+    <label>Corriere:</label>
+    <select id="corriere"></select>
+    <button class="small" onclick="aggiungiCorriere()">+ Corriere</button>
+    <button class="small" onclick="rimuoviCorriere()">- Corriere</button>
+    <label>Scaffale:</label>
+    <select id="scaffale"></select>
+    <button class="small" onclick="aggiungiScaffale()">+ Scaffale</button>
+    <button class="small" onclick="rimuoviScaffale()">- Scaffale</button>
+    <br><br>
+    <button onclick="aggiungiPacco()">Aggiungi Pacco</button>
   </div>
 
-  <script>
-    const codiceAccesso = "2025754785478";
-    let pacchi = JSON.parse(localStorage.getItem("pacchi")) || [];
-    let corrieri = JSON.parse(localStorage.getItem("corrieri")) || ["Tutti","GLS","Bartolini","DHL","Altri Corrieri"];
-    let scaffali = JSON.parse(localStorage.getItem("scaffali")) || ["", ...Array.from({length:12}, (_,i)=>`Scaffale ${i+1}`), "Avanti (bancone)"];
+  <div class="section">
+    <h3>Pacchi attivi</h3>
+    <ul id="listaPacchi"></ul>
+  </div>
 
-    // ---- LOGIN ----
-    function login(){
-      const input = document.getElementById("accessCode").value;
-      if(input === codiceAccesso){
-        document.getElementById("loginPage").classList.add("hidden");
-        document.getElementById("mainPage").classList.remove("hidden");
-        resetInactivityTimer();
-        aggiornaVista();
-      } else {
-        alert("Codice errato!");
-      }
-    }
+  <div class="section">
+    <h3>Pacchi ritirati</h3>
+    <button class="small" onclick="cancellaRitirati()">Cancella pacchi ritirati</button>
+    <ul id="listaRitirati"></ul>
+  </div>
 
-    function logout(){
-      document.getElementById("loginPage").classList.remove("hidden");
-      document.getElementById("mainPage").classList.add("hidden");
-      document.getElementById("accessCode").value="";
-      clearTimeout(inactivityTimer);
-    }
+<script>
+  const ACCESS_CODE = "2025754785478";
+  let inactivityTimer;
 
-    // ---- TIMER INATTIVITÀ ----
-    let inactivityTimer;
-    function resetInactivityTimer(){
-      clearTimeout(inactivityTimer);
-      inactivityTimer = setTimeout(()=>{
-        alert("Sessione scaduta. Reinserisci il codice di accesso.");
-        logout();
-      }, 20*60*1000);
+  // === LOGIN ===
+  function login() {
+    const code = document.getElementById("loginCode").value.trim();
+    if (code === ACCESS_CODE) {
+      document.getElementById("loginContainer").style.display = "none";
+      document.getElementById("logoutBtn").style.display = "block";
+      startInactivityTimer();
+    } else {
+      alert("Codice errato!");
     }
-    document.onmousemove = resetInactivityTimer;
-    document.onkeypress = resetInactivityTimer;
+  }
+  function logout() {
+    document.getElementById("loginContainer").style.display = "flex";
+    document.getElementById("logoutBtn").style.display = "none";
+    document.getElementById("loginCode").value = "";
+    clearTimeout(inactivityTimer);
+  }
+  function startInactivityTimer() {
+    resetInactivityTimer();
+    ["mousemove","keydown","click","touchstart"].forEach(ev =>
+      document.addEventListener(ev, resetInactivityTimer)
+    );
+  }
+  function resetInactivityTimer() {
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => {
+      alert("Sessione scaduta per inattività.");
+      logout();
+    }, 20 * 60 * 1000);
+  }
 
-    // ---- SALVATAGGIO ----
-    function salvaDati(){
-      localStorage.setItem("pacchi", JSON.stringify(pacchi));
-      localStorage.setItem("corrieri", JSON.stringify(corrieri));
-      localStorage.setItem("scaffali", JSON.stringify(scaffali));
-    }
+  // === STORAGE ===
+  let pacchi = JSON.parse(localStorage.getItem("pacchi") || "[]");
+  let ritirati = JSON.parse(localStorage.getItem("ritirati") || "[]");
+  let corrieri = JSON.parse(localStorage.getItem("corrieri") || '["","GLS","DHL","UPS","Bartolini","Altro"]');
+  let scaffali = JSON.parse(localStorage.getItem("scaffali") || JSON.stringify(["","1","2","3","4","5","6","7","8","9","10","11","12","Avanti"]));
 
-    // ---- GESTIONE CORRIERI ----
-    function aggiornaCorrieri(){
-      const select = document.getElementById("corriereSelect");
-      select.innerHTML="";
-      corrieri.forEach(c=>{
-        const opt = document.createElement("option");
-        opt.value=c; opt.textContent=c;
-        select.appendChild(opt);
-      });
-    }
-    function aggiungiCorriere(){
-      const val = document.getElementById("nuovoCorriere").value.trim();
-      if(val && !corrieri.includes(val)){
-        corrieri.push(val);
-        salvaDati();
-        aggiornaCorrieri();
-      }
-    }
-    function rimuoviCorriere(){
-      const val = document.getElementById("nuovoCorriere").value.trim();
-      if(val && corrieri.includes(val)){
-        if(confirm("Vuoi rimuovere anche i pacchi di questo corriere?")){
-          pacchi = pacchi.filter(p=>p.corriere!==val);
-        }
-        corrieri = corrieri.filter(c=>c!==val);
-        salvaDati();
-        aggiornaCorrieri();
-        aggiornaVista();
-      }
-    }
+  function salva() {
+    localStorage.setItem("pacchi", JSON.stringify(pacchi));
+    localStorage.setItem("ritirati", JSON.stringify(ritirati));
+    localStorage.setItem("corrieri", JSON.stringify(corrieri));
+    localStorage.setItem("scaffali", JSON.stringify(scaffali));
+  }
 
-    // ---- GESTIONE SCAFFALI ----
-    function aggiornaScaffali(){
-      const select = document.getElementById("scaffaleSelect");
-      select.innerHTML="";
-      scaffali.forEach(s=>{
-        const opt = document.createElement("option");
-        opt.value=s; opt.textContent=s;
-        select.appendChild(opt);
-      });
-    }
-    function aggiungiScaffale(){
-      const val = document.getElementById("nuovoScaffale").value.trim();
-      if(val && !scaffali.includes(val)){
-        scaffali.push(val);
-        salvaDati();
-        aggiornaScaffali();
-      }
-    }
-    function rimuoviScaffale(){
-      const val = document.getElementById("nuovoScaffale").value.trim();
-      if(val && scaffali.includes(val)){
-        if(confirm("Vuoi rimuovere anche i pacchi di questo scaffale?")){
-          pacchi = pacchi.filter(p=>p.scaffale!==val);
-        }
-        scaffali = scaffali.filter(s=>s!==val);
-        salvaDati();
-        aggiornaScaffali();
-        aggiornaVista();
-      }
-    }
-
-    // ---- FORM AGGIUNTA PACCO ----
-    document.getElementById("paccoForm").addEventListener("submit", e=>{
-      e.preventDefault();
-      const codice = document.getElementById("codiceRiconoscimento").value.trim();
-      const cognome = document.getElementById("cognome").value.trim();
-      const corriere = document.getElementById("corriereSelect").value;
-      const scaffale = document.getElementById("scaffaleSelect").value;
-
-      if(!codice || !cognome){
-        if(!confirm("Mancano dati obbligatori. Vuoi continuare?")) return;
-      }
-
-      if(pacchi.some(p=>p.codice===codice)){
-        if(!confirm("Codice già presente. Vuoi continuare?")) return;
-      }
-
-      pacchi.push({codice,cognome,corriere,scaffale,ritirato:false,dataRitiro:null});
-      salvaDati();
-      aggiornaVista();
-      e.target.reset();
+  // === PACCHI ===
+  function aggiornaListe() {
+    const lista = document.getElementById("listaPacchi");
+    lista.innerHTML = "";
+    pacchi.forEach((p,i) => {
+      const li = document.createElement("li");
+      li.textContent = `#${p.numero} - ${p.corriere} - ${p.cognome} (${p.tracking}) ${p.scaffale? "[Scaffale: "+p.scaffale+"]":""}`;
+      const btn = document.createElement("button");
+      btn.textContent = "Ritirato";
+      btn.onclick = () => ritiraPacco(i);
+      li.appendChild(btn);
+      lista.appendChild(li);
     });
-
-    // ---- CANCELLA PACCHI RITIRATI (solo corriere selezionato) ----
-    document.getElementById('cancellaRitiratiBtn').addEventListener('click', () => {
-      const corriere = document.getElementById('corriereSelect').value;
-      const ritirati = pacchi.filter(p => p.ritirato && (corriere==="Tutti" || p.corriere===corriere));
-      if(ritirati.length === 0){
-        alert(`Non ci sono pacchi ritirati da cancellare per ${corriere}.`);
-        return;
-      }
-      if(confirm(`Vuoi cancellare ${ritirati.length} pacchi ritirati di ${corriere}?`)){
-        pacchi = pacchi.filter(p => !(p.ritirato && (corriere==="Tutti" || p.corriere===corriere)));
-        salvaDati();
-        aggiornaVista();
-      }
+    const listaR = document.getElementById("listaRitirati");
+    listaR.innerHTML = "";
+    ritirati.forEach(r => {
+      const li = document.createElement("li");
+      li.textContent = `#${r.numero} - ${r.corriere} - ${r.cognome} (${r.tracking}) [${r.data}]`;
+      listaR.appendChild(li);
     });
+    document.getElementById("pacchiCounter").textContent = pacchi.length;
+    aggiornaSelects();
+    salva();
+  }
 
-    // ---- VISTA ----
-    function aggiornaVista(){
-      aggiornaCorrieri();
-      aggiornaScaffali();
-      const container = document.getElementById("pacchiContainer");
-      const ritiratiCont = document.getElementById("ritiratiContainer");
-      container.innerHTML="";
-      ritiratiCont.innerHTML="";
-
-      const corriereSelezionato = document.getElementById("corriereSelect").value || "Tutti";
-      let attivi = pacchi.filter(p=>!p.ritirato && (corriereSelezionato==="Tutti" || p.corriere===corriereSelezionato));
-      let ritirati = pacchi.filter(p=>p.ritirato && (corriereSelezionato==="Tutti" || p.corriere===corriereSelezionato));
-
-      document.getElementById("counterAttivi").textContent = attivi.length;
-
-      attivi.forEach(p=>{
-        const div=document.createElement("div");
-        div.textContent=`${p.codice} - ${p.cognome} (${p.corriere}) ${p.scaffale?"- "+p.scaffale:""}`;
-        const chk=document.createElement("input");
-        chk.type="checkbox";
-        chk.onchange=()=>{
-          p.ritirato=chk.checked;
-          p.dataRitiro=new Date().toLocaleString();
-          salvaDati();
-          aggiornaVista();
-        };
-        div.appendChild(chk);
-        container.appendChild(div);
-      });
-
-      ritirati.forEach(p=>{
-        const div=document.createElement("div");
-        div.textContent=`${p.codice} - ${p.cognome} (${p.corriere}) ${p.scaffale?"- "+p.scaffale:""} - Ritirato il ${p.dataRitiro}`;
-        ritiratiCont.appendChild(div);
-      });
+  function aggiungiPacco() {
+    const tracking = document.getElementById("tracking").value.trim();
+    const cognome = document.getElementById("cognome").value.trim();
+    const corriere = document.getElementById("corriere").value;
+    const scaffaleSel = document.getElementById("scaffale").value;
+    if (!tracking || !cognome) {
+      if (!confirm("Mancano dati obbligatori (tracking/cognome). Vuoi continuare?")) return;
     }
+    if (pacchi.some(p => p.tracking === tracking) || ritirati.some(p => p.tracking === tracking)) {
+      if (!confirm("Tracking già presente. Vuoi continuare lo stesso?")) return;
+    }
+    const numero = pacchi.length > 0 ? Math.max(...pacchi.map(p=>p.numero))+1 : 1;
+    pacchi.push({numero, tracking, cognome, corriere, scaffale: scaffaleSel});
+    aggiornaListe();
+    document.getElementById("tracking").value="";
+    document.getElementById("cognome").value="";
+    document.getElementById("corriere").value="";
+    document.getElementById("scaffale").value="";
+  }
 
-    aggiornaVista();
-  </script>
+  function ritiraPacco(i) {
+    const p = pacchi.splice(i,1)[0];
+    const data = new Date().toLocaleString();
+    ritirati.push({...p, data});
+    aggiornaListe();
+  }
+
+  function cancellaRitirati() {
+    const corriere = document.getElementById("corriere").value;
+    if (!corriere) { alert("Seleziona un corriere per cancellare i pacchi ritirati."); return; }
+    ritirati = ritirati.filter(r => r.corriere !== corriere);
+    aggiornaListe();
+  }
+
+  // === CORRIERI / SCAFFALI ===
+  function aggiornaSelects() {
+    const selC = document.getElementById("corriere");
+    selC.innerHTML = "";
+    corrieri.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c; opt.textContent = c;
+      selC.appendChild(opt);
+    });
+    const selS = document.getElementById("scaffale");
+    selS.innerHTML = "";
+    scaffali.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s; opt.textContent = s;
+      selS.appendChild(opt);
+    });
+  }
+  function aggiungiCorriere() {
+    const nome = prompt("Nome nuovo corriere:");
+    if (nome) { corrieri.push(nome); aggiornaListe(); }
+  }
+  function rimuoviCorriere() {
+    const nome = prompt("Nome corriere da rimuovere:");
+    if (nome && corrieri.includes(nome)) {
+      if (pacchi.some(p=>p.corriere===nome) || ritirati.some(r=>r.corriere===nome)) {
+        if (!confirm("Ci sono pacchi con questo corriere. Vuoi cancellarli anche?")) return;
+        pacchi = pacchi.filter(p=>p.corriere!==nome);
+        ritirati = ritirati.filter(r=>r.corriere!==nome);
+      }
+      corrieri = corrieri.filter(c=>c!==nome);
+      aggiornaListe();
+    }
+  }
+  function aggiungiScaffale() {
+    const nome = prompt("Nome nuovo scaffale:");
+    if (nome) { scaffali.push(nome); aggiornaListe(); }
+  }
+  function rimuoviScaffale() {
+    const nome = prompt("Nome scaffale da rimuovere:");
+    if (nome && scaffali.includes(nome)) {
+      scaffali = scaffali.filter(s=>s!==nome);
+      aggiornaListe();
+    }
+  }
+
+  aggiornaListe();
+</script>
 </body>
 </html>
