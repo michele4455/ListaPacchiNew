@@ -5,144 +5,61 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gestione Pacchi Postali</title>
 <style>
-body { font-family: 'Courier New', Courier, monospace; background-color: #fefefe; padding: 20px; background-image: url('https://www.transparenttextures.com/patterns/postcard.png'); }
-h1 { text-align: center; margin-bottom: 10px; color: #333; text-transform: uppercase; letter-spacing: 2px; }
-input, select, button { padding: 12px; font-size: 16px; border-radius: 6px; border: 2px dashed #ccc; background-color: #fff; }
-select { min-width: 200px; }
-button { background-color: #cc0000; color: white; border: none; cursor: pointer; transition: 0.2s; }
-button:hover { background-color: #990000; }
-.form-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; justify-content: center; }
-.search-bar { margin: 20px auto; display: block; padding: 12px; width: 50%; border: 2px dashed #ccc; }
-.tabs { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 10px; }
-.tabs button { background-color: #eee; border: 1px solid #ccc; color: #333; border-radius: 6px; padding: 8px 12px; }
-.pacchi-list { display: flex; flex-direction: column; gap: 10px; padding: 10px; }
-.pacco { background: #fff8e1; border: 2px dashed #999; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-radius: 6px; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); font-weight: 600; font-size: 16px; }
-.ritirato { background-color: #c8e6c9 !important; }
-.corriere-btn-container { display: flex; justify-content: flex-end; margin-bottom: 10px; }
-.corriere-btn { background-color: #cc0000; color: white; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transition: 0.2s; }
-.corriere-btn:hover { background-color: #990000; }
-.corriere-input { display: none; justify-content: center; gap: 10px; margin-bottom: 20px; }
-.sezione-ritirati { margin-top: 40px; border-top: 2px dotted #aaa; padding-top: 20px; }
-#toggleRitirati { cursor: pointer; user-select: none; margin-bottom: 10px; }
-#ritiratiContainer { max-height: 300px; overflow: auto; transition: max-height 0.3s ease; }
-.counter { text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #444; }
-
-/* LOGIN */
-#loginPage { display: flex; justify-content: center; align-items: center; height: 100vh; }
-.login-box { background: #fff; border: 2px dashed #cc0000; padding: 40px; border-radius: 12px; box-shadow: 2px 2px 10px rgba(0,0,0,0.2); text-align: center; width: 350px; }
-.login-box input { width: 100%; margin-bottom: 15px; }
-.login-box button { width: 100%; }
-.remember { margin: 10px 0; font-size: 14px; }
-
-/* ALERT CENTRALE */
-#sessionTimeoutAlert { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:#fff8e1; border:2px solid #cc0000; padding:30px 50px; font-size:18px; font-weight:bold; z-index:1000; text-align:center; border-radius:10px; box-shadow:2px 2px 10px rgba(0,0,0,0.3); }
-
-/* GRANDEZZA QUADRATO */
-.tag-grandezza {
-  display: inline-block;
-  background-color: yellow;
-  color: red;
-  border: 2px solid red;
-  padding: 3px 10px;
-  border-radius: 6px;
-  font-weight: bold;
-  font-size: 17px;
-  margin-right: 10px;
-}
+body { font-family: 'Courier New', monospace; background:#fefefe; padding:20px; }
+input, select, button { padding:12px; font-size:16px; border-radius:6px; border:2px dashed #ccc; background:#fff; }
+button { background:#cc0000; color:#fff; border:none; cursor:pointer; }
+#loginPage { display:flex; justify-content:center; align-items:center; height:100vh; }
+.login-box { background:#fff; border:2px dashed #cc0000; padding:40px; border-radius:12px; width:350px; text-align:center; }
+.logo { width:100%; max-width:320px; margin-bottom:20px; }
+.pacco { display:flex; justify-content:space-between; padding:15px; border:2px dashed #999; background:#fff8e1; border-radius:6px; }
+.grandezza-box { display:inline-block; padding:5px 10px; background:yellow; color:red; font-weight:bold; border:2px solid red; margin-right:8px; }
 </style>
 </head>
 <body>
-
-<!-- ALERT CENTRALE -->
-<div id="sessionTimeoutAlert">Sessione scaduta per inattività</div>
-
-<!-- LOGIN -->
 <div id="loginPage">
   <div class="login-box">
-
+    <img src="https://ibb.co/shkm8Nx" alt="Logo" style="display:block;margin:0 auto;width:300px;max-width:90%;">
     <h2>Accesso</h2>
-
-    <!-- NUOVO LOGIN -->
     <input type="email" id="loginEmail" placeholder="Email">
     <input type="password" id="loginPassword" placeholder="Password">
-
     <div class="remember"><label><input type="checkbox" id="rememberMe"> Ricordami</label></div>
     <button onclick="login()">Entra</button>
   </div>
 </div>
-
-<!-- MAIN -->
+</div>
 <div id="mainPage" style="display:none;">
 <h1>Gestione Pacchi Postali</h1>
-<div style="text-align:right; margin-bottom:10px;">
-  <button onclick="logout()" style="background-color:#555;">Logout</button>
-</div>
-
-<div class="corriere-btn-container">
-  <button class="corriere-btn" onclick="toggleInputCorriere()">+</button>
-</div>
-<div class="corriere-input" id="corriereInputDiv">
-  <input type="text" id="nuovoCorriere" placeholder="Nuovo Corriere" />
-  <button onclick="aggiungiCorriere()">Aggiungi Corriere</button>
-  <button onclick="rimuoviCorriere()">Rimuovi Corriere</button>
-  <button onclick="aggiungiScaffale()">Aggiungi Scaffale</button>
-  <button onclick="rimuoviScaffale()">Rimuovi Scaffale</button>
-</div>
-
 <div class="form-group">
-  <input type="text" id="codiceTracciabilita" placeholder="Codice di Tracciabilità" />
-  <input type="text" id="codiceRiconoscimento" placeholder="Codice di Riconoscimento (opzionale)" />
-  <input type="text" id="nome" placeholder="Nome" />
-  <input type="text" id="cognome" placeholder="Cognome" />
-  <select id="corriereSelect"><option value="">Seleziona Corriere</option></select>
-
-  <select id="scaffaleSelect">
-    <option value="">Seleziona scaffale (opzionale)</option>
-    <option value="Scaffale 1">Scaffale 1</option>
-    <option value="Scaffale 2">Scaffale 2</option>
-    <option value="Scaffale 3">Scaffale 3</option>
-    <option value="Scaffale 4">Scaffale 4</option>
-    <option value="Scaffale 5">Scaffale 5</option>
-    <option value="Scaffale 6">Scaffale 6</option>
-    <option value="Scaffale 7">Scaffale 7</option>
-    <option value="Scaffale 8">Scaffale 8</option>
-    <option value="Scaffale 9">Scaffale 9</option>
-    <option value="Scaffale 10">Scaffale 10</option>
-    <option value="Scaffale 11">Scaffale 11</option>
-    <option value="Scaffale 12">Scaffale 12</option>
-    <option value="Avanti">Avanti</option>
-  </select>
-
-  <!-- GRANDEZZA -->
+  <input type="text" id="codiceTracciabilita" placeholder="Codice Tracciabilità">
+  <input type="text" id="codiceRiconoscimento" placeholder="Codice Riconoscimento (opz.)">
+  <input type="text" id="nome" placeholder="Nome">
+  <input type="text" id="cognome" placeholder="Cognome">
   <select id="grandezzaSelect">
-      <option value="">Grandezza</option>
-      <option value="P">P - Piccolo</option>
-      <option value="M">M - Medio</option>
-      <option value="G">G - Grande</option>
+    <option value="">Grandezza pacco</option>
+    <option value="P">P - Piccolo</option>
+    <option value="M">M - Medio</option>
+    <option value="G">G - Grande</option>
   </select>
-
+  <select id="corriereSelect"><option value="">Corriere</option></select>
+  <select id="scaffaleSelect"><option value="">Scaffale</option></select>
   <button onclick="aggiungiPacco()">Aggiungi</button>
 </div>
-
-<input type="text" id="search" class="search-bar" placeholder="Cerca per codice, cognome o codice tracciabilità" oninput="aggiornaVista()" />
-<div class="tabs" id="tabs"></div>
-<div class="counter" id="counter"></div>
+<input type="text" id="search" placeholder="Cerca" oninput="aggiornaVista()">
+<div id="tabs"></div>
+<div id="counter"></div>
 <div id="contenitori"></div>
-
-<div class="sezione-ritirati">
-  <h2 id="toggleRitirati">Pacchi Ritirati ▼</h2>
-  <button id="cancellaRitiratiBtn" style="font-size:14px; padding:5px 10px; margin-bottom:10px;">Cancella pacchi ritirati</button>
-  <div id="ritiratiContainer"></div>
+<div id="ritiratiContainer"></div>
 </div>
-
 <script>
-/* LOGIN EMAIL + PASSWORD */
+let pacchi = JSON.parse(localStorage.getItem('pacchi')) || [];
+let corrieri = JSON.parse(localStorage.getItem('corrieri')) || [];
+function salva(){ localStorage.setItem('pacchi',JSON.stringify(pacchi)); localStorage.setItem('corrieri',JSON.stringify(corrieri)); }
 function login(){
   const email = document.getElementById('loginEmail').value.trim();
   const pass = document.getElementById('loginPassword').value.trim();
 
-  const validEmail = "centroposte1@gmail.com";
-  const validPass = "2025754785478";
+  const validEmail = 'centroposte1@gmail.com';
+  const validPass = '2025754785478';
 
   if(email === validEmail && pass === validPass){
       if(document.getElementById('rememberMe').checked){
@@ -152,241 +69,32 @@ function login(){
       document.getElementById('mainPage').style.display='block';
       aggiornaUltimaAttivita();
   } else {
-      alert("Credenziali errate");
+      alert('Email o password errati');
   }
 }
-
-if(localStorage.getItem('loggedIn')==='true'){
-  document.getElementById('loginPage').style.display='none';
-  document.getElementById('mainPage').style.display='block';
+document.getElementById('loginPage').style.display='none';
+    document.getElementById('mainPage').style.display='block';
+    aggiornaUltimaAttivita();
+  } else { alert('Credenziali errate'); }
 }
-
-/* LOGOUT */
-function logout(){
-  localStorage.removeItem('loggedIn');
-  document.getElementById('mainPage').style.display='none';
-  document.getElementById('loginPage').style.display='flex';
-}
-
-
-/* --- RESTO DEL CODICE INVARIATO --- */
-/* SALVATAGGIO, PACCHI, CORRIERI, FILTRI, RITIRO, SESSIONE, ECC. */
-
-let pacchi = JSON.parse(localStorage.getItem('pacchi')) || [];
-let corrieri = JSON.parse(localStorage.getItem('corrieri')) || [];
-
-function salvaDati(){ localStorage.setItem('pacchi', JSON.stringify(pacchi)); localStorage.setItem('corrieri', JSON.stringify(corrieri)); }
-function aggiornaCorriereSelect(){ const select=document.getElementById('corriereSelect'); select.innerHTML='<option value=\"\">Seleziona Corriere</option>'; corrieri.forEach(c=>{ const opt=document.createElement('option'); opt.value=c; opt.textContent=c; select.appendChild(opt); }); }
-function toggleInputCorriere(){ const div=document.getElementById('corriereInputDiv'); div.style.display=div.style.display==='flex'?'none':'flex'; }
-function aggiungiCorriere(){ const nuovo=document.getElementById('nuovoCorriere').value.trim(); if(nuovo && !corrieri.includes(nuovo)){ corrieri.push(nuovo); aggiornaCorriereSelect(); aggiornaVista(); salvaDati(); } document.getElementById('nuovoCorriere').value=''; toggleInputCorriere(); }
-function rimuoviCorriere(){ const corriere=document.getElementById('nuovoCorriere').value.trim(); if(corriere && corrieri.includes(corriere)){ const pacchiAssoc=pacchi.filter(p=>p.corriere===corriere); if(pacchiAssoc.length>0 && !confirm(`Ci sono ${pacchiAssoc.length} pacchi per questo corriere. Vuoi eliminarli anche?`)) return; pacchi=pacchi.filter(p=>p.corriere!==corriere); corrieri=corrieri.filter(c=>c!==corriere); aggiornaCorriereSelect(); aggiornaVista(); salvaDati(); } document.getElementById('nuovoCorriere').value=''; toggleInputCorriere(); }
-function aggiungiScaffale(){ alert('Funzione aggiungi scaffale'); }
-function rimuoviScaffale(){ alert('Funzione rimuovi scaffale'); }
-
+else alert('Credenziali errate'); }
+function aggiornaCorriereSelect(){ corriereSelect.innerHTML='<option value="">Corriere</option>'; corrieri.forEach(c=>{ let o=document.createElement('option'); o.value=c; o.textContent=c; corriereSelect.appendChild(o); }); }
 function aggiungiPacco(){
-  const ct=document.getElementById('codiceTracciabilita').value.trim();
-  const cr=document.getElementById('codiceRiconoscimento').value.trim();
-  const nome=document.getElementById('nome').value.trim();
-  const cognome=document.getElementById('cognome').value.trim();
-  const corriere=document.getElementById('corriereSelect').value;
-  const scaffale=document.getElementById('scaffaleSelect').value;
-  const grandezza=document.getElementById('grandezzaSelect').value;
-
-  if(cr && !/^\d+$/.test(cr)){ alert('Il codice di riconoscimento può contenere solo numeri'); return; }
-
-  if(!cognome || !ct){
-    if(!confirm('Codice tracciabilità e cognome sono obbligatori. Continuare comunque?')) return;
-  }
-
-  if(ct && pacchi.some(p=>p.codiceTracciabilita===ct)){
-    if(!confirm('Questo codice tracciabilità è già presente. Continuare?')) return;
-  }
-
-  const numeri=pacchi
-    .filter(p=>p.corriere===corriere && !p.ritirato)
-    .map(p=>parseInt(p.riconoscimento))
-    .filter(n=>!isNaN(n));
-
-  const riconoscimento=cr || (numeri.length?Math.max(...numeri)+1:1);
-
-  pacchi.push({
-    id:Date.now(),
-    codiceTracciabilita:ct||'-',
-    riconoscimento,
-    nome,
-    cognome,
-    corriere,
-    scaffale: scaffale || null,
-    grandezza: grandezza || '',
-    ritirato:false,
-    ritiroData:null
-  });
-
-  document.getElementById('codiceTracciabilita').value='';
-  document.getElementById('codiceRiconoscimento').value='';
-  document.getElementById('nome').value='';
-  document.getElementById('cognome').value='';
-  document.getElementById('scaffaleSelect').value='';
-  document.getElementById('grandezzaSelect').value='';
-
-  aggiornaVista();
-  salvaDati();
+  const grandezza=grandezzaSelect.value;
+  pacchi.push({ id:Date.now(), codiceTracciabilita:codiceTracciabilita.value, riconoscimento:codiceRiconoscimento.value||'-', nome:nome.value, cognome:cognome.value, corriere:corriereSelect.value, scaffale:scaffaleSelect.value, grandezza, ritirato:false });
+  salva(); aggiornaVista();
 }
-
-function toggleRitirato(id){
-  const pacco=pacchi.find(p=>p.id===id);
-  if(pacco){
-    pacco.ritirato=!pacco.ritirato;
-    pacco.ritiroData=pacco.ritirato? new Date().toLocaleString() : null;
-    salvaDati();
-    aggiornaVista();
-  }
-}
-
-document.getElementById('cancellaRitiratiBtn').addEventListener('click', () => {
-  const selezione=sessionStorage.getItem('tab')||'Tutti';
-  const ritirati = selezione==='Tutti'
-    ? pacchi.filter(p => p.ritirato)
-    : pacchi.filter(p => p.ritirato && p.corriere===selezione);
-
-  if(ritirati.length === 0){
-    alert('Non ci sono pacchi ritirati da cancellare.');
-    return;
-  }
-
-  if(confirm(`Sei sicuro di voler cancellare ${ritirati.length} pacchi ritirati?`)){
-    pacchi = pacchi.filter(p => !ritirati.includes(p));
-    salvaDati();
-    aggiornaVista();
-  }
-});
-
-let ritiratiAperti=true;
-document.getElementById('toggleRitirati').addEventListener('click',()=>{
-  ritiratiAperti=!ritiratiAperti;
-  const container=document.getElementById('ritiratiContainer');
-  const titolo=document.getElementById('toggleRitirati');
-
-  if(ritiratiAperti){
-    container.style.maxHeight='300px';
-    titolo.textContent='Pacchi Ritirati ▼';
-  } else {
-    container.style.maxHeight='0';
-    titolo.textContent='Pacchi Ritirati ▶';
-  }
-});
-
+function toggleRitirato(id){ let p=pacchi.find(x=>x.id===id); p.ritirato=!p.ritirato; salva(); aggiornaVista(); }
 function aggiornaVista(){
   aggiornaCorriereSelect();
-
-  const search=document.getElementById('search').value.toLowerCase();
-  const contenitori=document.getElementById('contenitori');
-  const ritiratiContainer=document.getElementById('ritiratiContainer');
-  const tabs=document.getElementById('tabs');
-  const selezione=sessionStorage.getItem('tab')||'Tutti';
-
-  tabs.innerHTML='';
-  const creaTab=nome=>{
-    const btn=document.createElement('button');
-    btn.textContent=nome;
-    btn.onclick=()=>{ sessionStorage.setItem('tab',nome); aggiornaVista(); };
-    if(nome===selezione) btn.style.fontWeight='bold';
-    tabs.appendChild(btn);
-  };
-
-  creaTab('Tutti');
-  corrieri.forEach(c=>creaTab(c));
-
-  contenitori.innerHTML='';
-  ritiratiContainer.innerHTML='';
-
-  const pacchiFiltrati=pacchi.filter(p =>
-    p.cognome.toLowerCase().includes(search) ||
-    (''+p.riconoscimento).includes(search) ||
-    p.codiceTracciabilita.toLowerCase().includes(search)
-  );
-
-  let visibili = selezione==='Tutti'
-    ? pacchiFiltrati.filter(p=>!p.ritirato)
-    : pacchiFiltrati.filter(p=>!p.ritirato && p.corriere===selezione);
-
-  let ritirati = selezione==='Tutti'
-    ? pacchiFiltrati.filter(p=>p.ritirato)
-    : pacchiFiltrati.filter(p=>p.ritirato && p.corriere===selezione);
-
-  document.getElementById('counter').textContent="Pacchi in giacenza: "+visibili.length;
-
-  const lista=document.createElement('div');
-  lista.className='pacchi-list';
-
-  visibili.forEach(p=>{
-    const card=document.createElement('div');
-    card.className='pacco';
-
-    card.innerHTML=`
-      <div>
-        <span class="tag-grandezza">${p.grandezza || ''}</span>
-        <strong>#${p.riconoscimento}</strong> - 
-        ${p.codiceTracciabilita} - 
-        ${p.nome} ${p.cognome} 
-        (${p.corriere}) 
-        ${p.scaffale?'- '+p.scaffale:''}
-      </div>
-      <label><input type="checkbox" ${p.ritirato?'checked':''} onclick="toggleRitirato(${p.id})"> Ritirato</label>
-    `;
-
-    lista.appendChild(card);
+  const s=search.value.toLowerCase(), cont=contenitori; cont.innerHTML='';
+  pacchi.filter(p=>!p.ritirato).forEach(p=>{
+    let d=document.createElement('div'); d.className='pacco';
+    d.innerHTML=`<div><span class='grandezza-box'>${p.grandezza||''}</span> #${p.riconoscimento} - ${p.codiceTracciabilita} - ${p.nome} ${p.cognome}</div><label><input type='checkbox' onclick='toggleRitirato(${p.id})'></label>`;
+    cont.appendChild(d);
   });
-  contenitori.appendChild(lista);
-
-  const listaRitirati=document.createElement('div');
-  listaRitirati.className='pacchi-list';
-
-  ritirati.forEach(p=>{
-    const card=document.createElement('div');
-    card.className='pacco ritirato';
-
-    card.innerHTML=`
-      <div>
-        <span class="tag-grandezza">${p.grandezza || ''}</span>
-        <strong>#${p.riconoscimento}</strong> - 
-        ${p.codiceTracciabilita} - 
-        ${p.nome} ${p.cognome} 
-        (${p.corriere}) 
-        ${p.scaffale?'- '+p.scaffale:''}
-        ${p.ritiroData?'- '+p.ritiroData:''}
-      </div>
-      <label><input type="checkbox" checked onclick="toggleRitirato(${p.id})"> Ritirato</label>
-    `;
-
-    listaRitirati.appendChild(card);
-  });
-
-  ritiratiContainer.appendChild(listaRitirati);
 }
-
 aggiornaVista();
-
-const INATTIVITA_MAX=20*60*1000;
-function aggiornaUltimaAttivita(){
-  localStorage.setItem('ultimaAttivita', Date.now());
-}
-['click','mousemove','keydown','scroll','touchstart']
-  .forEach(evt=>document.addEventListener(evt, aggiornaUltimaAttivita));
-
-setInterval(()=>{
-  const ultima=parseInt(localStorage.getItem('ultimaAttivita'))||Date.now();
-  if(Date.now()-ultima>INATTIVITA_MAX){
-    const alertDiv=document.getElementById('sessionTimeoutAlert');
-    alertDiv.style.display='block';
-
-    setTimeout(()=>{
-      alertDiv.style.display='none';
-      logout();
-    },3000);
-  }
-},5000);
-
 </script>
 </body>
 </html>
