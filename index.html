@@ -59,8 +59,13 @@ button:hover { background-color: #990000; }
 <!-- LOGIN -->
 <div id="loginPage">
   <div class="login-box">
+
     <h2>Accesso</h2>
-    <input type="text" id="loginCode" placeholder="Inserisci codice">
+
+    <!-- NUOVO LOGIN -->
+    <input type="email" id="loginEmail" placeholder="Email">
+    <input type="password" id="loginPassword" placeholder="Password">
+
     <div class="remember"><label><input type="checkbox" id="rememberMe"> Ricordami</label></div>
     <button onclick="login()">Entra</button>
   </div>
@@ -108,7 +113,7 @@ button:hover { background-color: #990000; }
     <option value="Avanti">Avanti</option>
   </select>
 
-  <!-- NUOVA GRANDEZZA -->
+  <!-- GRANDEZZA -->
   <select id="grandezzaSelect">
       <option value="">Grandezza</option>
       <option value="P">P - Piccolo</option>
@@ -131,78 +136,50 @@ button:hover { background-color: #990000; }
 </div>
 
 <script>
+/* LOGIN EMAIL + PASSWORD */
 function login(){
-  const codice=document.getElementById('loginCode').value.trim();
-  if(codice==='2025754785478'){
-    if(document.getElementById('rememberMe').checked){ localStorage.setItem('loggedIn','true'); }
-    document.getElementById('loginPage').style.display='none';
-    document.getElementById('mainPage').style.display='block';
-    aggiornaUltimaAttivita();
-  } else { alert('Codice errato'); }
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPassword').value.trim();
+
+  const validEmail = "centroposte1@gmail.com";
+  const validPass = "2025754785478";
+
+  if(email === validEmail && pass === validPass){
+      if(document.getElementById('rememberMe').checked){
+          localStorage.setItem('loggedIn','true');
+      }
+      document.getElementById('loginPage').style.display='none';
+      document.getElementById('mainPage').style.display='block';
+      aggiornaUltimaAttivita();
+  } else {
+      alert("Credenziali errate");
+  }
 }
+
 if(localStorage.getItem('loggedIn')==='true'){
   document.getElementById('loginPage').style.display='none';
   document.getElementById('mainPage').style.display='block';
 }
 
+/* LOGOUT */
 function logout(){
   localStorage.removeItem('loggedIn');
   document.getElementById('mainPage').style.display='none';
   document.getElementById('loginPage').style.display='flex';
 }
 
+
+/* --- RESTO DEL CODICE INVARIATO --- */
+/* SALVATAGGIO, PACCHI, CORRIERI, FILTRI, RITIRO, SESSIONE, ECC. */
+
 let pacchi = JSON.parse(localStorage.getItem('pacchi')) || [];
 let corrieri = JSON.parse(localStorage.getItem('corrieri')) || [];
 
-function salvaDati(){
-  localStorage.setItem('pacchi', JSON.stringify(pacchi));
-  localStorage.setItem('corrieri', JSON.stringify(corrieri));
-}
-
-function aggiornaCorriereSelect(){
-  const select=document.getElementById('corriereSelect');
-  select.innerHTML='<option value="">Seleziona Corriere</option>';
-  corrieri.forEach(c=>{
-    const opt=document.createElement('option');
-    opt.value=c; opt.textContent=c;
-    select.appendChild(opt);
-  });
-}
-
-function toggleInputCorriere(){
-  const div=document.getElementById('corriereInputDiv');
-  div.style.display=div.style.display==='flex'?'none':'flex';
-}
-
-function aggiungiCorriere(){
-  const nuovo=document.getElementById('nuovoCorriere').value.trim();
-  if(nuovo && !corrieri.includes(nuovo)){
-    corrieri.push(nuovo);
-    aggiornaCorriereSelect();
-    aggiornaVista();
-    salvaDati();
-  }
-  document.getElementById('nuovoCorriere').value='';
-  toggleInputCorriere();
-}
-
-function rimuoviCorriere(){
-  const corriere=document.getElementById('nuovoCorriere').value.trim();
-  if(corriere && corrieri.includes(corriere)){
-    const pacchiAssoc=pacchi.filter(p=>p.corriere===corriere);
-    if(pacchiAssoc.length>0 && !confirm(`Ci sono ${pacchiAssoc.length} pacchi per questo corriere. Vuoi eliminarli anche?`)) return;
-
-    pacchi=pacchi.filter(p=>p.corriere!==corriere);
-    corrieri=corrieri.filter(c=>c!==corriere);
-
-    aggiornaCorriereSelect();
-    aggiornaVista();
-    salvaDati();
-  }
-  document.getElementById('nuovoCorriere').value='';
-  toggleInputCorriere();
-}
-
+function salvaDati(){ localStorage.setItem('pacchi', JSON.stringify(pacchi)); localStorage.setItem('corrieri', JSON.stringify(corrieri)); }
+function aggiornaCorriereSelect(){ const select=document.getElementById('corriereSelect'); select.innerHTML='<option value=\"\">Seleziona Corriere</option>'; corrieri.forEach(c=>{ const opt=document.createElement('option'); opt.value=c; opt.textContent=c; select.appendChild(opt); }); }
+function toggleInputCorriere(){ const div=document.getElementById('corriereInputDiv'); div.style.display=div.style.display==='flex'?'none':'flex'; }
+function aggiungiCorriere(){ const nuovo=document.getElementById('nuovoCorriere').value.trim(); if(nuovo && !corrieri.includes(nuovo)){ corrieri.push(nuovo); aggiornaCorriereSelect(); aggiornaVista(); salvaDati(); } document.getElementById('nuovoCorriere').value=''; toggleInputCorriere(); }
+function rimuoviCorriere(){ const corriere=document.getElementById('nuovoCorriere').value.trim(); if(corriere && corrieri.includes(corriere)){ const pacchiAssoc=pacchi.filter(p=>p.corriere===corriere); if(pacchiAssoc.length>0 && !confirm(`Ci sono ${pacchiAssoc.length} pacchi per questo corriere. Vuoi eliminarli anche?`)) return; pacchi=pacchi.filter(p=>p.corriere!==corriere); corrieri=corrieri.filter(c=>c!==corriere); aggiornaCorriereSelect(); aggiornaVista(); salvaDati(); } document.getElementById('nuovoCorriere').value=''; toggleInputCorriere(); }
 function aggiungiScaffale(){ alert('Funzione aggiungi scaffale'); }
 function rimuoviScaffale(){ alert('Funzione rimuovi scaffale'); }
 
@@ -215,10 +192,7 @@ function aggiungiPacco(){
   const scaffale=document.getElementById('scaffaleSelect').value;
   const grandezza=document.getElementById('grandezzaSelect').value;
 
-  if(cr && !/^\d+$/.test(cr)){
-    alert('Il codice di riconoscimento può contenere solo numeri');
-    return;
-  }
+  if(cr && !/^\d+$/.test(cr)){ alert('Il codice di riconoscimento può contenere solo numeri'); return; }
 
   if(!cognome || !ct){
     if(!confirm('Codice tracciabilità e cognome sono obbligatori. Continuare comunque?')) return;
@@ -264,7 +238,6 @@ function toggleRitirato(id){
   if(pacco){
     pacco.ritirato=!pacco.ritirato;
     pacco.ritiroData=pacco.ritirato? new Date().toLocaleString() : null;
-
     salvaDati();
     aggiornaVista();
   }
