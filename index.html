@@ -54,7 +54,7 @@
 </div>
 
 <script>
-// RIPRISTINO DATI SENZA MODIFICARE NULLA
+// Carica i dati esistenti senza resettare i corrieri
 let pacchi = JSON.parse(localStorage.getItem('pacchi')) || [];
 let corrieri = JSON.parse(localStorage.getItem('corrieri')) || ["Punto Poste", "SDA", "BRT", "GLS", "Amazon"];
 let tabAttiva = 'Tutti';
@@ -80,10 +80,9 @@ function aggiungiPacco(){
 
     let riconoscimento;
     if(cr) {
-        // Se scrivi il numero a mano, usa quello
         riconoscimento = cr;
     } else {
-        // LOGICA RICHIESTA: Prendi l'ULTIMO pacco della lista e fai +1
+        // PRENDE L'ULTIMO PACCO INSERITO NELLA LISTA PER QUEL CORRIERE
         const pacchiCorriere = pacchi.filter(p => p.corriere === corriere);
         if(pacchiCorriere.length > 0) {
             const ultimoPacco = pacchiCorriere[pacchiCorriere.length - 1];
@@ -107,7 +106,6 @@ function aggiungiPacco(){
 
     salva();
     aggiornaVista();
-    // Pulisce solo i campi testo
     ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
 }
 
@@ -122,17 +120,18 @@ function aggiornaVista(){
     tabsBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">Tutti</button>`;
     corrieri.forEach(c => tabsBox.innerHTML += `<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}">${c}</button>`);
 
-    const inGiacenza = pacchi.filter(p => !p.ritirato && (tabAttiva === 'Tutti' || p.corriere === tabAttiva));
+    // ORDINE DI ARRIVO: i pacchi restano nell'ordine in cui sono nell'array
+    const filtrati = pacchi.filter(p => !p.ritirato && (tabAttiva === 'Tutti' || p.corriere === tabAttiva));
     
-    // Counter barra nera basato sull'ultimo della lista visualizzata
     let ultimoNum = "---";
-    if(inGiacenza.length > 0) {
-        ultimoNum = inGiacenza[inGiacenza.length - 1].riconoscimento;
+    if(filtrati.length > 0) {
+        ultimoNum = filtrati[filtrati.length - 1].riconoscimento;
     }
 
-    document.getElementById('counter').innerHTML = `Giacenza ${tabAttiva}: ${inGiacenza.length} | Ultimo: #${ultimoNum}`;
+    document.getElementById('counter').innerHTML = `Giacenza ${tabAttiva}: ${filtrati.length} | Ultimo: #${ultimoNum}`;
     
-    document.getElementById('contenitori').innerHTML = inGiacenza.map(p => `
+    // Rimosso il .reverse() per mantenere l'ordine cronologico
+    document.getElementById('contenitori').innerHTML = filtrati.map(p => `
         <div class="pacco">
             <div>
                 <span class="tag-grandezza">${p.grandezza}</span>
@@ -141,7 +140,7 @@ function aggiornaVista(){
             </div>
             <input type="checkbox" onchange="ritira(${p.id})" style="transform: scale(1.5)">
         </div>
-    `).reverse().join(''); // Reverse per vedere i nuovi in alto
+    `).join('');
 }
 
 function ritira(id){
