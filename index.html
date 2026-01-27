@@ -38,14 +38,13 @@
 
         .status-bar {
             background: #333; color: white; padding: 15px; border-radius: 8px; 
-            text-align: center; margin-bottom: 20px; font-size: 1.1em; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center; margin-bottom: 20px; font-size: 1.1em;
         }
 
         .tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
-        .tabs button { background-color: #ddd; color: #555; font-size: 13px; }
+        .tabs button { background-color: #ddd; color: #555; font-size: 13px; border:none; }
         .tabs button.active { background-color: var(--primary); color: white; }
 
-        /* Grafica Card che ti piace */
         .pacco { 
             background: white; border-left: 5px solid var(--primary); 
             padding: 15px; display: flex; justify-content: space-between; 
@@ -104,23 +103,18 @@
     <div id="contenitori"></div>
 
     <div style="margin-top:40px; border-top:2px dashed #ccc; padding-top:20px;">
-        <h3 style="cursor:pointer;">Pacchi Ritirati ▼</h3>
+        <h3>Pacchi Ritirati ▼</h3>
         <button onclick="cancellaRitirati()" style="font-size:12px; background:#666; margin-bottom:10px;">Svuota Cronologia</button>
         <div id="ritiratiContainer"></div>
     </div>
 </div>
 
 <script>
-// 1. CARICAMENTO DATI ESISTENTI (PER NON PERDERE NULLA)
 let pacchi = JSON.parse(localStorage.getItem('pacchi')) || [];
-// Se non ci sono corrieri salvati, usa quelli di default, altrimenti usa quelli che avevi
-let corrieri = JSON.parse(localStorage.getItem('corrieri')) || ["Poste Italiane", "SDA", "BRT", "GLS", "Amazon"];
+let corrieri = ["Poste Italiane", "SDA", "BRT", "GLS", "Amazon"];
 let tabAttiva = 'Tutti';
 
-function salva(){ 
-    localStorage.setItem('pacchi', JSON.stringify(pacchi)); 
-    localStorage.setItem('corrieri', JSON.stringify(corrieri));
-}
+function salva(){ localStorage.setItem('pacchi', JSON.stringify(pacchi)); }
 
 function login(){
     if(document.getElementById('loginEmail').value === 'centroposte1@gmail.com' && document.getElementById('loginPassword').value === '2025754785478'){
@@ -148,16 +142,19 @@ function aggiungiPacco(){
 
     if(!cognome || !corriere) { alert("Cognome e Corriere sono obbligatori"); return; }
 
-    // LOGICA PROGRESSIVO BLOCCATA PER CORRIERE
     let riconoscimento;
     if(cr) {
+        // Se l'utente scrive un numero a mano, usa quello
         riconoscimento = cr;
     } else {
-        const numeriDelCorriere = pacchi
-            .filter(p => p.corriere === corriere)
-            .map(p => parseInt(p.riconoscimento))
-            .filter(n => !isNaN(n));
-        riconoscimento = numeriDelCorriere.length ? Math.max(...numeriDelCorriere) + 1 : 1;
+        // LOGICA CORRETTA: Filtra per corriere e trova il numero massimo (riconoscimento)
+        const pacchiDelloStessoCorriere = pacchi.filter(p => p.corriere === corriere);
+        if(pacchiDelloStessoCorriere.length > 0) {
+            const numeri = pacchiDelloStessoCorriere.map(p => parseInt(p.riconoscimento)).filter(n => !isNaN(n));
+            riconoscimento = Math.max(...numeri) + 1;
+        } else {
+            riconoscimento = 1;
+        }
     }
 
     pacchi.push({
@@ -183,14 +180,14 @@ function aggiornaVista(){
     const ritiratiContainer = document.getElementById('ritiratiContainer');
     const search = document.getElementById('search').value.toLowerCase();
     
-    // Aggiorna Select
+    // Select
     const sel = document.getElementById('corriereSelect');
-    const oldVal = sel.value;
+    const curVal = sel.value;
     sel.innerHTML = '<option value="">Seleziona Corriere</option>';
     corrieri.forEach(c => sel.innerHTML += `<option value="${c}">${c}</option>`);
-    sel.value = oldVal;
+    sel.value = curVal;
 
-    // Aggiorna Tabs
+    // Tabs
     const tabsBox = document.getElementById('tabs');
     tabsBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">Tutti</button>`;
     corrieri.forEach(c => {
@@ -206,13 +203,18 @@ function aggiornaVista(){
     const inGiacenza = filtrati.filter(p => !p.ritirato);
     const ritirati = filtrati.filter(p => p.ritirato);
 
-    // Counter dinamico per tab
-    let ultimoCodice;
-    const pacchiTarget = tabAttiva === "Tutti" ? pacchi : pacchi.filter(p => p.corriere === tabAttiva);
-    ultimoCodice = pacchiTarget.length > 0 ? pacchiTarget[pacchiTarget.length - 1].riconoscimento : "---";
+    // Counter barra nera
+    let ultimoNum;
+    const listaPerCounter = tabAttiva === "Tutti" ? pacchi : pacchi.filter(p => p.corriere === tabAttiva);
+    if(listaPerCounter.length > 0) {
+        const numeri = listaPerCounter.map(p => parseInt(p.riconoscimento)).filter(n => !isNaN(n));
+        ultimoNum = Math.max(...numeri);
+    } else {
+        ultimoNum = "---";
+    }
 
     document.getElementById('counter').innerHTML = `
-        📦 Giacenza ${tabAttiva}: <strong>${inGiacenza.length}</strong> | 🆔 Ultimo registrato: <strong>#${ultimoCodice}</strong>
+        📦 Giacenza ${tabAttiva}: <strong>${inGiacenza.length}</strong> | 🆔 Ultimo ${tabAttiva}: <strong>#${ultimoNum}</strong>
     `;
 
     container.innerHTML = inGiacenza.map(p => generateHtml(p)).join('');
@@ -243,7 +245,7 @@ function toggleRitirato(id){
 function setTab(name){ tabAttiva = name; aggiornaVista(); }
 
 function cancellaRitirati(){
-    if(confirm("Eliminare cronologia ritirati?")){
+    if(confirm("Eliminare cronologia?")){
         pacchi = pacchi.filter(p => !p.ritirato);
         salva();
         aggiornaVista();
