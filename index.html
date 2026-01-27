@@ -6,24 +6,17 @@
     <style>
         :root { --primary: #cc0000; --secondary: #fefefe; --text: #333; --focus-border: #0056b3; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--secondary); padding: 20px; color: var(--text); }
-        
         .form-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        
-        /* Evidenzia il bordo quando scrivi */
         input, select, button { padding: 12px; font-size: 15px; border-radius: 8px; border: 2px solid #ddd; outline: none; transition: all 0.2s; }
         input:focus, select:focus { border-color: var(--focus-border); background-color: #f0f7ff; box-shadow: 0 0 10px rgba(0,86,179,0.2); }
-        
         button { background-color: var(--primary); color: white; border: none; cursor: pointer; font-weight: bold; }
         .status-bar { background: #333; color: white; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; font-size: 1.1em; }
         .tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
         .tabs button { background-color: #ddd; color: #555; border: none; cursor: pointer; }
         .tabs button.active { background-color: var(--primary); color: white; }
-        
         .pacco { background: white; border-left: 5px solid var(--primary); padding: 15px; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .pacco.ritirato { border-left-color: #4caf50; opacity: 0.7; background: #e8f5e9; }
-        
         .tag-grandezza { background: #ffeb3b; color: #d32f2f; padding: 2px 8px; border-radius: 4px; font-weight: bold; margin-right: 10px; border: 1px solid #fbc02d; }
-        
         #loginPage { display: flex; justify-content: center; align-items: center; height: 100vh; }
         .login-box { background: white; padding: 40px; border-radius: 15px; text-align: center; width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
     </style>
@@ -58,9 +51,7 @@
     </div>
 
     <div class="status-bar" id="counter"></div>
-    
     <input type="text" id="search" style="width:100%; margin-bottom:20px; box-sizing: border-box;" placeholder="Cerca per cognome o numero..." oninput="aggiornaVista()">
-
     <div class="tabs" id="tabs"></div>
     <div id="contenitori"></div>
 
@@ -100,9 +91,10 @@ function aggiungiPacco(){
     if(cr) {
         riconoscimento = cr;
     } else {
-        const pacchiCorriere = pacchi.filter(p => p.corriere === corriere);
-        if(pacchiCorriere.length > 0) {
-            const ultimoPacco = pacchiCorriere[pacchiCorriere.length - 1];
+        // LOGICA CORRETTA: Guarda SOLO i pacchi IN GIACENZA (non ritirati)
+        const pacchiInGiacenza = pacchi.filter(p => p.corriere === corriere && !p.ritirato);
+        if(pacchiInGiacenza.length > 0) {
+            const ultimoPacco = pacchiInGiacenza[pacchiInGiacenza.length - 1];
             riconoscimento = parseInt(ultimoPacco.riconoscimento) + 1;
         } else {
             riconoscimento = 1;
@@ -139,7 +131,6 @@ function aggiornaVista(){
 
     const search = document.getElementById('search').value.toLowerCase();
     
-    // Filtro per Tab e Ricerca
     const inGiacenza = pacchi.filter(p => !p.ritirato && 
         (tabAttiva === 'Tutti' || p.corriere === tabAttiva) &&
         (p.cognome.toLowerCase().includes(search) || String(p.riconoscimento).includes(search))
@@ -150,16 +141,13 @@ function aggiornaVista(){
         (p.cognome.toLowerCase().includes(search) || String(p.riconoscimento).includes(search))
     );
 
-    // Counter barra nera
-    const pacchiTabTotal = pacchi.filter(p => (tabAttiva === 'Tutti' || p.corriere === tabAttiva));
-    let ultimoNum = pacchiTabTotal.length > 0 ? pacchiTabTotal[pacchiTabTotal.length - 1].riconoscimento : "---";
+    // Counter barra nera basato sull'ultimo pacco REALE in giacenza
+    const ultimoGiacenza = pacchi.filter(p => !p.ritirato && (tabAttiva === 'Tutti' || p.corriere === tabAttiva));
+    let ultimoNum = ultimoGiacenza.length > 0 ? ultimoGiacenza[ultimoGiacenza.length - 1].riconoscimento : "---";
 
-    document.getElementById('counter').innerHTML = `Giacenza ${tabAttiva}: ${inGiacenza.length} | Ultimo: #${ultimoNum}`;
+    document.getElementById('counter').innerHTML = `Giacenza ${tabAttiva}: ${inGiacenza.length} | Ultimo Attivo: #${ultimoNum}`;
     
-    // HTML Pacchi in Giacenza
     document.getElementById('contenitori').innerHTML = inGiacenza.map(p => generateHtml(p)).join('');
-    
-    // HTML Pacchi Ritirati
     document.getElementById('ritiratiContainer').innerHTML = ritirati.map(p => generateHtml(p)).join('');
 }
 
