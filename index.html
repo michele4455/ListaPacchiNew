@@ -49,12 +49,14 @@
     </div>
 
     <div class="status-bar" id="counter"></div>
+    
+    <input type="text" id="search" style="width:100%; margin-bottom:20px; box-sizing: border-box;" placeholder="Cerca per cognome o numero..." oninput="aggiornaVista()">
+
     <div class="tabs" id="tabs"></div>
     <div id="contenitori"></div>
 </div>
 
 <script>
-// Carica i dati esistenti senza resettare i corrieri
 let pacchi = JSON.parse(localStorage.getItem('pacchi')) || [];
 let corrieri = JSON.parse(localStorage.getItem('corrieri')) || ["Punto Poste", "SDA", "BRT", "GLS", "Amazon"];
 let tabAttiva = 'Tutti';
@@ -82,8 +84,8 @@ function aggiungiPacco(){
     if(cr) {
         riconoscimento = cr;
     } else {
-        // PRENDE L'ULTIMO PACCO INSERITO NELLA LISTA PER QUEL CORRIERE
-        const pacchiCorriere = pacchi.filter(p => p.corriere === corriere);
+        // LOGICA ORIGINALE: Guarda l'ultimo pacco IN ELENCO per quel corriere
+        const pacchiCorriere = pacchi.filter(p => p.corriere === corriere && !p.ritirato);
         if(pacchiCorriere.length > 0) {
             const ultimoPacco = pacchiCorriere[pacchiCorriere.length - 1];
             riconoscimento = parseInt(ultimoPacco.riconoscimento) + 1;
@@ -120,17 +122,20 @@ function aggiornaVista(){
     tabsBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">Tutti</button>`;
     corrieri.forEach(c => tabsBox.innerHTML += `<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}">${c}</button>`);
 
-    // ORDINE DI ARRIVO: i pacchi restano nell'ordine in cui sono nell'array
-    const filtrati = pacchi.filter(p => !p.ritirato && (tabAttiva === 'Tutti' || p.corriere === tabAttiva));
+    const search = document.getElementById('search').value.toLowerCase();
     
-    let ultimoNum = "---";
-    if(filtrati.length > 0) {
-        ultimoNum = filtrati[filtrati.length - 1].riconoscimento;
-    }
+    // Filtro per ricerca e tab
+    const filtrati = pacchi.filter(p => !p.ritirato && 
+        (tabAttiva === 'Tutti' || p.corriere === tabAttiva) &&
+        (p.cognome.toLowerCase().includes(search) || String(p.riconoscimento).includes(search))
+    );
+    
+    // Ultimo numero basato sui pacchi attualmente visibili
+    const pacchiTab = pacchi.filter(p => !p.ritirato && (tabAttiva === 'Tutti' || p.corriere === tabAttiva));
+    let ultimoNum = pacchiTab.length > 0 ? pacchiTab[pacchiTab.length - 1].riconoscimento : "---";
 
     document.getElementById('counter').innerHTML = `Giacenza ${tabAttiva}: ${filtrati.length} | Ultimo: #${ultimoNum}`;
     
-    // Rimosso il .reverse() per mantenere l'ordine cronologico
     document.getElementById('contenitori').innerHTML = filtrati.map(p => `
         <div class="pacco">
             <div>
@@ -138,7 +143,10 @@ function aggiornaVista(){
                 <strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome} <br>
                 <small>${p.corriere} | ${p.scaffale || 'No scaffale'} | TRK: ${p.codiceTracciabilita}</small>
             </div>
-            <input type="checkbox" onchange="ritira(${p.id})" style="transform: scale(1.5)">
+            <div style="display:flex; gap:10px; align-items:center;">
+                <button onclick="eliminaPacco(${p.id})" style="background:#666; padding:5px 10px; font-size:10px;">ELIMINA</button>
+                <input type="checkbox" onchange="ritira(${p.id})" style="transform: scale(1.5)">
+            </div>
         </div>
     `).join('');
 }
@@ -148,6 +156,14 @@ function ritira(id){
     p.ritirato = true;
     salva();
     aggiornaVista();
+}
+
+function eliminaPacco(id){
+    if(confirm("Vuoi eliminare definitivamente questo pacco?")){
+        pacchi = pacchi.filter(p => p.id !== id);
+        salva();
+        aggiornaVista();
+    }
 }
 
 function setTab(t){ tabAttiva = t; aggiornaVista(); }
