@@ -142,9 +142,8 @@
 </div>
 
 <script>
-// RIPRISTINO DATI ORIGINALI
 let pacchi = JSON.parse(localStorage.getItem('pacchi')) || [];
-let corrieri = JSON.parse(localStorage.getItem('corrieri')) || ["Poste Italiane", "SDA", "BRT", "GLS", "Amazon"];
+let corrieri = ["Poste Italiane", "SDA", "BRT", "GLS", "Amazon"];
 let tabAttiva = 'Tutti';
 
 function salva(){ localStorage.setItem('pacchi', JSON.stringify(pacchi)); }
@@ -176,9 +175,17 @@ function aggiungiPacco(){
 
     if(!cognome || !corriere) { alert("Cognome e Corriere sono obbligatori"); return; }
 
-    // TUA LOGICA ORIGINALE NUMERAZIONE
-    const numeri = pacchi.filter(p => p.corriere === corriere).map(p => parseInt(p.riconoscimento)).filter(n => !isNaN(n));
-    const riconoscimento = cr || (numeri.length ? Math.max(...numeri) + 1 : 1);
+    // LOGICA RIPRISTINATA: Numero progressivo basato solo sul corriere scelto
+    let riconoscimento;
+    if(cr) {
+        riconoscimento = cr;
+    } else {
+        const numeriCorriere = pacchi
+            .filter(p => p.corriere === corriere)
+            .map(p => parseInt(p.riconoscimento))
+            .filter(n => !isNaN(n));
+        riconoscimento = numeriCorriere.length ? Math.max(...numeriCorriere) + 1 : 1;
+    }
 
     pacchi.push({
         id: Date.now(),
@@ -203,10 +210,12 @@ function aggiornaVista(){
     const ritiratiContainer = document.getElementById('ritiratiContainer');
     const search = document.getElementById('search').value.toLowerCase();
     
-    // Select Corriere
+    // Popola Select Corriere
     const sel = document.getElementById('corriereSelect');
+    const valoreAttuale = sel.value;
     sel.innerHTML = '<option value="">Seleziona Corriere</option>';
     corrieri.forEach(c => sel.innerHTML += `<option value="${c}">${c}</option>`);
+    sel.value = valoreAttuale;
 
     // Tabs
     const tabsBox = document.getElementById('tabs');
@@ -215,7 +224,6 @@ function aggiornaVista(){
         tabsBox.innerHTML += `<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}">${c}</button>`;
     });
 
-    // FILTRO ORIGINALE
     let filtrati = pacchi.filter(p => 
         (p.cognome.toLowerCase().includes(search) || p.codiceTracciabilita.toLowerCase().includes(search) || (""+p.riconoscimento).includes(search)) &&
         (tabAttiva === 'Tutti' || p.corriere === tabAttiva)
@@ -224,7 +232,7 @@ function aggiornaVista(){
     const inGiacenza = filtrati.filter(p => !p.ritirato);
     const ritirati = filtrati.filter(p => p.ritirato);
 
-    // LOGICA COUNTER CHE CAMBIA CON IL TAB
+    // Barra di stato dinamica
     let ultimoCodice;
     if(tabAttiva === "Tutti") {
         ultimoCodice = pacchi.length > 0 ? pacchi[pacchi.length - 1].riconoscimento : "---";
@@ -234,7 +242,7 @@ function aggiornaVista(){
     }
 
     document.getElementById('counter').innerHTML = `
-        📦 Giacenza ${tabAttiva}: <strong>${inGiacenza.length}</strong> | 🆔 Ultimo registrato: <strong>#${ultimoCodice}</strong>
+        📦 Giacenza ${tabAttiva}: <strong>${inGiacenza.length}</strong> | 🆔 Ultimo ${tabAttiva}: <strong>#${ultimoCodice}</strong>
     `;
 
     container.innerHTML = inGiacenza.map(p => generateHtml(p)).join('');
@@ -246,10 +254,10 @@ function generateHtml(p){
         <div class="pacco ${p.ritirato ? 'ritirato' : ''}">
             <div>
                 <span class="tag-grandezza">${p.grandezza || '?'}</span>
-                <strong>#${p.riconoscimento}</strong> - ${p.cognome} ${p.nome} <br>
-                <small style="color:#666">${p.corriere} | ${p.scaffale || 'No scaffale'} | TRK: ${p.codiceTracciabilita}</small>
+                <strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome} <br>
+                <small style="color:#666">${p.corriere} | ${p.scaffale || 'Senza scaffale'} | TRK: ${p.codiceTracciabilita}</small>
             </div>
-            <input type="checkbox" ${p.ritirato ? 'checked' : ''} onchange="toggleRitirato(${p.id})" style="transform: scale(1.5);">
+            <input type="checkbox" ${p.ritirato ? 'checked' : ''} onchange="toggleRitirato(${p.id})" style="transform: scale(1.5); cursor:pointer;">
         </div>
     `;
 }
@@ -265,7 +273,7 @@ function toggleRitirato(id){
 }
 
 function cancellaRitirati(){
-    if(confirm("Vuoi cancellare i ritirati?")){
+    if(confirm("Eliminare cronologia ritirati?")){
         pacchi = pacchi.filter(p => !p.ritirato);
         salva();
         aggiornaVista();
