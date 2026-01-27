@@ -4,92 +4,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Gestione Pacchi Postali Pro</title>
     <style>
-        :root {
-            --primary: #cc0000;
-            --secondary: #fefefe;
-            --accent: #fff8e1;
-            --text: #333;
-        }
-
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: var(--secondary); 
-            padding: 20px; 
-            background-image: url('https://www.transparenttextures.com/patterns/postcard.png');
-            color: var(--text);
-        }
-
+        :root { --primary: #cc0000; --secondary: #fefefe; --text: #333; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--secondary); padding: 20px; background-image: url('https://www.transparenttextures.com/patterns/postcard.png'); color: var(--text); }
         h1 { text-align: center; color: var(--text); text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid var(--primary); padding-bottom: 10px; }
-
-        .form-group { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
-            gap: 12px; 
-            background: white; 
-            padding: 20px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-        }
-
-        input, select, button { 
-            padding: 12px; 
-            font-size: 15px; 
-            border-radius: 8px; 
-            border: 1px solid #ddd; 
-            outline: none;
-        }
-
-        button { 
-            background-color: var(--primary); 
-            color: white; 
-            border: none; 
-            cursor: pointer; 
-            font-weight: bold; 
-            transition: 0.3s;
-        }
-
+        .form-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        input, select, button { padding: 12px; font-size: 15px; border-radius: 8px; border: 1px solid #ddd; outline: none; }
+        button { background-color: var(--primary); color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
         button:hover { background-color: #990000; transform: translateY(-1px); }
-
-        .status-bar {
-            background: #333;
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 1.1em;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
+        .status-bar { background: #333; color: white; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; font-size: 1.1em; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
         .tabs button { background-color: #ddd; color: #555; font-size: 13px; border: none; }
         .tabs button.active { background-color: var(--primary); color: white; }
-
-        .pacco { 
-            background: white; 
-            border-left: 5px solid var(--primary); 
-            padding: 15px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-radius: 8px; 
-            margin-bottom: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-
+        .pacco { background: white; border-left: 5px solid var(--primary); padding: 15px; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .pacco.ritirato { border-left-color: #4caf50; opacity: 0.7; background: #e8f5e9; }
-
-        .tag-grandezza {
-            background: #ffeb3b;
-            color: #d32f2f;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-weight: bold;
-            margin-right: 10px;
-            border: 1px solid #fbc02d;
-        }
-
+        .tag-grandezza { background: #ffeb3b; color: #d32f2f; padding: 2px 8px; border-radius: 4px; font-weight: bold; margin-right: 10px; border: 1px solid #fbc02d; }
         #loginPage { display: flex; justify-content: center; align-items: center; height: 100vh; }
         .login-box { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 350px; }
         .login-box input { width: 100%; margin-bottom: 15px; box-sizing: border-box; }
@@ -142,12 +70,16 @@
 </div>
 
 <script>
-// DATI E CORRIERI ORIGINALI
+// RIPRISTINO TOTALE LOGICA ORIGINALE
 let pacchi = JSON.parse(localStorage.getItem('pacchi')) || [];
-let corrieri = ["Poste Italiane", "SDA", "BRT", "GLS", "Amazon"];
+// Se avevi aggiunto corrieri manualmente, questa riga li caricherà. Se è vuota, mette i principali.
+let corrieri = JSON.parse(localStorage.getItem('corrieri')) || ["Poste Italiane", "SDA", "BRT", "GLS", "Amazon"];
 let tabAttiva = 'Tutti';
 
-function salva(){ localStorage.setItem('pacchi', JSON.stringify(pacchi)); }
+function salva(){ 
+    localStorage.setItem('pacchi', JSON.stringify(pacchi)); 
+    localStorage.setItem('corrieri', JSON.stringify(corrieri));
+}
 
 function login(){
     if(document.getElementById('loginEmail').value === 'centroposte1@gmail.com' && document.getElementById('loginPassword').value === '2025754785478'){
@@ -166,7 +98,6 @@ if(localStorage.getItem('loggedIn') === 'true') mostraApp();
 
 function logout(){ localStorage.removeItem('loggedIn'); location.reload(); }
 
-// LOGICA AGGIUNTA IDENTICA AL TUO PRIMO CODICE
 function aggiungiPacco(){
     const ct = document.getElementById('codiceTracciabilita').value.trim();
     const cr = document.getElementById('codiceRiconoscimento').value.trim();
@@ -180,8 +111,14 @@ function aggiungiPacco(){
     if(cr) {
         riconoscimento = cr;
     } else {
-        const numeri = pacchi.filter(p => p.corriere === corriere).map(p => parseInt(p.riconoscimento)).filter(n => !isNaN(n));
-        riconoscimento = numeri.length ? Math.max(...numeri) + 1 : 1;
+        // Logica originale: calcola il progressivo basandosi su TUTTI i pacchi (giacenza + ritirati)
+        const pacchiCorriere = pacchi.filter(p => p.corriere === corriere);
+        if(pacchiCorriere.length > 0) {
+            const numeri = pacchiCorriere.map(p => parseInt(p.riconoscimento)).filter(n => !isNaN(n));
+            riconoscimento = Math.max(...numeri) + 1;
+        } else {
+            riconoscimento = 1;
+        }
     }
 
     pacchi.push({
@@ -207,12 +144,14 @@ function aggiornaVista(){
     const ritiratiContainer = document.getElementById('ritiratiContainer');
     const search = document.getElementById('search').value.toLowerCase();
     
+    // Assicura che la select abbia i corrieri
     const sel = document.getElementById('corriereSelect');
-    const oldVal = sel.value;
+    const currentVal = sel.value;
     sel.innerHTML = '<option value="">Seleziona Corriere</option>';
     corrieri.forEach(c => sel.innerHTML += `<option value="${c}">${c}</option>`);
-    sel.value = oldVal;
+    sel.value = currentVal;
 
+    // Crea le Tabs
     const tabsBox = document.getElementById('tabs');
     tabsBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">Tutti</button>`;
     corrieri.forEach(c => {
@@ -227,19 +166,18 @@ function aggiornaVista(){
     const inGiacenza = filtrati.filter(p => !p.ritirato);
     const ritirati = filtrati.filter(p => p.ritirato);
 
-    // MODIFICA RICHIESTA: L'ultimo codice cambia in base al Tab selezionato
-    let ultimoCodice;
-    const pacchiTab = (tabAttiva === "Tutti") ? pacchi : pacchi.filter(p => p.corriere === tabAttiva);
-    if(pacchiTab.length > 0) {
-        // Prende il numero di riconoscimento più alto tra i pacchi del corriere/tab selezionato
-        const numeri = pacchiTab.map(p => parseInt(p.riconoscimento)).filter(n => !isNaN(n));
-        ultimoCodice = numeri.length ? Math.max(...numeri) : "---";
+    // COUNTER DINAMICO CHE CAMBIA CON IL TAB
+    let ultimoNum;
+    const dbTarget = tabAttiva === "Tutti" ? pacchi : pacchi.filter(p => p.corriere === tabAttiva);
+    if(dbTarget.length > 0) {
+        const numeri = dbTarget.map(p => parseInt(p.riconoscimento)).filter(n => !isNaN(n));
+        ultimoNum = Math.max(...numeri);
     } else {
-        ultimoCodice = "---";
+        ultimoNum = "---";
     }
 
     document.getElementById('counter').innerHTML = `
-        📦 Giacenza ${tabAttiva}: <strong>${inGiacenza.length}</strong> | 🆔 Ultimo ${tabAttiva}: <strong>#${ultimoCodice}</strong>
+        📦 Giacenza ${tabAttiva}: <strong>${inGiacenza.length}</strong> | 🆔 Ultimo ${tabAttiva}: <strong>#${ultimoNum}</strong>
     `;
 
     container.innerHTML = inGiacenza.map(p => generateHtml(p)).join('');
@@ -269,7 +207,7 @@ function toggleRitirato(id){
 }
 
 function cancellaRitirati(){
-    if(confirm("Vuoi cancellare i ritirati?")){
+    if(confirm("Svuotare la cronologia?")){
         pacchi = pacchi.filter(p => !p.ritirato);
         salva();
         aggiornaVista();
