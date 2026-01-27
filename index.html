@@ -15,26 +15,25 @@
         .tabs button.active { background-color: var(--primary); color: white; }
         .pacco { background: white; border-left: 5px solid var(--primary); padding: 15px; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .tag-grandezza { background: #ffeb3b; color: #d32f2f; padding: 2px 8px; border-radius: 4px; font-weight: bold; margin-right: 10px; border: 1px solid #fbc02d; }
-        #loginPage { display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .login-box { background: white; padding: 40px; border-radius: 15px; text-align: center; width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
 
-<div id="loginPage">
-    <div class="login-box">
+<div id="loginPage" style="display:none; text-align:center; padding-top:100px;">
+    <div style="background:white; display:inline-block; padding:40px; border-radius:15px; box-shadow:0 10px 25px rgba(0,0,0,0.1);">
         <h2 style="color:var(--primary)">Centro Poste</h2>
-        <input type="email" id="loginEmail" placeholder="Email" style="width:100%; margin-bottom:10px;">
-        <input type="password" id="loginPassword" placeholder="Password" style="width:100%; margin-bottom:20px;">
+        <input type="email" id="loginEmail" placeholder="Email" style="width:100%; margin-bottom:10px;"><br>
+        <input type="password" id="loginPassword" placeholder="Password" style="width:100%; margin-bottom:20px;"><br>
         <button onclick="login()" style="width:100%">ACCEDI</button>
     </div>
 </div>
 
 <div id="mainPage" style="display:none;">
     <h1 style="text-align:center">Gestione Pacchi</h1>
+    
     <div class="form-group">
         <input type="text" id="codiceTracciabilita" placeholder="Codice Tracciabilità">
-        <input type="text" id="codiceRiconoscimento" placeholder="Numero Pacco (es. 64)">
+        <input type="text" id="codiceRiconoscimento" placeholder="Numero (lascia vuoto per auto)">
         <input type="text" id="nome" placeholder="Nome">
         <input type="text" id="cognome" placeholder="Cognome">
         <select id="corriereSelect"></select>
@@ -49,12 +48,14 @@
     </div>
 
     <div class="status-bar" id="counter"></div>
+
+    <input type="text" id="search" style="width:100%; margin-bottom:20px; box-sizing:border-box;" placeholder="Cerca per cognome, tracking o numero..." oninput="aggiornaVista()">
+
     <div class="tabs" id="tabs"></div>
     <div id="contenitori"></div>
 </div>
 
 <script>
-// Carica i dati esistenti senza resettare i corrieri
 let pacchi = JSON.parse(localStorage.getItem('pacchi')) || [];
 let corrieri = JSON.parse(localStorage.getItem('corrieri')) || ["Punto Poste", "SDA", "BRT", "GLS", "Amazon"];
 let tabAttiva = 'Tutti';
@@ -63,9 +64,8 @@ function salva(){ localStorage.setItem('pacchi', JSON.stringify(pacchi)); }
 
 function login(){
     if(document.getElementById('loginEmail').value === 'centroposte1@gmail.com' && document.getElementById('loginPassword').value === '2025754785478'){
-        document.getElementById('loginPage').style.display='none';
-        document.getElementById('mainPage').style.display='block';
-        aggiornaVista();
+        localStorage.setItem('loggedIn', 'true');
+        location.reload();
     } else { alert("Dati errati"); }
 }
 
@@ -76,14 +76,14 @@ function aggiungiPacco(){
     const cognome = document.getElementById('cognome').value.trim();
     const corriere = document.getElementById('corriereSelect').value;
 
-    if(!cognome || !corriere) { alert("Cognome e Corriere obbligatori"); return; }
+    if(!cognome || !corriere) { alert("Inserisci Cognome e Corriere!"); return; }
 
     let riconoscimento;
-    if(cr) {
+    if(cr !== "") {
         riconoscimento = cr;
     } else {
-        // PRENDE L'ULTIMO PACCO INSERITO NELLA LISTA PER QUEL CORRIERE
-        const pacchiCorriere = pacchi.filter(p => p.corriere === corriere);
+        // LOGICA: Prendi l'ultimo pacco VISIBILE in lista per quel corriere e fai +1
+        const pacchiCorriere = pacchi.filter(p => p.corriere === corriere && !p.ritirato);
         if(pacchiCorriere.length > 0) {
             const ultimoPacco = pacchiCorriere[pacchiCorriere.length - 1];
             riconoscimento = parseInt(ultimoPacco.riconoscimento) + 1;
@@ -120,17 +120,20 @@ function aggiornaVista(){
     tabsBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">Tutti</button>`;
     corrieri.forEach(c => tabsBox.innerHTML += `<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}">${c}</button>`);
 
-    // ORDINE DI ARRIVO: i pacchi restano nell'ordine in cui sono nell'array
-    const filtrati = pacchi.filter(p => !p.ritirato && (tabAttiva === 'Tutti' || p.corriere === tabAttiva));
+    const search = document.getElementById('search').value.toLowerCase();
     
-    let ultimoNum = "---";
-    if(filtrati.length > 0) {
-        ultimoNum = filtrati[filtrati.length - 1].riconoscimento;
-    }
+    // Filtro per Tab e Ricerca
+    const filtrati = pacchi.filter(p => !p.ritirato && 
+        (tabAttiva === 'Tutti' || p.corriere === tabAttiva) &&
+        (p.cognome.toLowerCase().includes(search) || p.codiceTracciabilita.toLowerCase().includes(search) || String(p.riconoscimento).includes(search))
+    );
+    
+    // L'ultimo numero mostrato nella barra nera è quello dell'ultimo pacco inserito nel tab attuale
+    const pacchiTab = pacchi.filter(p => !p.ritirato && (tabAttiva === 'Tutti' || p.corriere === tabAttiva));
+    let ultimoNum = pacchiTab.length > 0 ? pacchiTab[pacchiTab.length - 1].riconoscimento : "---";
 
-    document.getElementById('counter').innerHTML = `Giacenza ${tabAttiva}: ${filtrati.length} | Ultimo: #${ultimoNum}`;
+    document.getElementById('counter').innerHTML = `Giacenza ${tabAttiva}: ${filtrati.length} | Ultimo in lista: #${ultimoNum}`;
     
-    // Rimosso il .reverse() per mantenere l'ordine cronologico
     document.getElementById('contenitori').innerHTML = filtrati.map(p => `
         <div class="pacco">
             <div>
@@ -138,24 +141,35 @@ function aggiornaVista(){
                 <strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome} <br>
                 <small>${p.corriere} | ${p.scaffale || 'No scaffale'} | TRK: ${p.codiceTracciabilita}</small>
             </div>
-            <input type="checkbox" onchange="ritira(${p.id})" style="transform: scale(1.5)">
+            <div style="display:flex; gap:10px; align-items:center;">
+                <button onclick="eliminaPacco(${p.id})" style="background:#666; padding:5px 10px; font-size:10px;">ELIMINA</button>
+                <input type="checkbox" onchange="ritira(${p.id})" style="transform: scale(1.5)">
+            </div>
         </div>
     `).join('');
 }
 
 function ritira(id){
-    const p = pacchi.find(x => x.id === id);
-    p.ritirato = true;
+    pacchi.find(x => x.id === id).ritirato = true;
     salva();
     aggiornaVista();
+}
+
+function eliminaPacco(id){
+    if(confirm("Eliminare definitivamente?")){
+        pacchi = pacchi.filter(p => p.id !== id);
+        salva();
+        aggiornaVista();
+    }
 }
 
 function setTab(t){ tabAttiva = t; aggiornaVista(); }
 
 if(localStorage.getItem('loggedIn') === 'true') {
-    document.getElementById('loginPage').style.display='none';
     document.getElementById('mainPage').style.display='block';
     aggiornaVista();
+} else {
+    document.getElementById('loginPage').style.display='block';
 }
 </script>
 </body>
