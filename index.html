@@ -15,16 +15,16 @@
         .tabs button { background-color: #ddd; color: #555; border: none; cursor: pointer; }
         .tabs button.active { background-color: var(--primary); color: white; }
         .pacco { background: white; border-left: 5px solid var(--primary); padding: 15px; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .pacco.ritirato { border-left-color: #4caf50; opacity: 0.7; background: #e8f5e9; }
+        .pacco.ritirato { border-left-color: #4caf50; opacity: 0.8; background: #f1f8f1; }
         .tag-grandezza { background: #ffeb3b; color: #d32f2f; padding: 2px 8px; border-radius: 4px; font-weight: bold; margin-right: 10px; border: 1px solid #fbc02d; }
         #loginPage { display: flex; justify-content: center; align-items: center; height: 100vh; }
         .login-box { background: white; padding: 40px; border-radius: 15px; text-align: center; width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         
-        /* Nuovi stili per la freccia e il toggle */
-        .header-ritirati { cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none; }
+        .header-ritirati { cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none; margin-top: 20px; }
         .freccia { transition: transform 0.3s; display: inline-block; }
         .freccia.chiuso { transform: rotate(-90deg); }
         #sezioneRitirati { display: block; }
+        .info-ritiro { color: #2e7d32; font-size: 0.85em; margin-top: 5px; font-weight: bold; border-top: 1px solid #ddd; pt: 5px; }
     </style>
 </head>
 <body>
@@ -88,7 +88,6 @@ function login(){
     } else { alert("Dati errati"); }
 }
 
-// Funzione per mostrare/nascondere la sezione ritirati
 function toggleSezioneRitirati() {
     const sezione = document.getElementById('sezioneRitirati');
     const freccia = document.getElementById('frecciaIcon');
@@ -132,7 +131,9 @@ function aggiungiPacco(){
         corriere: corriere,
         scaffale: document.getElementById('scaffaleSelect').value,
         grandezza: document.getElementById('grandezzaSelect').value,
-        ritirato: false
+        ritirato: false,
+        dataRitiro: null,
+        ritiratoDa: ''
     });
 
     salva();
@@ -153,7 +154,6 @@ function aggiornaVista(){
 
     const search = document.getElementById('search').value.toLowerCase();
     
-    // LOGICA DI RICERCA AGGIORNATA: Inclusione codiceTracciabilita
     const inGiacenza = pacchi.filter(p => !p.ritirato && 
         (tabAttiva === 'Tutti' || p.corriere === tabAttiva) &&
         (p.cognome.toLowerCase().includes(search) || 
@@ -166,7 +166,7 @@ function aggiornaVista(){
         (p.cognome.toLowerCase().includes(search) || 
          String(p.riconoscimento).includes(search) || 
          p.codiceTracciabilita.toLowerCase().includes(search))
-    );
+    ).reverse(); // Mostra i più recenti in alto
 
     const ultimoGiacenza = pacchi.filter(p => !p.ritirato && (tabAttiva === 'Tutti' || p.corriere === tabAttiva));
     let ultimoNum = ultimoGiacenza.length > 0 ? ultimoGiacenza[ultimoGiacenza.length - 1].riconoscimento : "---";
@@ -178,27 +178,63 @@ function aggiornaVista(){
 }
 
 function generateHtml(p) {
+    let infoRitiroHtml = '';
+    if(p.ritirato && p.dataRitiro) {
+        infoRitiroHtml = `<div class="info-ritiro">✓ Ritiro: ${p.ritiratoDa} - ${p.dataRitiro}</div>`;
+    }
+
     return `
         <div class="pacco ${p.ritirato ? 'ritirato' : ''}">
-            <div>
+            <div style="flex-grow:1">
                 <span class="tag-grandezza">${p.grandezza}</span>
                 <strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome} <br>
                 <small>${p.corriere} | ${p.scaffale || 'No scaffale'} | TRK: ${p.codiceTracciabilita}</small>
+                ${infoRitiroHtml}
             </div>
-            <input type="checkbox" ${p.ritirato ? 'checked' : ''} onchange="toggleRitirato(${p.id})" style="transform: scale(1.5); cursor:pointer;">
+            <input type="checkbox" ${p.ritirato ? 'checked' : ''} onchange="toggleRitirato(${p.id})" style="transform: scale(1.6); cursor:pointer; margin-left:15px;">
         </div>
     `;
 }
 
 function toggleRitirato(id){
     const p = pacchi.find(x => x.id === id);
-    p.ritirato = !p.ritirato;
+    
+    if(!p.ritirato) {
+        // Logica per il Ritiro (attivazione checkbox)
+        const conferma = confirm(`Confermi il ritiro del pacco #${p.riconoscimento} (${p.cognome})?`);
+        if(conferma) {
+            let chi = prompt("Chi ritira il pacco? (Lascia vuoto se è l'intestatario: " + p.cognome + ")", p.cognome);
+            if(chi === null) { 
+                aggiornaVista(); // Annulla se clicca annulla nel prompt
+                return; 
+            }
+            
+            const ora = new Date();
+            p.ritirato = true;
+            p.ritiratoDa = chi.trim() || p.cognome;
+            p.dataRitiro = ora.toLocaleDateString() + " " + ora.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        } else {
+            aggiornaVista(); // Ripristina la checkbox se non conferma
+            return;
+        }
+    } else {
+        // Riporta in giacenza
+        if(confirm("Vuoi riportare questo pacco in giacenza?")) {
+            p.ritirato = false;
+            p.dataRitiro = null;
+            p.ritiratoDa = '';
+        } else {
+            aggiornaVista();
+            return;
+        }
+    }
+    
     salva();
     aggiornaVista();
 }
 
 function cancellaRitirati(){
-    if(confirm("Vuoi svuotare la cronologia dei ritirati?")){
+    if(confirm("Vuoi svuotare definitivamente la cronologia dei ritirati?")){
         pacchi = pacchi.filter(p => !p.ritirato);
         salva();
         aggiornaVista();
