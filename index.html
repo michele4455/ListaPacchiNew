@@ -19,6 +19,12 @@
         .tag-grandezza { background: #ffeb3b; color: #d32f2f; padding: 2px 8px; border-radius: 4px; font-weight: bold; margin-right: 10px; border: 1px solid #fbc02d; }
         #loginPage { display: flex; justify-content: center; align-items: center; height: 100vh; }
         .login-box { background: white; padding: 40px; border-radius: 15px; text-align: center; width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        
+        /* Nuovi stili per la freccia e il toggle */
+        .header-ritirati { cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none; }
+        .freccia { transition: transform 0.3s; display: inline-block; }
+        .freccia.chiuso { transform: rotate(-90deg); }
+        #sezioneRitirati { display: block; }
     </style>
 </head>
 <body>
@@ -51,14 +57,18 @@
     </div>
 
     <div class="status-bar" id="counter"></div>
-    <input type="text" id="search" style="width:100%; margin-bottom:20px; box-sizing: border-box;" placeholder="Cerca per cognome o numero..." oninput="aggiornaVista()">
+    <input type="text" id="search" style="width:100%; margin-bottom:20px; box-sizing: border-box;" placeholder="Cerca per cognome, numero o tracking..." oninput="aggiornaVista()">
     <div class="tabs" id="tabs"></div>
     <div id="contenitori"></div>
 
     <div style="margin-top:40px; border-top:2px dashed #ccc; padding-top:20px;">
-        <h3>Pacchi Ritirati ▼</h3>
-        <button onclick="cancellaRitirati()" style="font-size:12px; background:#666; margin-bottom:10px;">Svuota Cronologia</button>
-        <div id="ritiratiContainer"></div>
+        <h3 class="header-ritirati" onclick="toggleSezioneRitirati()">
+            <span id="frecciaIcon" class="freccia">▼</span> Pacchi Ritirati
+        </h3>
+        <div id="sezioneRitirati">
+            <button onclick="cancellaRitirati()" style="font-size:12px; background:#666; margin-bottom:10px;">Svuota Cronologia</button>
+            <div id="ritiratiContainer"></div>
+        </div>
     </div>
 </div>
 
@@ -78,6 +88,19 @@ function login(){
     } else { alert("Dati errati"); }
 }
 
+// Funzione per mostrare/nascondere la sezione ritirati
+function toggleSezioneRitirati() {
+    const sezione = document.getElementById('sezioneRitirati');
+    const freccia = document.getElementById('frecciaIcon');
+    if (sezione.style.display === "none") {
+        sezione.style.display = "block";
+        freccia.classList.remove('chiuso');
+    } else {
+        sezione.style.display = "none";
+        freccia.classList.add('chiuso');
+    }
+}
+
 function aggiungiPacco(){
     const ct = document.getElementById('codiceTracciabilita').value.trim();
     const cr = document.getElementById('codiceRiconoscimento').value.trim();
@@ -91,7 +114,6 @@ function aggiungiPacco(){
     if(cr) {
         riconoscimento = cr;
     } else {
-        // LOGICA CORRETTA: Guarda SOLO i pacchi IN GIACENZA (non ritirati)
         const pacchiInGiacenza = pacchi.filter(p => p.corriere === corriere && !p.ritirato);
         if(pacchiInGiacenza.length > 0) {
             const ultimoPacco = pacchiInGiacenza[pacchiInGiacenza.length - 1];
@@ -131,17 +153,21 @@ function aggiornaVista(){
 
     const search = document.getElementById('search').value.toLowerCase();
     
+    // LOGICA DI RICERCA AGGIORNATA: Inclusione codiceTracciabilita
     const inGiacenza = pacchi.filter(p => !p.ritirato && 
         (tabAttiva === 'Tutti' || p.corriere === tabAttiva) &&
-        (p.cognome.toLowerCase().includes(search) || String(p.riconoscimento).includes(search))
+        (p.cognome.toLowerCase().includes(search) || 
+         String(p.riconoscimento).includes(search) || 
+         p.codiceTracciabilita.toLowerCase().includes(search))
     );
     
     const ritirati = pacchi.filter(p => p.ritirato && 
         (tabAttiva === 'Tutti' || p.corriere === tabAttiva) &&
-        (p.cognome.toLowerCase().includes(search) || String(p.riconoscimento).includes(search))
+        (p.cognome.toLowerCase().includes(search) || 
+         String(p.riconoscimento).includes(search) || 
+         p.codiceTracciabilita.toLowerCase().includes(search))
     );
 
-    // Counter barra nera basato sull'ultimo pacco REALE in giacenza
     const ultimoGiacenza = pacchi.filter(p => !p.ritirato && (tabAttiva === 'Tutti' || p.corriere === tabAttiva));
     let ultimoNum = ultimoGiacenza.length > 0 ? ultimoGiacenza[ultimoGiacenza.length - 1].riconoscimento : "---";
 
