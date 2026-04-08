@@ -24,10 +24,51 @@
         .freccia { transition: transform 0.3s; display: inline-block; }
         .freccia.chiuso { transform: rotate(-90deg); }
         #sezioneRitirati { display: block; }
-        .info-ritiro { color: #2e7d32; font-size: 0.85em; margin-top: 5px; font-weight: bold; border-top: 1px solid #ddd; pt: 5px; }
+        .info-ritiro { color: #2e7d32; font-size: 0.85em; margin-top: 5px; font-weight: bold; border-top: 1px solid #ddd; padding-top: 5px; }
+
+        /* MODALE PERSONALIZZATO */
+        #customModal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .modal-content h3 { margin-top: 0; color: var(--primary); }
+        .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
+        .modal-buttons button { flex: 1; }
+        .btn-cancel { background: #666; }
     </style>
 </head>
 <body>
+
+<div id="customModal">
+    <div class="modal-content">
+        <h3 id="modalTitle">Conferma Ritiro</h3>
+        <p id="modalText"></p>
+        <input type="text" id="modalInput" style="width:100%; box-sizing:border-box; margin-top:10px; display:none;">
+        <div class="modal-buttons">
+            <button class="btn-cancel" onclick="closeModal()">Annulla</button>
+            <button id="modalConfirmBtn">Conferma</button>
+        </div>
+    </div>
+</div>
 
 <div id="loginPage">
     <div class="login-box">
@@ -91,13 +132,30 @@ function login(){
 function toggleSezioneRitirati() {
     const sezione = document.getElementById('sezioneRitirati');
     const freccia = document.getElementById('frecciaIcon');
-    if (sezione.style.display === "none") {
-        sezione.style.display = "block";
-        freccia.classList.remove('chiuso');
-    } else {
-        sezione.style.display = "none";
-        freccia.classList.add('chiuso');
-    }
+    sezione.style.display = (sezione.style.display === "none") ? "block" : "none";
+    freccia.classList.toggle('chiuso');
+}
+
+// LOGICA MODALE PERSONALIZZATO
+let currentPaccoId = null;
+
+function openModal(title, text, showInput, inputValue, onConfirm) {
+    document.getElementById('customModal').style.display = 'flex';
+    document.getElementById('modalTitle').innerText = title;
+    document.getElementById('modalText').innerText = text;
+    const input = document.getElementById('modalInput');
+    input.style.display = showInput ? 'block' : 'none';
+    input.value = inputValue || '';
+    
+    document.getElementById('modalConfirmBtn').onclick = () => {
+        onConfirm(input.value);
+        closeModal();
+    };
+}
+
+function closeModal() {
+    document.getElementById('customModal').style.display = 'none';
+    aggiornaVista(); // Re-render per resettare checkbox se annullato
 }
 
 function aggiungiPacco(){
@@ -109,17 +167,10 @@ function aggiungiPacco(){
 
     if(!cognome || !corriere) { alert("Cognome e Corriere obbligatori"); return; }
 
-    let riconoscimento;
-    if(cr) {
-        riconoscimento = cr;
-    } else {
-        const pacchiInGiacenza = pacchi.filter(p => p.corriere === corriere && !p.ritirato);
-        if(pacchiInGiacenza.length > 0) {
-            const ultimoPacco = pacchiInGiacenza[pacchiInGiacenza.length - 1];
-            riconoscimento = parseInt(ultimoPacco.riconoscimento) + 1;
-        } else {
-            riconoscimento = 1;
-        }
+    let riconoscimento = cr || (pacchi.filter(p => p.corriere === corriere && !p.ritirato).length + 1);
+    if(!cr) {
+        const pGiacenza = pacchi.filter(p => p.corriere === corriere && !p.ritirato);
+        riconoscimento = pGiacenza.length > 0 ? parseInt(pGiacenza[pGiacenza.length-1].riconoscimento) + 1 : 1;
     }
 
     pacchi.push({
@@ -156,33 +207,24 @@ function aggiornaVista(){
     
     const inGiacenza = pacchi.filter(p => !p.ritirato && 
         (tabAttiva === 'Tutti' || p.corriere === tabAttiva) &&
-        (p.cognome.toLowerCase().includes(search) || 
-         String(p.riconoscimento).includes(search) || 
-         p.codiceTracciabilita.toLowerCase().includes(search))
+        (p.cognome.toLowerCase().includes(search) || String(p.riconoscimento).includes(search) || p.codiceTracciabilita.toLowerCase().includes(search))
     );
     
     const ritirati = pacchi.filter(p => p.ritirato && 
         (tabAttiva === 'Tutti' || p.corriere === tabAttiva) &&
-        (p.cognome.toLowerCase().includes(search) || 
-         String(p.riconoscimento).includes(search) || 
-         p.codiceTracciabilita.toLowerCase().includes(search))
-    ).reverse(); // Mostra i più recenti in alto
+        (p.cognome.toLowerCase().includes(search) || String(p.riconoscimento).includes(search) || p.codiceTracciabilita.toLowerCase().includes(search))
+    ).reverse();
 
     const ultimoGiacenza = pacchi.filter(p => !p.ritirato && (tabAttiva === 'Tutti' || p.corriere === tabAttiva));
     let ultimoNum = ultimoGiacenza.length > 0 ? ultimoGiacenza[ultimoGiacenza.length - 1].riconoscimento : "---";
 
     document.getElementById('counter').innerHTML = `Giacenza ${tabAttiva}: ${inGiacenza.length} | Ultimo Attivo: #${ultimoNum}`;
-    
     document.getElementById('contenitori').innerHTML = inGiacenza.map(p => generateHtml(p)).join('');
     document.getElementById('ritiratiContainer').innerHTML = ritirati.map(p => generateHtml(p)).join('');
 }
 
 function generateHtml(p) {
-    let infoRitiroHtml = '';
-    if(p.ritirato && p.dataRitiro) {
-        infoRitiroHtml = `<div class="info-ritiro">✓ Ritiro: ${p.ritiratoDa} - ${p.dataRitiro}</div>`;
-    }
-
+    let infoRitiroHtml = (p.ritirato && p.dataRitiro) ? `<div class="info-ritiro">✓ Ritiro: ${p.ritiratoDa} - ${p.dataRitiro}</div>` : '';
     return `
         <div class="pacco ${p.ritirato ? 'ritirato' : ''}">
             <div style="flex-grow:1">
@@ -191,54 +233,39 @@ function generateHtml(p) {
                 <small>${p.corriere} | ${p.scaffale || 'No scaffale'} | TRK: ${p.codiceTracciabilita}</small>
                 ${infoRitiroHtml}
             </div>
-            <input type="checkbox" ${p.ritirato ? 'checked' : ''} onchange="toggleRitirato(${p.id})" style="transform: scale(1.6); cursor:pointer; margin-left:15px;">
+            <input type="checkbox" ${p.ritirato ? 'checked' : ''} onchange="handleToggle(${p.id})" style="transform: scale(1.6); cursor:pointer; margin-left:15px;">
         </div>
     `;
 }
 
-function toggleRitirato(id){
+function handleToggle(id) {
     const p = pacchi.find(x => x.id === id);
-    
     if(!p.ritirato) {
-        // Logica per il Ritiro (attivazione checkbox)
-        const conferma = confirm(`Confermi il ritiro del pacco #${p.riconoscimento} (${p.cognome})?`);
-        if(conferma) {
-            let chi = prompt("Chi ritira il pacco? (Lascia vuoto se è l'intestatario: " + p.cognome + ")", p.cognome);
-            if(chi === null) { 
-                aggiornaVista(); // Annulla se clicca annulla nel prompt
-                return; 
-            }
-            
+        openModal("Conferma Ritiro", `Chi sta ritirando il pacco #${p.riconoscimento}?`, true, p.cognome, (nomeRitiro) => {
             const ora = new Date();
             p.ritirato = true;
-            p.ritiratoDa = chi.trim() || p.cognome;
-            p.dataRitiro = ora.toLocaleDateString() + " " + ora.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        } else {
-            aggiornaVista(); // Ripristina la checkbox se non conferma
-            return;
-        }
+            p.ritiratoDa = nomeRitiro.trim() || p.cognome;
+            p.dataRitiro = ora.toLocaleDateString() + " " + ora.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            salva();
+            aggiornaVista();
+        });
     } else {
-        // Riporta in giacenza
-        if(confirm("Vuoi riportare questo pacco in giacenza?")) {
+        openModal("Ripristino", "Riportare il pacco in giacenza?", false, '', () => {
             p.ritirato = false;
             p.dataRitiro = null;
             p.ritiratoDa = '';
-        } else {
+            salva();
             aggiornaVista();
-            return;
-        }
+        });
     }
-    
-    salva();
-    aggiornaVista();
 }
 
 function cancellaRitirati(){
-    if(confirm("Vuoi svuotare definitivamente la cronologia dei ritirati?")){
+    openModal("Svuota Cronologia", "Sei sicuro di voler eliminare tutti i pacchi ritirati?", false, '', () => {
         pacchi = pacchi.filter(p => !p.ritirato);
         salva();
         aggiornaVista();
-    }
+    });
 }
 
 function setTab(t){ tabAttiva = t; aggiornaVista(); }
