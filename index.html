@@ -18,194 +18,70 @@
         body { 
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             background-color: var(--secondary); 
-            padding: 0; 
-            margin: 0; 
-            color: var(--text); 
+            padding: 0; margin: 0; color: var(--text); 
         }
 
         /* --- LOGIN PAGE --- */
-        #loginPage { 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            background: linear-gradient(135deg, #cc0000 0%, #333 100%);
-        }
-        .login-box { 
-            background: var(--white); 
-            padding: 40px; 
-            border-radius: 20px; 
-            text-align: center; 
-            width: 100%;
-            max-width: 380px; 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2); 
-        }
-        /* Style aggiornato per il logo nel login per gestirlo meglio */
-        .login-box img { 
-            max-width: 150px; 
-            max-height: 150px;
-            margin-bottom: 20px; 
-            object-fit: contain;
-        }
+        #loginPage { display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #cc0000 0%, #333 100%); }
+        .login-box { background: var(--white); padding: 40px; border-radius: 20px; text-align: center; width: 100%; max-width: 380px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); }
+        .login-box img { max-width: 150px; margin-bottom: 20px; }
 
         /* --- HEADER & LAYOUT --- */
         .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
-        .app-header { 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 15px; 
-            margin-bottom: 30px; 
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            flex-wrap: wrap; /* Per dispositivi mobili */
-        }
-        /* Style aggiornato per il logo nell'header */
-        .app-header img { 
-            height: 60px; 
-            max-width: 100%;
-            object-fit: contain;
-        }
-        .app-header h1 { 
-            margin: 0; 
-            font-size: 1.8rem; 
-            color: var(--primary); 
-            text-transform: uppercase; 
-            letter-spacing: 1px;
-            text-align: center;
-        }
+        .app-header { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 30px; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .app-header img { height: 60px; }
+        .app-header h1 { margin: 0; font-size: 1.8rem; color: var(--primary); text-transform: uppercase; }
 
         /* --- FORM --- */
-        .form-group { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
-            gap: 15px; 
-            background: var(--white); 
-            padding: 25px; 
-            border-radius: 15px; 
-            box-shadow: 0 8px 20px rgba(0,0,0,0.06); 
-            margin-bottom: 25px; 
-        }
-        input, select, button { 
-            padding: 14px; 
-            font-size: 14px; 
-            border-radius: 10px; 
-            border: 1px solid #dfe6e9; 
-            outline: none; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-        }
-        input:focus, select:focus { 
-            border-color: var(--accent); 
-            box-shadow: 0 0 0 3px rgba(9, 132, 227, 0.1);
-        }
-        button { 
-            background-color: var(--primary); 
-            color: white; 
-            border: none; 
-            cursor: pointer; 
-            font-weight: 700; 
-            text-transform: uppercase;
-        }
-        button:hover { background-color: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 5px 15px rgba(204, 0, 0, 0.3); }
-        button:active { transform: translateY(0); }
+        .form-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; background: var(--white); padding: 25px; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.06); margin-bottom: 25px; }
+        input, select, button { padding: 14px; font-size: 14px; border-radius: 10px; border: 1px solid #dfe6e9; outline: none; transition: all 0.3s; }
+        input:focus { border-color: var(--accent); }
+        button { background-color: var(--primary); color: white; border: none; cursor: pointer; font-weight: 700; text-transform: uppercase; }
+        button:hover { background-color: var(--primary-dark); }
 
         /* --- STATUS & TABS --- */
-        .status-bar { 
-            background: #2d3436; 
-            color: white; 
-            padding: 15px; 
-            border-radius: 12px; 
-            text-align: center; 
-            margin-bottom: 20px; 
-            font-weight: 500;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
+        .status-bar { background: #2d3436; color: white; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
         .tabs { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 25px; }
-        .tabs button { 
-            background-color: #e2e8f0; 
-            color: #4a5568; 
-            border-radius: 25px; 
-            padding: 10px 20px;
-            font-size: 0.9em;
-        }
+        .tabs button { background-color: #e2e8f0; color: #4a5568; border-radius: 25px; padding: 10px 20px; }
         .tabs button.active { background-color: var(--primary); color: white; }
 
         /* --- PACCO CARD --- */
-        .pacco { 
-            background: var(--white); 
-            border-left: 6px solid var(--primary); 
-            padding: 18px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-radius: 12px; 
-            margin-bottom: 12px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.03);
-            transition: transform 0.2s;
-        }
-        .pacco:hover { transform: scale(1.01); }
-        .pacco.ritirato { border-left-color: var(--success); opacity: 0.7; background: #f8fff9; }
-        
-        .tag-grandezza { 
-            background: #ffeaa7; 
-            color: #d63031; 
-            padding: 4px 10px; 
-            border-radius: 6px; 
-            font-weight: 800; 
-            margin-right: 12px; 
-            font-size: 0.8em;
-        }
-        .info-ritiro { 
-            color: var(--success); 
-            font-size: 0.85em; 
-            margin-top: 8px; 
-            font-weight: 600; 
-            border-top: 1px dashed #ddd; 
-            padding-top: 8px; 
-        }
+        .pacco { background: var(--white); border-left: 6px solid var(--primary); padding: 18px; display: flex; justify-content: space-between; align-items: center; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.03); }
+        .pacco.ritirato { border-left-color: var(--success); background: #f8fff9; }
+        .tag-grandezza { background: #ffeaa7; color: #d63031; padding: 4px 10px; border-radius: 6px; font-weight: 800; margin-right: 12px; }
+        .info-ritiro { color: var(--success); font-size: 0.85em; margin-top: 8px; font-weight: 600; border-top: 1px dashed #ddd; padding-top: 8px; }
 
-        /* --- SECTION RITIRATI --- */
-        .header-ritirati { 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            gap: 12px; 
-            margin-top: 40px; 
-            padding: 10px;
-            background: #eee;
-            border-radius: 10px;
-        }
-        .freccia { transition: transform 0.3s; font-size: 0.8em; }
-        .freccia.chiuso { transform: rotate(-90deg); }
+        /* --- SIGNATURE CANVAS --- */
+        #signature-pad { border: 2px dashed #ccc; background: #fff; border-radius: 8px; cursor: crosshair; margin-top: 10px; touch-action: none; }
+        .signature-actions { display: flex; justify-content: space-between; margin-top: 5px; }
+        .btn-clear { font-size: 10px; background: #636e72; padding: 5px; }
 
         /* --- MODALE --- */
-        #customModal {
-            display: none; position: fixed; z-index: 1000;
-            left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
-            align-items: center; justify-content: center;
-        }
-        .modal-content {
-            background: white; padding: 30px; border-radius: 20px;
-            width: 90%; max-width: 400px; text-align: center;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
-            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        @keyframes modalPop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .btn-cancel { background: #b2bec3; }
+        #customModal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 90%; max-width: 450px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.3); }
+        
+        /* Immagine firma nell'elenco */
+        .firma-anteprima { cursor: pointer; text-decoration: underline; color: var(--accent); margin-left: 10px; font-size: 0.9em; }
     </style>
 </head>
 <body>
 
 <div id="customModal">
     <div class="modal-content">
-        <h3 id="modalTitle">Conferma</h3>
+        <h3 id="modalTitle">Conferma Ritiro</h3>
         <p id="modalText"></p>
-        <input type="text" id="modalInput" style="width:100%; box-sizing:border-box; margin-top:15px; display:none;" placeholder="Nome di chi ritira">
-        <div class="modal-buttons" style="display:flex; gap:10px; margin-top:25px;">
-            <button class="btn-cancel" onclick="closeModal()" style="flex:1">Annulla</button>
+        
+        <div id="ritiroExtra" style="display:none;">
+            <input type="text" id="modalInput" style="width:100%; box-sizing:border-box; margin-bottom:10px;" placeholder="Cognome del ritirante">
+            <label style="font-size: 12px; color: #666; display: block; text-align: left;">Firma qui sotto:</label>
+            <canvas id="signature-pad" width="400" height="150"></canvas>
+            <div class="signature-actions">
+                <button class="btn-clear" onclick="clearCanvas()">Cancella Firma</button>
+            </div>
+        </div>
+
+        <div class="modal-buttons" style="display:flex; gap:10px; margin-top:20px;">
+            <button class="btn-cancel" onclick="closeModal()" style="flex:1; background:#b2bec3;">Annulla</button>
             <button id="modalConfirmBtn" style="flex:1">Conferma</button>
         </div>
     </div>
@@ -214,7 +90,7 @@
 <div id="loginPage">
     <div class="login-box">
         <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp" alt="Logo">
-        <h2 style="color:var(--primary); margin-bottom:25px;">Centro Post@ Anaclerio<br><span style="font-size:0.8em; color:#555;">Accesso Gestionale</span></h2>
+        <h2 style="color:var(--primary); margin-bottom:25px;">Centro Post@ Anaclerio</h2>
         <input type="email" id="loginEmail" placeholder="Email" style="width:100%; margin-bottom:12px; box-sizing: border-box;">
         <input type="password" id="loginPassword" placeholder="Password" style="width:100%; margin-bottom:25px; box-sizing: border-box;">
         <button onclick="login()" style="width:100%">ENTRA NEL SISTEMA</button>
@@ -228,8 +104,8 @@
     </div>
 
     <div class="form-group">
-        <input type="text" id="codiceTracciabilita" placeholder="Codice Tracciabilità (TRK)">
-        <input type="text" id="codiceRiconoscimento" placeholder="ID Pacco (es. 64)">
+        <input type="text" id="codiceTracciabilita" placeholder="TRK Tracking">
+        <input type="text" id="codiceRiconoscimento" placeholder="ID Pacco">
         <input type="text" id="nome" placeholder="Nome">
         <input type="text" id="cognome" placeholder="Cognome">
         <select id="corriereSelect"></select>
@@ -238,36 +114,47 @@
             <script>for(let i=1;i<=12;i++) document.write(`<option value="Scaffale ${i}">Scaffale ${i}</option>`);</script>
         </select>
         <select id="grandezzaSelect">
-            <option value="P">Taglia: P</option>
-            <option value="M">Taglia: M</option>
-            <option value="G">Taglia: G</option>
+            <option value="P">Taglia: P</option><option value="M">Taglia: M</option><option value="G">Taglia: G</option>
         </select>
         <button onclick="aggiungiPacco()">+ AGGIUNGI PACCO</button>
     </div>
 
     <div class="status-bar" id="counter">Caricamento...</div>
-    
     <input type="text" id="search" style="width:100%; margin-bottom:25px; box-sizing: border-box; padding: 15px; border-radius: 50px; border: 2px solid #ddd;" placeholder="🔍 Cerca per cognome, numero o tracking..." oninput="aggiornaVista()">
     
     <div class="tabs" id="tabs"></div>
     <div id="contenitori"></div>
 
     <div style="margin-top:50px;">
-        <h3 class="header-ritirati" onclick="toggleSezioneRitirati()">
-            <span id="frecciaIcon" class="freccia">▼</span> Archivio Pacchi Ritirati
-        </h3>
+        <h3 style="cursor:pointer;" onclick="toggleSezioneRitirati()">▼ Archivio Pacchi Ritirati</h3>
         <div id="sezioneRitirati">
-            <button onclick="cancellaRitirati()" style="font-size:11px; background:#2d3436; margin: 15px 0; padding: 8px 15px;">SVUOTA CRONOLOGIA ARCHIVIO</button>
+            <button onclick="cancellaRitirati()" style="font-size:11px; background:#2d3436; margin: 15px 0;">SVUOTA CRONOLOGIA</button>
             <div id="ritiratiContainer"></div>
         </div>
     </div>
 </div>
 
 <script>
-// --- LOGICA ORIGINALE PRESERVATA INALTERATA ---
 let pacchi = JSON.parse(localStorage.getItem('pacchi')) || [];
-let corrieri = JSON.parse(localStorage.getItem('corrieri')) || ["Punto Poste", "SDA", "BRT", "GLS", "Amazon"];
+let corrieri = ["Punto Poste", "SDA", "BRT", "GLS", "Amazon"];
 let tabAttiva = 'Tutti';
+
+// Gestione Canvas Firma
+const canvas = document.getElementById('signature-pad');
+const ctx = canvas.getContext('2d');
+let drawing = false;
+
+canvas.addEventListener('mousedown', startDrawing);
+canvas.addEventListener('mousemove', draw);
+canvas.addEventListener('mouseup', stopDrawing);
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDrawing(e.touches[0]); });
+canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e.touches[0]); });
+canvas.addEventListener('touchend', stopDrawing);
+
+function startDrawing(e) { drawing = true; ctx.beginPath(); ctx.moveTo(e.clientX - canvas.getBoundingClientRect().left, e.clientY - canvas.getBoundingClientRect().top); }
+function draw(e) { if (!drawing) return; ctx.lineTo(e.clientX - canvas.getBoundingClientRect().left, e.clientY - canvas.getBoundingClientRect().top); ctx.stroke(); ctx.lineWidth = 2; ctx.lineCap = 'round'; }
+function stopDrawing() { drawing = false; }
+function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
 function salva(){ localStorage.setItem('pacchi', JSON.stringify(pacchi)); }
 
@@ -277,111 +164,81 @@ function login(){
         document.getElementById('loginPage').style.display='none';
         document.getElementById('mainPage').style.display='block';
         aggiornaVista();
-    } else { alert("Credenziali non valide"); }
+    } else { alert("Dati errati"); }
 }
 
-function toggleSezioneRitirati() {
-    const sezione = document.getElementById('sezioneRitirati');
-    const freccia = document.getElementById('frecciaIcon');
-    sezione.style.display = (sezione.style.display === "none") ? "block" : "none";
-    freccia.classList.toggle('chiuso');
-}
-
-function openModal(title, text, showInput, inputValue, onConfirm) {
+function openModal(title, text, isRitiro, inputValue, onConfirm) {
     document.getElementById('customModal').style.display = 'flex';
     document.getElementById('modalTitle').innerText = title;
     document.getElementById('modalText').innerText = text;
-    const input = document.getElementById('modalInput');
-    input.style.display = showInput ? 'block' : 'none';
-    input.value = inputValue || '';
+    document.getElementById('ritiroExtra').style.display = isRitiro ? 'block' : 'none';
+    document.getElementById('modalInput').value = inputValue || '';
+    clearCanvas();
     
     document.getElementById('modalConfirmBtn').onclick = () => {
-        onConfirm(input.value);
+        const firma = isRitiro ? canvas.toDataURL() : null; // Salva firma come immagine
+        onConfirm(document.getElementById('modalInput').value, firma);
         closeModal();
     };
 }
 
-function closeModal() {
-    document.getElementById('customModal').style.display = 'none';
-    aggiornaVista();
-}
+function closeModal() { document.getElementById('customModal').style.display = 'none'; aggiornaVista(); }
 
 function aggiungiPacco(){
-    const ct = document.getElementById('codiceTracciabilita').value.trim();
-    const cr = document.getElementById('codiceRiconoscimento').value.trim();
-    const nome = document.getElementById('nome').value.trim();
     const cognome = document.getElementById('cognome').value.trim();
     const corriere = document.getElementById('corriereSelect').value;
-
-    if(!cognome || !corriere) { alert("Inserire almeno Cognome e Corriere"); return; }
-
-    let riconoscimento = cr || (pacchi.filter(p => p.corriere === corriere && !p.ritirato).length + 1);
-    if(!cr) {
-        const pGiacenza = pacchi.filter(p => p.corriere === corriere && !p.ritirato);
-        riconoscimento = pGiacenza.length > 0 ? parseInt(pGiacenza[pGiacenza.length-1].riconoscimento) + 1 : 1;
-    }
+    if(!cognome || !corriere) return alert("Mancano dati!");
 
     pacchi.push({
         id: Date.now(),
-        codiceTracciabilita: ct || '-',
-        riconoscimento: riconoscimento,
-        nome: nome,
+        codiceTracciabilita: document.getElementById('codiceTracciabilita').value || '-',
+        riconoscimento: document.getElementById('codiceRiconoscimento').value || (pacchi.length + 1),
+        nome: document.getElementById('nome').value,
         cognome: cognome,
         corriere: corriere,
         scaffale: document.getElementById('scaffaleSelect').value,
         grandezza: document.getElementById('grandezzaSelect').value,
         ritirato: false,
         dataRitiro: null,
-        ritiratoDa: ''
+        ritiratoDa: '',
+        firma: null
     });
-
-    salva();
-    aggiornaVista();
+    salva(); aggiornaVista();
     ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
 }
 
 function aggiornaVista(){
     const sel = document.getElementById('corriereSelect');
-    const oldVal = sel.value;
-    sel.innerHTML = '<option value="">Seleziona Corriere</option>';
-    corrieri.forEach(c => sel.innerHTML += `<option value="${c}">${c}</option>`);
-    sel.value = oldVal;
-
+    sel.innerHTML = '<option value="">Seleziona Corriere</option>' + corrieri.map(c => `<option value="${c}">${c}</option>`).join('');
+    
     const tabsBox = document.getElementById('tabs');
-    tabsBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">📦 Tutti</button>`;
-    corrieri.forEach(c => tabsBox.innerHTML += `<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}">${c}</button>`);
+    tabsBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">📦 Tutti</button>` + 
+        corrieri.map(c => `<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}">${c}</button>`).join('');
 
     const search = document.getElementById('search').value.toLowerCase();
-    
-    const inGiacenza = pacchi.filter(p => !p.ritirato && 
-        (tabAttiva === 'Tutti' || p.corriere === tabAttiva) &&
-        (p.cognome.toLowerCase().includes(search) || String(p.riconoscimento).includes(search) || p.codiceTracciabilita.toLowerCase().includes(search))
-    );
-    
-    const ritirati = pacchi.filter(p => p.ritirato && 
-        (tabAttiva === 'Tutti' || p.corriere === tabAttiva) &&
-        (p.cognome.toLowerCase().includes(search) || String(p.riconoscimento).includes(search) || p.codiceTracciabilita.toLowerCase().includes(search))
-    ).reverse();
+    const filter = p => (tabAttiva === 'Tutti' || p.corriere === tabAttiva) && (p.cognome.toLowerCase().includes(search) || p.codiceTracciabilita.toLowerCase().includes(search));
 
-    const ultimoGiacenza = pacchi.filter(p => !p.ritirato && (tabAttiva === 'Tutti' || p.corriere === tabAttiva));
-    let ultimoNum = ultimoGiacenza.length > 0 ? ultimoGiacenza[ultimoGiacenza.length - 1].riconoscimento : "---";
+    const inGiacenza = pacchi.filter(p => !p.ritirato && filter(p));
+    const ritirati = pacchi.filter(p => p.ritirato && filter(p)).reverse();
 
-    document.getElementById('counter').innerHTML = `📦 In Giacenza (${tabAttiva}): ${inGiacenza.length} | 🏷️ Ultimo ID: #${ultimoNum}`;
+    document.getElementById('counter').innerHTML = `Giacenza: ${inGiacenza.length}`;
     document.getElementById('contenitori').innerHTML = inGiacenza.map(p => generateHtml(p)).join('');
     document.getElementById('ritiratiContainer').innerHTML = ritirati.map(p => generateHtml(p)).join('');
 }
 
 function generateHtml(p) {
-    let infoRitiroHtml = (p.ritirato && p.dataRitiro) ? `<div class="info-ritiro">✅ Ritirato da: ${p.ritiratoDa} il ${p.dataRitiro}</div>` : '';
+    let firmaLink = p.firma ? `<span class="firma-anteprima" onclick="mostraFirma('${p.firma}')">VEDI FIRMA</span>` : '';
+    let infoRitiro = p.ritirato ? `<div class="info-ritiro">✅ Ritiro: ${p.ritiratoDa} - ${p.dataRitiro} ${firmaLink}</div>` : '';
+    
     return `
         <div class="pacco ${p.ritirato ? 'ritirato' : ''}">
             <div style="flex-grow:1">
                 <span class="tag-grandezza">${p.grandezza}</span>
-                <span style="font-size: 1.1em;"><strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome}</span><br>
-                <small style="color: #636e72;">${p.corriere} • ${p.scaffale || 'Senza Scaffale'} • TRK: ${p.codiceTracciabilita}</small>
-                ${infoRitiroHtml}
+                <strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome}<br>
+                <small>${p.corriere} | ${p.scaffale} | TRK: ${p.codiceTracciabilita}</small>
+                ${infoRitiro}
             </div>
-            <input type="checkbox" ${p.ritirato ? 'checked' : ''} onchange="handleToggle(${p.id})" style="transform: scale(1.8); cursor:pointer; margin-left:15px; accent-color: var(--primary);">
+            <input type="checkbox" ${p.ritirato ? 'checked' : ''} onchange="handleToggle(${p.id})" style="transform:scale(1.8); cursor:pointer;">
         </div>
     `;
 }
@@ -389,34 +246,33 @@ function generateHtml(p) {
 function handleToggle(id) {
     const p = pacchi.find(x => x.id === id);
     if(!p.ritirato) {
-        openModal("Conferma Ritiro", `Chi sta ritirando il pacco #${p.riconoscimento}?`, true, p.cognome, (nomeRitiro) => {
+        openModal("Conferma Ritiro", `Pacco #${p.riconoscimento}`, true, p.cognome, (nomeRitiro, firmaImg) => {
             const ora = new Date();
             p.ritirato = true;
-            p.ritiratoDa = nomeRitiro.trim() || p.cognome;
-            p.dataRitiro = ora.toLocaleDateString() + " " + ora.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-            salva();
-            aggiornaVista();
+            p.ritiratoDa = nomeRitiro || p.cognome;
+            p.dataRitiro = ora.toLocaleString();
+            p.firma = firmaImg; // Salva la firma come immagine Base64
+            salva(); aggiornaVista();
         });
     } else {
-        openModal("Ripristino Giacenza", "Vuoi riportare questo pacco in giacenza?", false, '', () => {
-            p.ritirato = false;
-            p.dataRitiro = null;
-            p.ritiratoDa = '';
-            salva();
-            aggiornaVista();
+        openModal("Ripristino", "Riportare in giacenza?", false, '', () => {
+            p.ritirato = false; p.firma = null; salva(); aggiornaVista();
         });
     }
 }
 
-function cancellaRitirati(){
-    openModal("Svuota Archivio", "Sei sicuro di voler eliminare definitivamente tutti i pacchi ritirati?", false, '', () => {
-        pacchi = pacchi.filter(p => !p.ritirato);
-        salva();
-        aggiornaVista();
-    });
+function mostraFirma(dataUrl) {
+    const win = window.open();
+    win.document.write(`<div style="text-align:center;"><h3>Firma del ritirante</h3><img src="${dataUrl}" style="border:1px solid #000;"></div>`);
+}
+
+function toggleSezioneRitirati() {
+    const s = document.getElementById('sezioneRitirati');
+    s.style.display = s.style.display === 'none' ? 'block' : 'none';
 }
 
 function setTab(t){ tabAttiva = t; aggiornaVista(); }
+function cancellaRitirati(){ if(confirm("Cancellare tutto l'archivio?")) { pacchi = pacchi.filter(p => !p.ritirato); salva(); aggiornaVista(); } }
 
 if(localStorage.getItem('loggedIn') === 'true') {
     document.getElementById('loginPage').style.display='none';
