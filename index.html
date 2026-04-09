@@ -6,103 +6,76 @@
     <title>📦 Gestione Pacchi - Poste Private</title>
     <style>
         :root { 
-            --primary: #003399; /* Blu Poste */
-            --accent: #ffcc00;  /* Giallo Poste */
-            --bg: #f0f2f5; 
-            --text: #1a1a1a; 
+            --primary: #003399; /* BLU */
+            --accent: #ffcc00;  /* GIALLO */
             --white: #ffffff;
         }
 
-        body { 
-            font-family: 'Segoe UI', Arial, sans-serif; 
-            background-color: var(--bg); 
-            padding: 0; margin: 0; color: var(--text); 
-        }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
 
         /* --- LOGIN --- */
         #loginPage { display: flex; justify-content: center; align-items: center; height: 100vh; background: var(--primary); }
-        .login-box { 
-            background: var(--white); padding: 40px; border-radius: 15px; text-align: center; width: 350px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-top: 8px solid var(--accent);
-        }
+        .login-box { background: white; padding: 40px; border-radius: 15px; text-align: center; border-top: 8px solid var(--accent); }
 
-        /* --- HEADER --- */
         .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+        
+        /* --- HEADER --- */
         .app-header { 
             display: flex; align-items: center; justify-content: center; gap: 15px; 
-            margin-bottom: 25px; background: var(--primary); padding: 20px; border-radius: 15px; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); color: var(--accent);
+            background: var(--primary); color: var(--accent); padding: 20px; border-radius: 15px; margin-bottom: 20px;
         }
-        .app-header img { height: 60px; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.2)); }
 
         /* --- FORM --- */
         .form-group { 
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; 
-            background: var(--white); padding: 20px; border-radius: 15px; border: 2px solid var(--primary); margin-bottom: 20px; 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; 
+            background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px;
         }
-        input, select, button { padding: 12px; font-size: 14px; border-radius: 8px; border: 1px solid #ccc; outline: none; }
-        input:focus { border-color: var(--primary); box-shadow: 0 0 5px rgba(0,51,153,0.2); }
-        
-        button { 
-            background-color: var(--primary); color: var(--accent); border: none; 
-            cursor: pointer; font-weight: 800; text-transform: uppercase; transition: 0.3s;
-        }
-        button:hover { background-color: #002266; transform: scale(1.02); }
+        input, select, button { padding: 12px; border-radius: 8px; border: 1px solid #ccc; outline: none; }
+        button { background: var(--primary); color: var(--accent); font-weight: bold; cursor: pointer; border: none; }
+        button:hover { background: #002266; }
 
         /* --- TABS --- */
         .status-bar { background: var(--primary); color: var(--accent); padding: 12px; border-radius: 10px; text-align: center; margin-bottom: 15px; font-weight: bold; }
         .tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
-        .tabs button { background-color: #ddd; color: #333; border-radius: 20px; padding: 8px 16px; font-size: 0.85em; }
-        .tabs button.active { background-color: var(--accent); color: var(--primary); border: 2px solid var(--primary); }
+        .tabs button { background: #ddd; color: #333; border-radius: 20px; border: none; padding: 8px 15px; }
+        .tabs button.active { background: var(--accent); color: var(--primary); border: 2px solid var(--primary); }
 
-        /* --- PACCO CARD (ANIMATA) --- */
+        /* --- PACCO (EFFETTO MOVIMENTO) --- */
         .pacco { 
-            background: var(--white); border-left: 8px solid var(--primary); padding: 15px; 
+            background: white; border-left: 6px solid var(--primary); padding: 15px; 
             display: flex; justify-content: space-between; align-items: center; border-radius: 10px; 
-            margin-bottom: 10px; box-shadow: 0 3px 6px rgba(0,0,0,0.05);
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: all 0.3s ease; /* Transizione per il movimento */
         }
-        /* Effetto movimento al passaggio */
         .pacco:hover { 
-            transform: translateX(10px) scale(1.02); 
-            box-shadow: 0 10px 20px rgba(0,51,153,0.15);
-            background-color: #fffdf2;
+            transform: translateY(-5px) scale(1.02); /* Si alza e si ingrandisce */
+            box-shadow: 0 8px 15px rgba(0,51,153,0.2);
+            background: #fffef0;
         }
-        .pacco.ritirato { border-left-color: #28a745; opacity: 0.8; }
-        
-        .tag-grandezza { background: var(--accent); color: var(--primary); padding: 3px 8px; border-radius: 5px; font-weight: bold; margin-right: 10px; }
+        .pacco.ritirato { border-left-color: #28a745; opacity: 0.7; }
 
         /* --- MODALE --- */
         #customModal { 
             display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.7); align-items: center; justify-content: center;
         }
-        .modal-content { 
-            background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center;
-            border: 4px solid var(--primary);
-        }
-        #signature-pad { border: 2px dashed var(--primary); background: #f9f9f9; border-radius: 8px; margin-top: 10px; touch-action: none; }
-
-        .info-ritiro { color: #28a745; font-size: 0.85em; margin-top: 8px; font-weight: bold; border-top: 1px solid #eee; padding-top: 5px; }
-        .pacco-checkbox { transform: scale(1.7); cursor: pointer; accent-color: var(--primary); }
+        .modal-content { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; }
+        #signature-pad { border: 2px dashed #ccc; background: #f9f9f9; border-radius: 8px; margin-top: 10px; touch-action: none; }
     </style>
 </head>
 <body>
 
 <div id="customModal">
     <div class="modal-content">
-        <h3 id="modalTitle" style="color:var(--primary)">Ritiro Pacco</h3>
+        <h3 id="modalTitle">Ritiro Pacco</h3>
         <p id="modalText"></p>
-        <input type="text" id="modalInput" style="width:100%; box-sizing:border-box; margin-top:10px; display:none;" placeholder="Cognome chi ritira">
-        
-        <div id="firmaBox" style="display:none; margin-top:10px;">
-            <label style="font-size:12px; font-weight:bold;">Firma per ricevuta:</label>
+        <input type="text" id="modalInput" style="width:100%; box-sizing:border-box; margin-top:10px; display:none;">
+        <div id="firmaArea" style="display:none; margin-top:10px;">
             <canvas id="signature-pad" width="350" height="150"></canvas>
-            <button onclick="clearCanvas()" style="font-size:10px; background:#666; padding:5px; margin-top:5px;">Cancella</button>
+            <button onclick="clearCanvas()" style="font-size:10px; background:#666; margin-top:5px;">Cancella Firma</button>
         </div>
-
         <div style="display:flex; gap:10px; margin-top:20px;">
-            <button onclick="closeModal()" style="flex:1; background:#ccc; color:#333;">Annulla</button>
+            <button onclick="closeModal()" style="flex:1; background:#ccc; color:black;">Annulla</button>
             <button id="modalConfirmBtn" style="flex:1">Conferma</button>
         </div>
     </div>
@@ -111,7 +84,7 @@
 <div id="loginPage">
     <div class="login-box">
         <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp" width="120">
-        <h2 style="color:var(--primary)">Area Riservata</h2>
+        <h2>Centro Post@ Anaclerio</h2>
         <input type="email" id="loginEmail" placeholder="Email" style="width:100%; margin-bottom:10px; box-sizing:border-box;">
         <input type="password" id="loginPassword" placeholder="Password" style="width:100%; margin-bottom:20px; box-sizing:border-box;">
         <button onclick="login()" style="width:100%">ACCEDI</button>
@@ -120,15 +93,15 @@
 
 <div id="mainPage" style="display:none;" class="container">
     <div class="app-header">
-        <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp">
+        <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp" height="60">
         <h1>Centro Post@ Anaclerio</h1>
     </div>
 
     <div class="form-group">
         <input type="text" id="codiceTracciabilita" placeholder="Tracking TRK">
-        <input type="text" id="codiceRiconoscimento" placeholder="Numero Pacco">
-        <input type="text" id="intestatario" placeholder="Nome e Cognome Intestatario" list="suggerimentiNomi">
-        <datalist id="suggerimentiNomi"></datalist>
+        <input type="text" id="codiceRiconoscimento" placeholder="ID Pacco">
+        <input type="text" id="intestatario" placeholder="Nome e Cognome" list="nomiSalvati">
+        <datalist id="nomiSalvati"></datalist>
         
         <select id="corriereSelect"></select>
         <select id="scaffaleSelect">
@@ -141,16 +114,16 @@
         <button onclick="aggiungiPacco()">+ AGGIUNGI</button>
     </div>
 
-    <div class="status-bar" id="counter">Caricamento...</div>
-    <input type="text" id="search" style="width:100%; margin-bottom:20px; box-sizing:border-box; border-radius:30px; padding:15px;" placeholder="🔍 Cerca cliente o numero..." oninput="aggiornaVista()">
+    <div class="status-bar" id="counter"></div>
+    <input type="text" id="search" style="width:100%; margin-bottom:20px; padding:12px; border-radius:25px; border:1px solid #ccc; box-sizing:border-box;" placeholder="🔍 Cerca cliente o numero pacco..." oninput="aggiornaVista()">
     
     <div class="tabs" id="tabs"></div>
     <div id="contenitori"></div>
 
-    <div style="margin-top:30px; background:white; padding:15px; border-radius:10px;">
-        <h3 onclick="document.getElementById('sezR').style.display=document.getElementById('sezR').style.display==='none'?'block':'none'" style="cursor:pointer; color:var(--primary)">▼ Archivio Ritirati</h3>
-        <div id="sezR" style="display:none;">
-            <button id="btnSvuotaDinamico" onclick="cancellaRitirati()" style="font-size:11px; margin-bottom:10px; background:#cc0000; color:white;">SVUOTA RITIRATI</button>
+    <div style="margin-top:30px;">
+        <h3 onclick="toggleRitirati()" style="cursor:pointer; color:var(--primary)">▼ Archivio Ritirati</h3>
+        <div id="sezRitirati" style="display:none;">
+            <button id="btnSvuota" onclick="cancellaRitirati()" style="background:#cc0000; color:white; font-size:11px; margin-bottom:10px;">SVUOTA RITIRATI (CORRIERE ATTUALE)</button>
             <div id="ritiratiContainer"></div>
         </div>
     </div>
@@ -158,6 +131,7 @@
 
 <script>
 let pacchi = JSON.parse(localStorage.getItem('pacchi')) || [];
+// --- I TUOI CORRIERI ORIGINALI ---
 let corrieri = ["Punto Poste", "SDA", "BRT", "GLS", "Amazon"];
 let tabAttiva = 'Tutti';
 
@@ -188,19 +162,18 @@ function login(){
 }
 
 function aggiornaSuggerimenti() {
-    const list = document.getElementById('suggerimentiNomi');
-    const nomiUnici = [...new Set(pacchi.map(p => p.intestatario))];
-    list.innerHTML = nomiUnici.map(n => `<option value="${n}">`).join('');
+    const dl = document.getElementById('nomiSalvati');
+    const nomi = [...new Set(pacchi.map(p => p.intestatario))];
+    dl.innerHTML = nomi.map(n => `<option value="${n}">`).join('');
 }
 
 function aggiungiPacco(){
     const int = document.getElementById('intestatario').value.trim();
     const corr = document.getElementById('corriereSelect').value;
     const cr = document.getElementById('codiceRiconoscimento').value.trim();
-    
     if(!int || !corr) return alert("Manca Intestatario o Corriere");
 
-    // Logica numero pacco originale
+    // TUA LOGICA ORIGINALE NUMERAZIONE
     let num = cr || (pacchi.filter(p => p.corriere === corr && !p.ritirato).length + 1);
     if(!cr) {
         const pG = pacchi.filter(p => p.corriere === corr && !p.ritirato);
@@ -229,14 +202,14 @@ function aggiornaVista(){
     tBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">Tutti</button>` + 
         corrieri.map(c => `<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}">${c}</button>`).join('');
 
-    const search = document.getElementById('search').value.toLowerCase();
-    const filt = p => (tabAttiva==='Tutti' || p.corriere===tabAttiva) && (p.intestatario.toLowerCase().includes(search) || String(p.riconoscimento).includes(search));
+    const query = document.getElementById('search').value.toLowerCase();
+    const filt = p => (tabAttiva==='Tutti' || p.corriere===tabAttiva) && (p.intestatario.toLowerCase().includes(query) || String(p.riconoscimento).includes(query));
     
     const giacenza = pacchi.filter(p => !p.ritirato && filt(p));
     const ritirati = pacchi.filter(p => p.ritirato && filt(p)).reverse();
 
-    document.getElementById('counter').innerText = `Giacenza ${tabAttiva}: ${giacenza.length} pacchi`;
-    document.getElementById('btnSvuotaDinamico').innerText = `SVUOTA RITIRATI (${tabAttiva})`;
+    document.getElementById('counter').innerText = `📦 Giacenza ${tabAttiva}: ${giacenza.length} pacchi`;
+    document.getElementById('btnSvuota').innerText = `SVUOTA RITIRATI (${tabAttiva})`;
 
     document.getElementById('contenitori').innerHTML = giacenza.map(p => genHtml(p)).join('');
     document.getElementById('ritiratiContainer').innerHTML = ritirati.map(p => genHtml(p)).join('');
@@ -244,16 +217,14 @@ function aggiornaVista(){
 }
 
 function genHtml(p) {
-    let fLink = p.firma ? `<span style="color:var(--primary);cursor:pointer;text-decoration:underline;margin-left:10px" onclick="mostraFirma('${p.id}')">VEDI FIRMA</span>` : '';
     return `
         <div class="pacco ${p.ritirato?'ritirato':''}">
             <div style="flex:1">
-                <span class="tag-grandezza">${p.grandezza}</span>
-                <strong>#${p.riconoscimento} - ${p.intestatario.toUpperCase()}</strong><br>
+                <strong><span style="background:var(--accent);padding:2px 5px;border-radius:4px;">${p.grandezza}</span> #${p.riconoscimento} - ${p.intestatario.toUpperCase()}</strong><br>
                 <small>${p.corriere} | ${p.scaffale} | TRK: ${p.codiceTracciabilita}</small>
-                ${p.ritirato ? `<div class="info-ritiro">✓ Consegnato a: ${p.ritiratoDa} il ${p.dataRitiro} ${fLink}</div>` : ''}
+                ${p.ritirato ? `<div style="color:green;font-size:12px;margin-top:5px;">✓ Ritirato da: ${p.ritiratoDa} il ${p.dataRitiro}</div>` : ''}
             </div>
-            <input type="checkbox" class="pacco-checkbox" ${p.ritirato?'checked':''} onchange="handleT(${p.id})">
+            <input type="checkbox" style="transform:scale(1.5)" ${p.ritirato?'checked':''} onchange="handleT(${p.id})">
         </div>
     `;
 }
@@ -265,43 +236,40 @@ function handleT(id){
         document.getElementById('modalText').innerText = `Consegna pacco a ${p.intestatario}`;
         document.getElementById('modalInput').style.display='block';
         document.getElementById('modalInput').value = p.intestatario;
-        document.getElementById('firmaBox').style.display='block';
+        document.getElementById('firmaArea').style.display='block';
         clearCanvas();
         document.getElementById('modalConfirmBtn').onclick = () => {
-            const ora = new Date();
             p.ritirato = true;
             p.ritiratoDa = document.getElementById('modalInput').value;
-            p.dataRitiro = ora.toLocaleString();
+            p.dataRitiro = new Date().toLocaleString();
             p.firma = canvas.toDataURL();
             salva(); closeModal();
         };
     } else {
-        if(confirm("Riportare in giacenza?")){ p.ritirato=false; p.firma=null; salva(); aggiornaVista(); }
+        if(confirm("Ripristinare pacco?")){ p.ritirato=false; salva(); aggiornaVista(); }
     }
 }
 
 function closeModal(){ document.getElementById('customModal').style.display='none'; aggiornaVista(); }
 
-function mostraFirma(id){
-    const p = pacchi.find(x=>x.id==id);
-    const w = window.open("","","width=400,height=300");
-    w.document.write(`<body style="text-align:center;font-family:sans-serif"><h3>Firma di: ${p.ritiratoDa}</h3><img src="${p.firma}" style="border:2px solid var(--primary);border-radius:10px;"><p>Pacco #${p.riconoscimento}</p></body>`);
-}
-
 function setTab(t){ tabAttiva = t; aggiornaVista(); }
 
-// CANCELLAZIONE SELETTIVA
+// CANCELLAZIONE SELETTIVA RICHIESTA
 function cancellaRitirati(){
-    const msg = tabAttiva === 'Tutti' ? "Cancellare TUTTO l'archivio?" : `Cancellare solo i ritirati di ${tabAttiva}?`;
+    const msg = tabAttiva === 'Tutti' ? "Svuotare TUTTO l'archivio ritirati?" : `Svuotare solo i ritirati di ${tabAttiva}?`;
     if(confirm(msg)){
         if(tabAttiva === 'Tutti') {
             pacchi = pacchi.filter(p => !p.ritirato);
         } else {
-            // Rimuove solo i ritirati del corriere attivo
             pacchi = pacchi.filter(p => !(p.ritirato && p.corriere === tabAttiva));
         }
         salva(); aggiornaVista();
     }
+}
+
+function toggleRitirati(){
+    const s = document.getElementById('sezRitirati');
+    s.style.display = s.style.display === 'none' ? 'block' : 'none';
 }
 
 if(localStorage.getItem('loggedIn')==='true'){
