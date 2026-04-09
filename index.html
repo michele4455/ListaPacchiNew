@@ -21,7 +21,7 @@
             padding: 0; margin: 0; color: var(--text); 
         }
 
-        /* --- GRAFICA LOGO --- */
+        /* --- HEADER --- */
         .app-header { 
             background: var(--primary);
             padding: 30px 20px;
@@ -51,7 +51,6 @@
         input, select, button { padding: 14px; font-size: 14px; border-radius: 10px; border: 1px solid #ddd; outline: none; }
         button { background-color: var(--primary); color: var(--accent); border: none; cursor: pointer; font-weight: bold; text-transform: uppercase; }
 
-        /* BARRA STATO CON ULTIMO NUMERO */
         .status-bar { background: var(--white); border: 2px solid var(--primary); color: var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.1rem; }
         
         .tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 25px; }
@@ -145,8 +144,8 @@
 
 <script>
 let pacchi = JSON.parse(localStorage.getItem('pacchi')) || [];
-// --- I TUOI CORRIERI ORIGINALI RIPRISTINATI ---
-const corrieri = ["InPost", "UPS", "GLS", "Amazon", "Bartolini", "SDA", "Poste Italiane"];
+// --- RIPRISTINATI I TUOI CORRIERI ESATTI ---
+const corrieri = ["InPost", "Punto Poste", "SDA", "BRT", "GLS", "Amazon"];
 let tabAttiva = 'Tutti';
 
 const canvas = document.getElementById('signature-pad');
@@ -212,7 +211,6 @@ function aggiornaVista(){
     const inGiacenza = pacchi.filter(p => !p.ritirato && filterFn(p));
     const ritirati = pacchi.filter(p => p.ritirato && filterFn(p)).reverse();
 
-    // --- FUNZIONE ULTIMO NUMERO REGISTRATO ---
     const perUltimoID = pacchi.filter(p => !p.ritirato && (tabAttiva === 'Tutti' || p.corriere === tabAttiva));
     let ultimoID = perUltimoID.length > 0 ? perUltimoID[perUltimoID.length - 1].riconoscimento : "---";
 
