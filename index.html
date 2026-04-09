@@ -144,8 +144,8 @@
 
 <script>
 let pacchi = JSON.parse(localStorage.getItem('pacchi')) || [];
-// --- LISTA CORRIERI ORIGINALI COMPLETA ---
-const corrieri = ["InPost", "Punto Poste", "SDA", "BRT", "GLS", "Amazon", "Corrieri No Pudo"];
+// --- LISTA COMPLETA DEI TUOI CORRIERI ---
+const corrieri = ["InPost", "UPS", "Punto Poste", "SDA", "BRT", "GLS", "Amazon", "Corrieri No Pudo"];
 let tabAttiva = 'Tutti';
 
 const canvas = document.getElementById('signature-pad');
@@ -254,10 +254,43 @@ function handleToggle(id) {
     }
 }
 
+// --- FINESTRA FIRMA POTENZIATA CON PIÙ INFO ---
 function mostraFirma(id) {
     const p = pacchi.find(x => x.id == id);
-    const win = window.open("", "Firma", "width=500,height=400");
-    win.document.write(`<body style="text-align:center; padding:30px;"><h2>Firma ${p.ritiratoDa}</h2><img src="${p.firma}" style="border:1px solid #ddd; max-width:100%;"></body>`);
+    const win = window.open("", "Firma", "width=600,height=700");
+    win.document.write(`
+        <body style="font-family:'Segoe UI', sans-serif; padding:40px; color:#333; line-height:1.6;">
+            <div style="text-align:center; border-bottom:3px solid #003399; padding-bottom:20px; margin-bottom:20px;">
+                <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp" width="80">
+                <h1 style="color:#003399; margin:10px 0;">RICEVUTA DI CONSEGNA</h1>
+                <p style="margin:0; font-weight:bold;">Centro Post@ Anaclerio</p>
+            </div>
+            
+            <div style="background:#f9f9f9; padding:20px; border-radius:10px; border:1px solid #ddd;">
+                <p><b>ID Pacco:</b> #${p.riconoscimento}</p>
+                <p><b>Corriere:</b> ${p.corriere}</p>
+                <p><b>Codice Tracking:</b> ${p.codiceTracciabilita}</p>
+                <p><b>Destinatario:</b> ${p.cognome.toUpperCase()} ${p.nome}</p>
+                <p><b>Posizione Originale:</b> ${p.scaffale} (${p.grandezza})</p>
+                <hr style="border:0; border-top:1px solid #ccc;">
+                <p style="color:#00b894; font-weight:bold;"><b>Data e Ora Ritiro:</b> ${p.dataRitiro}</p>
+                <p><b>Rilasciato a:</b> ${p.ritiratoDa}</p>
+            </div>
+
+            <div style="margin-top:30px; text-align:center;">
+                <p style="font-size:0.9rem; color:#666;">Firma del ricevente:</p>
+                <img src="${p.firma}" style="border:2px solid #003399; border-radius:15px; background:#fff; max-width:100%; width:400px;">
+            </div>
+
+            <div style="margin-top:40px; text-align:center; font-size:0.8rem; color:#999;">
+                Documento generato digitalmente dal sistema gestionale.
+            </div>
+            
+            <div style="margin-top:20px; text-align:center;">
+                <button onclick="window.print()" style="padding:10px 20px; background:#003399; color:#fff; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">STAMPA RICEVUTA</button>
+            </div>
+        </body>
+    `);
 }
 
 function closeModal() { document.getElementById('customModal').style.display = 'none'; aggiornaVista(); }
