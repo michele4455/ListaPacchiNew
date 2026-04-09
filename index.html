@@ -142,7 +142,7 @@
         </div>
 
         <div class="status-bar" id="counter">Caricamento...</div>
-        <input type="text" id="search" style="width:100%; margin-bottom:25px; box-sizing: border-box; padding: 16px; border-radius: 50px; border: 2px solid var(--primary);" placeholder="🔍 Cerca cliente o ID..." oninput="aggiornaVista()">
+        <input type="text" id="search" style="width:100%; margin-bottom:25px; box-sizing: border-box; padding: 16px; border-radius: 50px; border: 2px solid var(--primary);" placeholder="🔍 Cerca cliente, ID o Tracking..." oninput="aggiornaVista()">
         
         <div class="tabs" id="tabs"></div>
         <div id="contenitori"></div>
@@ -167,10 +167,10 @@ const canvas = document.getElementById('signature-pad');
 const ctx = canvas.getContext('2d');
 let drawing = false;
 
-// --- GESTIONE INATTIVITÀ (20 MINUTI) ---
+// --- GESTIONE INATTIVITÀ (10 MINUTI) ---
 function resetInattivita() {
     clearTimeout(timeoutInattivita);
-    timeoutInattivita = setTimeout(logout, 20 * 60 * 1000); 
+    timeoutInattivita = setTimeout(logout, 10 * 60 * 1000); 
 }
 window.onload = resetInattivita;
 document.onmousemove = resetInattivita;
@@ -236,7 +236,12 @@ function aggiornaVista(){
         corrieri.map(c => `<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}">${c}</button>`).join('');
 
     const search = document.getElementById('search').value.toLowerCase();
-    const filterFn = p => (tabAttiva === 'Tutti' || p.corriere === tabAttiva) && (p.cognome.toLowerCase().includes(search) || String(p.riconoscimento).includes(search));
+    
+    // --- RICERCA AGGIORNATA: COGNOME, ID O TRACKING ---
+    const filterFn = p => (tabAttiva === 'Tutti' || p.corriere === tabAttiva) && 
+        (p.cognome.toLowerCase().includes(search) || 
+         String(p.riconoscimento).includes(search) || 
+         p.codiceTracciabilita.toLowerCase().includes(search));
     
     const inGiacenza = pacchi.filter(p => !p.ritirato && filterFn(p));
     const ritirati = pacchi.filter(p => p.ritirato && filterFn(p)).reverse();
