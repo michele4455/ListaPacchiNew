@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>📦 Gestione Pacchi Postali Pro</title>
     <style>
+        /* --- STILE ANIMATO E MODERNO --- */
         :root { 
             --primary: #cc0000; 
             --primary-dark: #a30000;
@@ -13,19 +14,17 @@
             --accent: #0984e3;
             --success: #00b894;
             --white: #ffffff;
-            --gray-light: #dfe6e9;
-            --gray-dark: #2d3436;
         }
 
         body { 
             font-family: 'Inter', sans-serif; 
             background-color: var(--secondary); 
             padding: 0; margin: 0; color: var(--text); 
-            opacity: 0; animation: fadeInBody 0.5s forwards;
+            animation: fadeInBody 0.5s forwards;
         }
-        @keyframes fadeInBody { to { opacity: 1; } }
+        @keyframes fadeInBody { from { opacity: 0; } to { opacity: 1; } }
 
-        /* --- LOGIN PAGE --- */
+        /* --- LOGIN --- */
         #loginPage { display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #cc0000 0%, #333 100%); }
         .login-box { 
             background: var(--white); padding: 40px; border-radius: 20px; text-align: center; width: 100%; max-width: 380px; 
@@ -34,38 +33,38 @@
         @keyframes loginPop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .login-box img { max-width: 150px; margin-bottom: 20px; }
 
-        /* --- LAYOUT --- */
+        /* --- CONTAINER E HEADER --- */
         .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
         .app-header { 
             display: flex; align-items: center; justify-content: center; gap: 15px; 
             margin-bottom: 30px; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
         .app-header img { height: 60px; }
-        .app-header h1 { margin: 0; font-size: 1.8rem; color: var(--primary); text-transform: uppercase; }
+        .app-header h1 { margin: 0; font-size: 1.8rem; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; }
 
-        /* --- FORM --- */
+        /* --- FORM (TUA LOGICA) --- */
         .form-group { 
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; 
             background: var(--white); padding: 25px; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.06); margin-bottom: 25px; 
         }
-        input, select, button { padding: 14px; font-size: 14px; border-radius: 10px; border: 1px solid var(--gray-light); outline: none; transition: all 0.3s; }
+        input, select, button { padding: 14px; font-size: 14px; border-radius: 10px; border: 1px solid #dfe6e9; outline: none; transition: all 0.3s; }
         input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(9, 132, 227, 0.1); }
         button { background-color: var(--primary); color: white; border: none; cursor: pointer; font-weight: 700; text-transform: uppercase; }
-        button:hover { background-color: var(--primary-dark); transform: translateY(-2px); }
+        button:hover { background-color: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(204, 0, 0, 0.2); }
 
-        /* --- LISTA E TABS --- */
-        .status-bar { background: var(--gray-dark); color: white; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: 500; }
-        .tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 25px; }
-        .tabs button { background-color: #e2e8f0; color: #4a5568; border-radius: 25px; padding: 10px 20px; font-weight: 500; }
-        .tabs button.active { background-color: var(--primary); color: white; box-shadow: 0 4px 10px rgba(204, 0, 0, 0.2); }
+        /* --- TABS E STATO --- */
+        .status-bar { background: #2d3436; color: white; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: 500; }
+        .tabs { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 25px; }
+        .tabs button { background-color: #e2e8f0; color: #4a5568; border-radius: 25px; padding: 10px 20px; font-size: 0.9em; }
+        .tabs button.active { background-color: var(--primary); color: white; box-shadow: 0 4px 10px rgba(204,0,0,0.2); }
 
-        /* --- CARDS PACCO --- */
+        /* --- CARDS (ANIMATE) --- */
         .pacco { 
             background: var(--white); border-left: 6px solid var(--primary); padding: 18px; 
             display: flex; justify-content: space-between; align-items: center; border-radius: 12px; 
-            margin-bottom: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.03); animation: cardIn 0.4s ease-out;
+            margin-bottom: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.03); animation: slideIn 0.4s ease-out;
         }
-        @keyframes cardIn { from { transform: translateY(15px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .pacco.ritirato { border-left-color: var(--success); opacity: 0.7; background: #f8fff9; }
         .tag-grandezza { background: #ffeaa7; color: #d63031; padding: 4px 10px; border-radius: 6px; font-weight: 800; margin-right: 12px; }
         .info-ritiro { color: var(--success); font-size: 0.85em; margin-top: 10px; font-weight: 600; border-top: 1px dashed #ddd; padding-top: 8px; }
@@ -77,11 +76,11 @@
         }
         .modal-content { 
             background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 450px; text-align: center; 
-            box-shadow: 0 25px 50px rgba(0,0,0,0.3); transform: scale(0.9); transition: transform 0.3s;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3); animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
+        @keyframes modalPop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         #signature-pad { border: 2px dashed #ccc; background: #fff; border-radius: 8px; cursor: crosshair; margin-top: 10px; touch-action: none; }
-        .view-firma-txt { color: var(--accent); cursor: pointer; text-decoration: underline; margin-left: 10px; }
-        
+        .view-firma-link { color: var(--accent); cursor: pointer; text-decoration: underline; margin-left: 10px; font-size: 0.9em; }
         .pacco-checkbox { transform: scale(1.8); cursor: pointer; margin-left: 15px; accent-color: var(--primary); }
     </style>
 </head>
@@ -93,8 +92,8 @@
         <p id="modalText"></p>
         <input type="text" id="modalInput" style="width:100%; box-sizing:border-box; margin-top:15px; display:none;" placeholder="Cognome ritirante">
         
-        <div id="signatureArea" style="display:none; margin-top:15px;">
-            <label style="font-size:12px; display:block; text-align:left; font-weight:bold;">Firma qui:</label>
+        <div id="firmaBox" style="display:none; margin-top:15px;">
+            <label style="font-size:12px; display:block; text-align:left; font-weight:bold;">Firma obbligatoria:</label>
             <canvas id="signature-pad" width="380" height="150"></canvas>
             <button onclick="clearCanvas()" style="font-size:10px; background:#666; padding:5px; margin-top:5px; text-transform:none;">Cancella Firma</button>
         </div>
@@ -109,10 +108,10 @@
 <div id="loginPage">
     <div class="login-box">
         <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp">
-        <h2>Centro Post@ Anaclerio</h2>
-        <input type="email" id="loginEmail" placeholder="Email" style="width:100%; margin-bottom:10px;">
-        <input type="password" id="loginPassword" placeholder="Password" style="width:100%; margin-bottom:20px;">
-        <button onclick="login()" style="width:100%">ACCEDI</button>
+        <h2 style="color:var(--primary);">Centro Post@ Anaclerio</h2>
+        <input type="email" id="loginEmail" placeholder="Email" style="width:100%; margin-bottom:12px; box-sizing: border-box;">
+        <input type="password" id="loginPassword" placeholder="Password" style="width:100%; margin-bottom:25px; box-sizing: border-box;">
+        <button onclick="login()" style="width:100%">ENTRA NEL SISTEMA</button>
     </div>
 </div>
 
@@ -123,7 +122,7 @@
     </div>
 
     <div class="form-group">
-        <input type="text" id="codiceTracciabilita" placeholder="Tracking TRK">
+        <input type="text" id="codiceTracciabilita" placeholder="Codice Tracciabilità (TRK)">
         <input type="text" id="codiceRiconoscimento" placeholder="ID Pacco (es. 64)">
         <input type="text" id="nome" placeholder="Nome">
         <input type="text" id="cognome" placeholder="Cognome">
@@ -133,33 +132,39 @@
             <script>for(let i=1;i<=12;i++) document.write(`<option value="Scaffale ${i}">Scaffale ${i}</option>`);</script>
         </select>
         <select id="grandezzaSelect">
-            <option value="P">P</option><option value="M">M</option><option value="G">G</option>
+            <option value="P">Taglia: P</option>
+            <option value="M">Taglia: M</option>
+            <option value="G">Taglia: G</option>
         </select>
-        <button onclick="aggiungiPacco()">+ AGGIUNGI</button>
+        <button onclick="aggiungiPacco()">+ AGGIUNGI PACCO</button>
     </div>
 
-    <div class="status-bar" id="counter"></div>
-    <input type="text" id="search" style="width:100%; margin-bottom:25px; padding:15px; border-radius:50px; border:2px solid #ddd;" placeholder="🔍 Cerca cognome, numero o tracking..." oninput="aggiornaVista()">
+    <div class="status-bar" id="counter">Caricamento...</div>
+    
+    <input type="text" id="search" style="width:100%; margin-bottom:25px; box-sizing: border-box; padding: 15px; border-radius: 50px; border: 2px solid #ddd;" placeholder="🔍 Cerca per cognome, numero o tracking..." oninput="aggiornaVista()">
     
     <div class="tabs" id="tabs"></div>
     <div id="contenitori"></div>
 
-    <div style="margin-top:40px;">
-        <h3 onclick="toggleRitirati()" style="cursor:pointer;">▼ Archivio Pacchi Ritirati</h3>
+    <div style="margin-top:50px;">
+        <h3 class="header-ritirati" onclick="toggleSezioneRitirati()" style="cursor:pointer; background:white; padding:15px; border-radius:10px;">
+            <span id="frecciaIcon">▼</span> Archivio Pacchi Ritirati
+        </h3>
         <div id="sezioneRitirati" style="display:none;">
-            <button onclick="cancellaRitirati()" style="font-size:11px; background:#333; margin:10px 0;">Svuota Cronologia</button>
+            <button onclick="cancellaRitirati()" style="font-size:11px; background:#2d3436; margin: 15px 0; padding: 8px 15px;">SVUOTA CRONOLOGIA ARCHIVIO</button>
             <div id="ritiratiContainer"></div>
         </div>
     </div>
 </div>
 
 <script>
+// --- RIPRISTINO TOTALE LOGICA ORIGINALE ---
 let pacchi = JSON.parse(localStorage.getItem('pacchi')) || [];
-// --- RIPRISTINATI CORRIERI ORIGINALI ---
-let corrieri = ["Punto Poste", "SDA", "BRT", "GLS", "Amazon"]; 
+// I TUOI CORRIERI
+let corrieri = JSON.parse(localStorage.getItem('corrieri')) || ["Punto Poste", "SDA", "BRT", "GLS", "Amazon"];
 let tabAttiva = 'Tutti';
 
-// Gestione Firma
+// LOGICA FIRMA
 const canvas = document.getElementById('signature-pad');
 const ctx = canvas.getContext('2d');
 let drawing = false;
@@ -170,13 +175,13 @@ function getPos(e) {
     const y = (e.clientY || e.touches[0].clientY) - rect.top;
     return {x, y};
 }
-function start(e) { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); }
-function draw(e) { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }
-function stop() { drawing = false; }
+canvas.addEventListener('mousedown', (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
+canvas.addEventListener('mousemove', (e) => { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+window.addEventListener('mouseup', () => drawing = false);
+canvas.addEventListener('touchstart', (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
+canvas.addEventListener('touchmove', (e) => { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+canvas.addEventListener('touchend', () => drawing = false);
 function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
-
-canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', draw); window.addEventListener('mouseup', stop);
-canvas.addEventListener('touchstart', start); canvas.addEventListener('touchmove', draw); canvas.addEventListener('touchend', stop);
 
 function salva(){ localStorage.setItem('pacchi', JSON.stringify(pacchi)); }
 
@@ -186,7 +191,7 @@ function login(){
         document.getElementById('loginPage').style.display='none';
         document.getElementById('mainPage').style.display='block';
         aggiornaVista();
-    } else { alert("Credenziali errate"); }
+    } else { alert("Credenziali non valide"); }
 }
 
 function openModal(title, text, showInput, showSign, inputValue, onConfirm) {
@@ -194,7 +199,7 @@ function openModal(title, text, showInput, showSign, inputValue, onConfirm) {
     document.getElementById('modalTitle').innerText = title;
     document.getElementById('modalText').innerText = text;
     document.getElementById('modalInput').style.display = showInput ? 'block' : 'none';
-    document.getElementById('signatureArea').style.display = showSign ? 'block' : 'none';
+    document.getElementById('firmaBox').style.display = showSign ? 'block' : 'none';
     document.getElementById('modalInput').value = inputValue || '';
     clearCanvas();
     document.getElementById('modalConfirmBtn').onclick = () => {
@@ -202,10 +207,9 @@ function openModal(title, text, showInput, showSign, inputValue, onConfirm) {
         closeModal();
     };
 }
+function closeModal() { document.getElementById('customModal').style.display = 'none'; aggiornaVista(); }
 
-function closeModal(){ document.getElementById('customModal').style.display='none'; aggiornaVista(); }
-
-// --- RIPRISTINATA LOGICA ORIGINALE AGGIUNTA PACCO ---
+// TUA FUNZIONE AGGIUNGI PACCO (INALTERATA)
 function aggiungiPacco(){
     const ct = document.getElementById('codiceTracciabilita').value.trim();
     const cr = document.getElementById('codiceRiconoscimento').value.trim();
@@ -213,7 +217,7 @@ function aggiungiPacco(){
     const cognome = document.getElementById('cognome').value.trim();
     const corriere = document.getElementById('corriereSelect').value;
 
-    if(!cognome || !corriere) return alert("Inserire Cognome e Corriere");
+    if(!cognome || !corriere) { alert("Inserire almeno Cognome e Corriere"); return; }
 
     let riconoscimento = cr || (pacchi.filter(p => p.corriere === corriere && !p.ritirato).length + 1);
     if(!cr) {
@@ -236,35 +240,38 @@ function aggiungiPacco(){
 
 function aggiornaVista(){
     const sel = document.getElementById('corriereSelect');
-    sel.innerHTML = '<option value="">Corriere</option>' + corrieri.map(c => `<option value="${c}">${c}</option>`).join('');
-    
-    const tabsBox = document.getElementById('tabs');
-    tabsBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">Tutti</button>` + 
-        corrieri.map(c => `<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}">${c}</button>`).join('');
+    const oldVal = sel.value;
+    sel.innerHTML = '<option value="">Seleziona Corriere</option>';
+    corrieri.forEach(c => sel.innerHTML += `<option value="${c}">${c}</option>`);
+    sel.value = oldVal;
 
-    const query = document.getElementById('search').value.toLowerCase();
-    const filterFn = p => (tabAttiva==='Tutti' || p.corriere===tabAttiva) && (p.cognome.toLowerCase().includes(query) || String(p.riconoscimento).includes(query) || p.codiceTracciabilita.toLowerCase().includes(query));
+    const tabsBox = document.getElementById('tabs');
+    tabsBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">📦 Tutti</button>`;
+    corrieri.forEach(c => tabsBox.innerHTML += `<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}">${c}</button>`);
+
+    const search = document.getElementById('search').value.toLowerCase();
+    const filterFn = p => (tabAttiva === 'Tutti' || p.corriere === tabAttiva) && (p.cognome.toLowerCase().includes(search) || String(p.riconoscimento).includes(search) || p.codiceTracciabilita.toLowerCase().includes(search));
     
     const inGiacenza = pacchi.filter(p => !p.ritirato && filterFn(p));
     const ritirati = pacchi.filter(p => p.ritirato && filterFn(p)).reverse();
 
-    // --- RIPRISTINATO CALCOLO ULTIMO ID ---
-    const ultimoG = pacchi.filter(p => !p.ritirato && (tabAttiva === 'Tutti' || p.corriere === tabAttiva));
-    let ultimoNum = ultimoG.length > 0 ? ultimoG[ultimoG.length-1].riconoscimento : "---";
+    const ultimoGiacenza = pacchi.filter(p => !p.ritirato && (tabAttiva === 'Tutti' || p.corriere === tabAttiva));
+    let ultimoNum = ultimoGiacenza.length > 0 ? ultimoGiacenza[ultimoGiacenza.length - 1].riconoscimento : "---";
 
-    document.getElementById('counter').innerHTML = `📦 Giacenza ${tabAttiva}: ${inGiacenza.length} | 🏷️ Ultimo ID: #${ultimoNum}`;
+    document.getElementById('counter').innerHTML = `📦 In Giacenza (${tabAttiva}): ${inGiacenza.length} | 🏷️ Ultimo ID: #${ultimoNum}`;
     document.getElementById('contenitori').innerHTML = inGiacenza.map(p => generateHtml(p)).join('');
     document.getElementById('ritiratiContainer').innerHTML = ritirati.map(p => generateHtml(p)).join('');
 }
 
 function generateHtml(p) {
-    let firmaTxt = p.firma ? `<span class="view-firma-txt" onclick="vediFirma('${p.id}')">VEDI FIRMA</span>` : '';
-    let infoRitiro = p.ritirato ? `<div class="info-ritiro">✓ Ritirato da: ${p.ritiratoDa} il ${p.dataRitiro} ${firmaTxt}</div>` : '';
+    let firmaLink = p.firma ? `<span class="view-firma-link" onclick="mostraFirma('${p.id}')">VEDI FIRMA</span>` : '';
+    let infoRitiro = p.ritirato ? `<div class="info-ritiro">✅ Ritirato da: ${p.ritiratoDa} il ${p.dataRitiro} ${firmaLink}</div>` : '';
     return `
         <div class="pacco ${p.ritirato ? 'ritirato' : ''}">
             <div style="flex-grow:1">
-                <strong><span class="tag-grandezza">${p.grandezza}</span> #${p.riconoscimento} - ${p.cognome.toUpperCase()} ${p.nome}</strong>
-                <div style="font-size:0.85em; color:#666; margin-top:5px;">${p.corriere} • ${p.scaffale || 'No scaffale'} • TRK: ${p.codiceTracciabilita}</div>
+                <span class="tag-grandezza">${p.grandezza}</span>
+                <strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome}<br>
+                <small style="color: #636e72;">${p.corriere} • ${p.scaffale || 'No scaffale'} • TRK: ${p.codiceTracciabilita}</small>
                 ${infoRitiro}
             </div>
             <input type="checkbox" class="pacco-checkbox" ${p.ritirato ? 'checked' : ''} onchange="handleToggle(${p.id})">
@@ -275,7 +282,7 @@ function generateHtml(p) {
 function handleToggle(id) {
     const p = pacchi.find(x => x.id === id);
     if(!p.ritirato) {
-        openModal("Conferma Ritiro", `Pacco #${p.riconoscimento} per ${p.cognome}`, true, true, p.cognome, (nome, firma) => {
+        openModal("Conferma Ritiro", `Pacco #${p.riconoscimento} di ${p.cognome}`, true, true, p.cognome, (nome, firma) => {
             const ora = new Date();
             p.ritirato = true;
             p.ritiratoDa = nome || p.cognome;
@@ -290,13 +297,13 @@ function handleToggle(id) {
     }
 }
 
-function vediFirma(id) {
+function mostraFirma(id) {
     const p = pacchi.find(x => x.id == id);
-    const win = window.open("", "Firma", "width=450,height=300");
+    const win = window.open("", "Firma", "width=500,height=300");
     win.document.write(`<body style="text-align:center;font-family:sans-serif;"><h3>Firma di: ${p.ritiratoDa}</h3><img src="${p.firma}" style="border:1px solid #ccc; border-radius:10px;"><p>Pacco #${p.riconoscimento}</p></body>`);
 }
 
-function toggleRitirati() {
+function toggleSezioneRitirati() {
     const s = document.getElementById('sezioneRitirati');
     s.style.display = s.style.display === 'none' ? 'block' : 'none';
 }
