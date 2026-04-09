@@ -6,11 +6,11 @@
     <title>📦 Gestione Pacchi Postali Pro</title>
     <style>
         :root { 
-            --primary: #003399; /* BLU */
+            --primary: #003399; /* BLU POSTE */
             --primary-dark: #002266;
             --secondary: #f4f7f6; 
             --text: #2d3436; 
-            --accent: #ffcc00; /* GIALLO */
+            --accent: #ffcc00; /* GIALLO POSTE */
             --success: #00b894;
             --white: #ffffff;
         }
@@ -37,15 +37,15 @@
         .tabs button { background-color: #e2e8f0; color: #4a5568; border-radius: 25px; padding: 10px 20px; border: none; cursor: pointer; }
         .tabs button.active { background-color: var(--accent); color: var(--primary); border: 2px solid var(--primary); font-weight: bold; }
 
-        /* --- PACCO (MOVIMENTO CURSORE) --- */
+        /* --- EFFETTO MOVIMENTO PACCO --- */
         .pacco { 
             background: var(--white); border-left: 8px solid var(--primary); padding: 18px; 
             display: flex; justify-content: space-between; align-items: center; border-radius: 12px; 
             margin-bottom: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.03);
-            transition: all 0.3s ease; /* Effetto movimento */
+            transition: all 0.3s ease;
         }
         .pacco:hover { 
-            transform: translateX(10px) translateY(-5px); /* Si sposta quando passi il mouse */
+            transform: translateX(10px) translateY(-5px);
             box-shadow: 0 10px 20px rgba(0,51,153,0.15);
             background-color: #fffdf2;
         }
@@ -95,11 +95,8 @@
     <div class="form-group">
         <input type="text" id="codiceTracciabilita" placeholder="Tracking TRK">
         <input type="text" id="codiceRiconoscimento" placeholder="ID Pacco">
-        
-        <input type="text" id="nome" placeholder="Nome" list="suggNome">
-        <datalist id="suggNome"></datalist>
-        <input type="text" id="cognome" placeholder="Cognome" list="suggCognome">
-        <datalist id="suggCognome"></datalist>
+        <input type="text" id="nome" placeholder="Nome">
+        <input type="text" id="cognome" placeholder="Cognome">
 
         <select id="corriereSelect"></select>
         <select id="scaffaleSelect">
@@ -128,8 +125,9 @@
 </div>
 
 <script>
+// --- I TUOI 5 CORRIERI ORIGINALI ---
+const corrieri = ["Punto Poste", "SDA", "BRT", "GLS", "Amazon"];
 let pacchi = JSON.parse(localStorage.getItem('pacchi')) || [];
-let corrieri = ["Punto Poste", "SDA", "BRT", "GLS", "Amazon"];
 let tabAttiva = 'Tutti';
 
 const canvas = document.getElementById('signature-pad');
@@ -142,10 +140,7 @@ window.addEventListener('mouseup', ()=>drawing=false);
 canvas.addEventListener('touchstart', (e)=>{ drawing=true; ctx.beginPath(); const p=getPos(e); ctx.moveTo(p.x,p.y); });
 canvas.addEventListener('touchmove', (e)=>{ if(!drawing) return; e.preventDefault(); const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); });
 
-function salva(){ 
-    localStorage.setItem('pacchi', JSON.stringify(pacchi)); 
-    aggiornaSuggerimenti();
-}
+function salva(){ localStorage.setItem('pacchi', JSON.stringify(pacchi)); }
 
 function login(){
     if(document.getElementById('loginEmail').value==='centroposte1@gmail.com' && document.getElementById('loginPassword').value==='2025754785478'){
@@ -154,11 +149,6 @@ function login(){
         document.getElementById('mainPage').style.display='block';
         aggiornaVista();
     } else alert("Dati errati");
-}
-
-function aggiornaSuggerimenti() {
-    document.getElementById('suggNome').innerHTML = [...new Set(pacchi.map(p=>p.nome))].map(n=>`<option value="${n}">`).join('');
-    document.getElementById('suggCognome').innerHTML = [...new Set(pacchi.map(p=>p.cognome))].map(c=>`<option value="${c}">`).join('');
 }
 
 function aggiungiPacco(){
@@ -194,7 +184,7 @@ function aggiornaVista(){
     
     const tBox = document.getElementById('tabs');
     tBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">Tutti</button>` + 
-        corrieri.map(c=>`<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}">${c}</button>`).join('');
+        corrieri.map(c=>`<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}">${c}</button>`);
 
     const query = document.getElementById('search').value.toLowerCase();
     const filt = p => (tabAttiva==='Tutti' || p.corriere===tabAttiva) && (p.cognome.toLowerCase().includes(query) || String(p.riconoscimento).includes(query));
@@ -206,7 +196,6 @@ function aggiornaVista(){
     document.getElementById('btnSvuota').innerText = `SVUOTA RITIRATI (${tabAttiva})`;
     document.getElementById('contenitori').innerHTML = giacenza.map(p=>genHtml(p)).join('');
     document.getElementById('ritiratiContainer').innerHTML = ritirati.map(p=>genHtml(p)).join('');
-    aggiornaSuggerimenti();
 }
 
 function genHtml(p) {
@@ -250,7 +239,7 @@ function toggleRitirati(){ const s=document.getElementById('sezRitirati'); s.sty
 function setTab(t){ tabAttiva=t; aggiornaVista(); }
 
 function cancellaRitirati(){
-    const msg = tabAttiva === 'Tutti' ? "Svuotare TUTTO?" : `Svuotare solo ritirati di ${tabAttiva}?`;
+    const msg = tabAttiva === 'Tutti' ? "Svuotare TUTTO l'archivio ritirati?" : `Svuotare solo i ritirati di ${tabAttiva}?`;
     if(confirm(msg)){
         if(tabAttiva === 'Tutti') pacchi = pacchi.filter(p=>!p.ritirato);
         else pacchi = pacchi.filter(p=>!(p.ritirato && p.corriere === tabAttiva));
