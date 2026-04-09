@@ -40,7 +40,13 @@
             max-width: 380px; 
             box-shadow: 0 15px 35px rgba(0,0,0,0.2); 
         }
-        .login-box img { width: 120px; margin-bottom: 20px; }
+        /* Style aggiornato per il logo nel login per gestirlo meglio */
+        .login-box img { 
+            max-width: 150px; 
+            max-height: 150px;
+            margin-bottom: 20px; 
+            object-fit: contain;
+        }
 
         /* --- HEADER & LAYOUT --- */
         .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
@@ -54,9 +60,22 @@
             padding: 20px;
             border-radius: 15px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            flex-wrap: wrap; /* Per dispositivi mobili */
         }
-        .app-header img { height: 50px; }
-        .app-header h1 { margin: 0; font-size: 1.5rem; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; }
+        /* Style aggiornato per il logo nell'header */
+        .app-header img { 
+            height: 60px; 
+            max-width: 100%;
+            object-fit: contain;
+        }
+        .app-header h1 { 
+            margin: 0; 
+            font-size: 1.8rem; 
+            color: var(--primary); 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+            text-align: center;
+        }
 
         /* --- FORM --- */
         .form-group { 
@@ -194,8 +213,8 @@
 
 <div id="loginPage">
     <div class="login-box">
-        <img src="https://i.ibb.co/20Rcs6QK/image.png" alt="Logo">
-        <h2 style="color:var(--primary); margin-bottom:25px;">Accesso Gestionale</h2>
+        <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp" alt="Logo">
+        <h2 style="color:var(--primary); margin-bottom:25px;">Centro Post@ Anaclerio<br><span style="font-size:0.8em; color:#555;">Accesso Gestionale</span></h2>
         <input type="email" id="loginEmail" placeholder="Email" style="width:100%; margin-bottom:12px; box-sizing: border-box;">
         <input type="password" id="loginPassword" placeholder="Password" style="width:100%; margin-bottom:25px; box-sizing: border-box;">
         <button onclick="login()" style="width:100%">ENTRA NEL SISTEMA</button>
@@ -204,8 +223,8 @@
 
 <div id="mainPage" style="display:none;" class="container">
     <div class="app-header">
-        <img src="https://i.ibb.co/20Rcs6QK/image.png" alt="Logo">
-        <h1>Centro Poste</h1>
+        <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp" alt="Logo">
+        <h1>Centro Post@ Anaclerio</h1>
     </div>
 
     <div class="form-group">
@@ -245,7 +264,7 @@
 </div>
 
 <script>
-// --- LOGICA ORIGINALE PRESERVATA ---
+// --- LOGICA ORIGINALE PRESERVATA INALTERATA ---
 let pacchi = JSON.parse(localStorage.getItem('pacchi')) || [];
 let corrieri = JSON.parse(localStorage.getItem('corrieri')) || ["Punto Poste", "SDA", "BRT", "GLS", "Amazon"];
 let tabAttiva = 'Tutti';
