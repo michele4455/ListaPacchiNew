@@ -28,7 +28,7 @@
             text-align: center;
             border-bottom: 6px solid var(--accent);
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            margin-bottom: 20px;
+            margin-bottom: 30px;
             position: relative;
         }
         .logout-btn {
@@ -58,62 +58,32 @@
 
         .container { max-width: 1000px; margin: 0 auto; padding: 0 20px 40px 20px; }
 
-        /* --- NUOVO PANNELLO AGGIUNGI (APRI/CHIUDI) --- */
-        .toggle-form-btn {
-            width: 100%;
-            background: var(--primary);
-            color: var(--accent);
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 10px;
-            font-size: 1.1rem;
-            border: 2px solid var(--accent);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
         .form-group { 
-            display: none; /* Inizia chiuso */
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; 
-            background: var(--white); padding: 25px; border-radius: 15px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 25px; 
-            border: 3px solid var(--primary);
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; 
+            background: var(--white); padding: 25px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 25px; 
         }
-
-        /* --- BORDI GIALLI E BLU SUI CAMPI --- */
-        input, select { 
-            padding: 14px; font-size: 14px; border-radius: 10px; 
-            border: 2px solid var(--primary); 
-            outline: none; 
-            transition: 0.3s;
-        }
-        input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 8px rgba(255, 204, 0, 0.5); }
-
+        input, select, button { padding: 14px; font-size: 14px; border-radius: 10px; border: 1px solid #ddd; outline: none; }
         button { background-color: var(--primary); color: var(--accent); border: none; cursor: pointer; font-weight: bold; text-transform: uppercase; }
 
-        .status-bar { background: var(--white); border: 2px solid var(--primary); border-left: 10px solid var(--accent); color: var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.1rem; }
+        .status-bar { background: var(--white); border: 2px solid var(--primary); color: var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.1rem; }
         
         .tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 25px; }
-        .tabs button { background-color: #dee2e6; color: #495057; border: none; padding: 10px 20px; border-radius: 25px; cursor: pointer; border: 1px solid transparent; }
+        .tabs button { background-color: #dee2e6; color: #495057; border: none; padding: 10px 20px; border-radius: 25px; cursor: pointer; }
         .tabs button.active { background-color: var(--accent); color: var(--primary); font-weight: 800; border: 2px solid var(--primary); }
 
-        /* --- STILE PACCO CON BORDI --- */
         .pacco { 
-            background: var(--white); 
-            border: 2px solid var(--primary);
-            border-left: 10px solid var(--accent); 
-            padding: 20px; 
+            background: var(--white); border-left: 8px solid var(--primary); padding: 20px; 
             display: flex; justify-content: space-between; align-items: center; border-radius: 12px; 
             margin-bottom: 12px; box-shadow: 0 3px 6px rgba(0,0,0,0.05); transition: 0.3s;
         }
-        .pacco:hover { transform: translateX(10px); background-color: #fffef5; border-color: var(--accent); }
-        .pacco.ritirato { border-left-color: var(--success); opacity: 0.8; border-color: #ddd; }
-        
+        .pacco:hover { transform: translateX(10px); background-color: #fffef5; }
+        .pacco.ritirato { border-left-color: var(--success); opacity: 0.8; }
         .tag-grandezza { background: var(--accent); color: var(--primary); padding: 4px 10px; border-radius: 6px; font-weight: 900; margin-right: 12px; border: 1px solid var(--primary); }
-        .view-firma-link { color: var(--primary); text-decoration: none; cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-left: 10px; padding: 4px 8px; border: 1px solid var(--primary); border-radius: 5px; background: var(--accent); }
+        .view-firma-link { color: var(--primary); text-decoration: none; cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-left: 10px; padding: 4px 8px; border: 1px solid var(--primary); border-radius: 5px; }
 
         #customModal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
-        .modal-content { background: white; padding: 30px; border-radius: 20px; width: 95%; max-width: 420px; text-align: center; border-top: 10px solid var(--primary); border-bottom: 10px solid var(--accent); }
-        #signature-pad { border: 2px dashed var(--primary); background: #fff; border-radius: 8px; margin-top: 10px; touch-action: none; }
+        .modal-content { background: white; padding: 30px; border-radius: 20px; width: 95%; max-width: 420px; text-align: center; border-top: 10px solid var(--primary); }
+        #signature-pad { border: 2px dashed #ccc; background: #fff; border-radius: 8px; margin-top: 10px; touch-action: none; }
         .pacco-checkbox { transform: scale(2); cursor: pointer; accent-color: var(--primary); }
     </style>
 </head>
@@ -138,7 +108,7 @@
 <div id="loginPage">
     <div class="login-box">
         <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp" width="120">
-        <h2>Accesso Gestionale</h2>
+        <h2>Accesso</h2>
         <input type="email" id="loginEmail" placeholder="Email" style="width:100%; margin-bottom:10px; box-sizing: border-box;">
         <input type="password" id="loginPassword" placeholder="Password" style="width:100%; margin-bottom:20px; box-sizing: border-box;">
         <button onclick="login()" style="width:100%">ENTRA</button>
@@ -155,9 +125,7 @@
     </div>
 
     <div class="container">
-        <button class="toggle-form-btn" onclick="toggleForm()">➕ AGGIUNGI NUOVO PACCO</button>
-
-        <div class="form-group" id="paccoForm">
+        <div class="form-group">
             <input type="text" id="codiceTracciabilita" placeholder="Tracking (TRK)">
             <input type="text" id="codiceRiconoscimento" placeholder="ID Pacco">
             <input type="text" id="nome" placeholder="Nome">
@@ -170,20 +138,19 @@
             <select id="grandezzaSelect">
                 <option value="P">P</option><option value="M">M</option><option value="G">G</option>
             </select>
-            <button onclick="aggiungiPacco()">SALVA PACCO</button>
+            <button onclick="aggiungiPacco()">AGGIUNGI</button>
         </div>
 
         <div class="status-bar" id="counter">Caricamento...</div>
-        
-        <input type="text" id="search" style="width:100%; margin-bottom:25px; box-sizing: border-box; padding: 16px; border-radius: 50px; border: 3px solid var(--primary);" placeholder="🔍 Cerca cliente, ID o Tracking..." oninput="aggiornaVista()">
+        <input type="text" id="search" style="width:100%; margin-bottom:25px; box-sizing: border-box; padding: 16px; border-radius: 50px; border: 2px solid var(--primary);" placeholder="🔍 Cerca cliente, ID o Tracking..." oninput="aggiornaVista()">
         
         <div class="tabs" id="tabs"></div>
         <div id="contenitori"></div>
 
         <div style="margin-top:50px;">
-            <h3 onclick="toggleSezioneRitirati()" style="cursor:pointer; background:white; padding:15px; border-radius:12px; color:var(--primary); box-shadow:0 3px 6px rgba(0,0,0,0.05); border: 2px solid var(--primary);">ARCHIVIO RITIRATI ▼</h3>
+            <h3 onclick="toggleSezioneRitirati()" style="cursor:pointer; background:white; padding:15px; border-radius:12px; color:var(--primary); box-shadow:0 3px 6px rgba(0,0,0,0.05);">ARCHIVIO RITIRATI ▼</h3>
             <div id="sezioneRitirati" style="display:none;">
-                <button id="btnSvuota" onclick="cancellaRitirati()" style="background:#ff4757; color:white; font-size:10px; margin:10px 0; padding:10px; border-radius: 8px;">SVUOTA RITIRATI FILTRATI</button>
+                <button id="btnSvuota" onclick="cancellaRitirati()" style="background:#ff4757; color:white; font-size:10px; margin:10px 0; padding:10px;">SVUOTA RITIRATI FILTRATI</button>
                 <div id="ritiratiContainer"></div>
             </div>
         </div>
@@ -200,11 +167,7 @@ const canvas = document.getElementById('signature-pad');
 const ctx = canvas.getContext('2d');
 let drawing = false;
 
-function toggleForm() {
-    const f = document.getElementById('paccoForm');
-    f.style.display = (f.style.display === 'grid') ? 'none' : 'grid';
-}
-
+// --- GESTIONE INATTIVITÀ (10 MINUTI) ---
 function resetInattivita() {
     clearTimeout(timeoutInattivita);
     timeoutInattivita = setTimeout(logout, 10 * 60 * 1000); 
@@ -260,9 +223,7 @@ function aggiungiPacco(){
         grandezza: document.getElementById('grandezzaSelect').value,
         ritirato: false, dataRitiro: null, ritiratoDa: '', firma: null
     });
-    salva(); 
-    aggiornaVista();
-    document.getElementById('paccoForm').style.display = 'none'; // Chiudi dopo aggiunta
+    salva(); aggiornaVista();
     ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
 }
 
@@ -276,6 +237,7 @@ function aggiornaVista(){
 
     const search = document.getElementById('search').value.toLowerCase();
     
+    // --- RICERCA AGGIORNATA: COGNOME, ID O TRACKING ---
     const filterFn = p => (tabAttiva === 'Tutti' || p.corriere === tabAttiva) && 
         (p.cognome.toLowerCase().includes(search) || 
          String(p.riconoscimento).includes(search) || 
