@@ -13,7 +13,7 @@
             --accent: #ffcc00; 
             --success: #00b894;
             --white: #ffffff;
-            --border-color: #003399; /* Colore bordi input */
+            --border-color: #003399;
         }
 
         body { 
@@ -59,7 +59,6 @@
 
         .container { max-width: 1000px; margin: 0 auto; padding: 0 20px 40px 20px; }
 
-        /* --- STILE INPUT CON BORDI --- */
         .form-group { 
             display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; 
             background: var(--white); padding: 25px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 25px; 
@@ -68,7 +67,7 @@
             padding: 14px; 
             font-size: 14px; 
             border-radius: 10px; 
-            border: 2px solid var(--border-color); /* Bordo visibile */
+            border: 2px solid var(--border-color);
             outline: none; 
             transition: all 0.3s;
         }
@@ -92,11 +91,12 @@
         .pacco:hover { transform: translateX(10px); background-color: #fffef5; }
         .pacco.ritirato { border-left-color: var(--success); opacity: 0.8; }
         
-        /* Tag per grandezza e corriere */
         .tag-grandezza { background: var(--accent); color: var(--primary); padding: 4px 10px; border-radius: 6px; font-weight: 900; margin-right: 8px; border: 1px solid var(--primary); }
         .tag-corriere { background: var(--primary); color: white; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.75rem; text-transform: uppercase; margin-right: 12px; }
         
         .view-firma-link { color: var(--primary); text-decoration: none; cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-left: 10px; padding: 4px 8px; border: 1px solid var(--primary); border-radius: 5px; }
+
+        .scadenza-alert { font-size: 1.5rem; cursor: help; margin-right: 15px; vertical-align: middle; }
 
         #customModal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
         .modal-content { background: white; padding: 30px; border-radius: 20px; width: 95%; max-width: 420px; text-align: center; border-top: 10px solid var(--primary); }
@@ -232,6 +232,7 @@ function aggiungiPacco(){
 
     pacchi.push({
         id: Date.now(),
+        dataInserimento: new Date().getTime(), // SALVA DATA IN MILLISECONDI
         codiceTracciabilita: document.getElementById('codiceTracciabilita').value || '-',
         riconoscimento: num,
         nome: n, cognome: c, corriere: corr,
@@ -272,6 +273,17 @@ function aggiornaVista(){
 
 function generateHtml(p) {
     let firmaLink = (p.ritirato && p.firma) ? `<span class="view-firma-link" onclick="mostraFirma('${p.id}')">VEDI FIRMA</span>` : '';
+    
+    // LOGICA SCADENZA (5 GIORNI)
+    let alertScadenza = '';
+    if (!p.ritirato && p.dataInserimento) {
+        const oggi = new Date().getTime();
+        const diffGiorni = (oggi - p.dataInserimento) / (1000 * 60 * 60 * 24);
+        if (diffGiorni >= 5) {
+            alertScadenza = `<span class="scadenza-alert" title="PACCO IN SCADENZA">⚠️</span>`;
+        }
+    }
+
     return `
         <div class="pacco ${p.ritirato ? 'ritirato' : ''}">
             <div style="flex-grow:1">
@@ -281,7 +293,10 @@ function generateHtml(p) {
                 <small style="display:block; margin-top:5px; color:#666;">📍 ${p.scaffale} • 🔍 TRK: ${p.codiceTracciabilita}</small>
                 ${p.ritirato ? `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">✅ Ritirato da ${p.ritiratoDa} il ${p.dataRitiro} ${firmaLink}</div>` : ''}
             </div>
-            <input type="checkbox" class="pacco-checkbox" ${p.ritirato ? 'checked' : ''} onchange="handleToggle(${p.id})">
+            <div style="display:flex; align-items:center;">
+                ${alertScadenza}
+                <input type="checkbox" class="pacco-checkbox" ${p.ritirato ? 'checked' : ''} onchange="handleToggle(${p.id})">
+            </div>
         </div>
     `;
 }
