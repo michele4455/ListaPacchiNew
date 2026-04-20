@@ -12,6 +12,7 @@
             --text: #1a1a1a; 
             --accent: #ffcc00; 
             --success: #00b894;
+            --warning: #ff4757;
             --white: #ffffff;
             --border-color: #003399;
         }
@@ -90,6 +91,7 @@
         }
         .pacco:hover { transform: translateX(10px); background-color: #fffef5; }
         .pacco.ritirato { border-left-color: var(--success); opacity: 0.8; }
+        .pacco.scaduto { border-left-color: var(--warning); opacity: 0.8; }
         
         .tag-grandezza { background: var(--accent); color: var(--primary); padding: 4px 10px; border-radius: 6px; font-weight: 900; margin-right: 8px; border: 1px solid var(--primary); }
         .tag-corriere { background: var(--primary); color: white; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.75rem; text-transform: uppercase; margin-right: 12px; }
@@ -108,13 +110,27 @@
 
 <div id="customModal">
     <div class="modal-content">
-        <h3 id="modalTitle" style="color:var(--primary);">Ritiro Pacco</h3>
+        <h3 id="modalTitle" style="color:var(--primary);">Gestione Uscita Pacco</h3>
         <p id="modalText"></p>
-        <input type="text" id="modalInput" style="width:100%; box-sizing:border-box; margin-bottom:15px; display:none;" placeholder="Chi ritira?">
-        <div id="firmaBox" style="display:none;">
-            <canvas id="signature-pad" width="360" height="150"></canvas>
-            <button onclick="clearCanvas()" style="font-size:10px; background:#666; color:white; margin-top:5px; padding:5px 10px;">PULISCI</button>
+        
+        <select id="tipoUscita" style="width:100%; margin-bottom:15px;" onchange="toggleCampiUscita()">
+            <option value="cliente">Ritiro Cliente</option>
+            <option value="scaduto">Pacco Scaduto (Reso)</option>
+        </select>
+
+        <div id="boxRitiroCliente">
+            <input type="text" id="modalInput" style="width:100%; box-sizing:border-box; margin-bottom:15px;" placeholder="Chi ritira?">
+            <div id="firmaBox">
+                <canvas id="signature-pad" width="360" height="150"></canvas>
+                <button onclick="clearCanvas()" style="font-size:10px; background:#666; color:white; margin-top:5px; padding:5px 10px;">PULISCI</button>
+            </div>
         </div>
+
+        <div id="boxPaccoScaduto" style="display:none;">
+            <p style="font-size: 0.9rem; color: #666;">Inserire data di rimozione/reso:</p>
+            <input type="date" id="dataScadenzaRimozione" style="width:100%; box-sizing:border-box; margin-bottom:15px;">
+        </div>
+
         <div style="display:flex; gap:10px; margin-top:25px;">
             <button onclick="closeModal()" style="flex:1; background:#e0e0e0; border:none;">ANNULLA</button>
             <button id="modalConfirmBtn" style="flex:1">CONFERMA</button>
@@ -165,9 +181,9 @@
         <div id="contenitori"></div>
 
         <div style="margin-top:50px;">
-            <h3 onclick="toggleSezioneRitirati()" style="cursor:pointer; background:white; padding:15px; border-radius:12px; color:var(--primary); box-shadow:0 3px 6px rgba(0,0,0,0.05); border: 2px solid var(--primary);">ARCHIVIO RITIRATI ▼</h3>
+            <h3 onclick="toggleSezioneRitirati()" style="cursor:pointer; background:white; padding:15px; border-radius:12px; color:var(--primary); box-shadow:0 3px 6px rgba(0,0,0,0.05); border: 2px solid var(--primary);">ARCHIVIO RITIRATI / SCADUTI ▼</h3>
             <div id="sezioneRitirati" style="display:none;">
-                <button id="btnSvuota" onclick="cancellaRitirati()" style="background:#ff4757; color:white; font-size:10px; margin:10px 0; padding:10px; border:none;">SVUOTA RITIRATI FILTRATI</button>
+                <button id="btnSvuota" onclick="cancellaRitirati()" style="background:#ff4757; color:white; font-size:10px; margin:10px 0; padding:10px; border:none;">SVUOTA ARCHIVIO FILTRATO</button>
                 <div id="ritiratiContainer"></div>
             </div>
         </div>
@@ -232,13 +248,17 @@ function aggiungiPacco(){
 
     pacchi.push({
         id: Date.now(),
-        dataInserimento: new Date().getTime(), // SALVA DATA IN MILLISECONDI
+        dataInserimento: new Date().getTime(),
         codiceTracciabilita: document.getElementById('codiceTracciabilita').value || '-',
         riconoscimento: num,
         nome: n, cognome: c, corriere: corr,
         scaffale: document.getElementById('scaffaleSelect').value,
         grandezza: document.getElementById('grandezzaSelect').value,
-        ritirato: false, dataRitiro: null, ritiratoDa: '', firma: null
+        ritirato: false, 
+        isScaduto: false, // NUOVO CAMPO
+        dataRitiro: null, 
+        ritiratoDa: '', 
+        firma: null
     });
     salva(); aggiornaVista();
     ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
@@ -266,15 +286,14 @@ function aggiornaVista(){
     let ultimoID = perUltimoID.length > 0 ? perUltimoID[perUltimoID.length - 1].riconoscimento : "---";
 
     document.getElementById('counter').innerHTML = `📦 Giacenza ${tabAttiva}: ${inGiacenza.length} | 🏷️ Ultimo ID: #${ultimoID}`;
-    document.getElementById('btnSvuota').innerText = `SVUOTA RITIRATI (${tabAttiva})`;
+    document.getElementById('btnSvuota').innerText = `SVUOTA ARCHIVIO (${tabAttiva})`;
     document.getElementById('contenitori').innerHTML = inGiacenza.map(p => generateHtml(p)).join('');
     document.getElementById('ritiratiContainer').innerHTML = ritirati.map(p => generateHtml(p)).join('');
 }
 
 function generateHtml(p) {
-    let firmaLink = (p.ritirato && p.firma) ? `<span class="view-firma-link" onclick="mostraFirma('${p.id}')">VEDI FIRMA</span>` : '';
+    let firmaLink = (p.ritirato && p.firma && !p.isScaduto) ? `<span class="view-firma-link" onclick="mostraFirma('${p.id}')">VEDI FIRMA</span>` : '';
     
-    // LOGICA SCADENZA (5 GIORNI)
     let alertScadenza = '';
     if (!p.ritirato && p.dataInserimento) {
         const oggi = new Date().getTime();
@@ -284,14 +303,23 @@ function generateHtml(p) {
         }
     }
 
+    let statoTesto = '';
+    if(p.ritirato) {
+        if(p.isScaduto) {
+            statoTesto = `<div style="color:var(--warning); font-size:0.85rem; margin-top:5px; font-weight:bold;">🚫 RESO PER SCADENZA il ${p.dataRitiro}</div>`;
+        } else {
+            statoTesto = `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">✅ Ritirato da ${p.ritiratoDa} il ${p.dataRitiro} ${firmaLink}</div>`;
+        }
+    }
+
     return `
-        <div class="pacco ${p.ritirato ? 'ritirato' : ''}">
+        <div class="pacco ${p.ritirato ? (p.isScaduto ? 'scaduto' : 'ritirato') : ''}">
             <div style="flex-grow:1">
                 <span class="tag-grandezza">${p.grandezza}</span>
                 <span class="tag-corriere">${p.corriere}</span>
                 <strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome}<br>
                 <small style="display:block; margin-top:5px; color:#666;">📍 ${p.scaffale} • 🔍 TRK: ${p.codiceTracciabilita}</small>
-                ${p.ritirato ? `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">✅ Ritirato da ${p.ritiratoDa} il ${p.dataRitiro} ${firmaLink}</div>` : ''}
+                ${statoTesto}
             </div>
             <div style="display:flex; align-items:center;">
                 ${alertScadenza}
@@ -301,22 +329,51 @@ function generateHtml(p) {
     `;
 }
 
+function toggleCampiUscita() {
+    const tipo = document.getElementById('tipoUscita').value;
+    document.getElementById('boxRitiroCliente').style.display = tipo === 'cliente' ? 'block' : 'none';
+    document.getElementById('boxPaccoScaduto').style.display = tipo === 'scaduto' ? 'block' : 'none';
+}
+
 function handleToggle(id) {
     const p = pacchi.find(x => x.id === id);
     if(!p.ritirato) {
         document.getElementById('customModal').style.display = 'flex';
-        document.getElementById('modalText').innerHTML = `Consegna pacco <b>#${p.riconoscimento}</b> a <b>${p.cognome}</b>`;
-        document.getElementById('modalInput').style.display = 'block';
+        document.getElementById('modalText').innerHTML = `Gestione pacco <b>#${p.riconoscimento}</b> di <b>${p.cognome}</b>`;
+        
+        // Reset modal
+        document.getElementById('tipoUscita').value = 'cliente';
+        toggleCampiUscita();
         document.getElementById('modalInput').value = p.cognome;
-        document.getElementById('firmaBox').style.display = 'block';
+        document.getElementById('dataScadenzaRimozione').valueAsDate = new Date();
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
         document.getElementById('modalConfirmBtn').onclick = () => {
-            p.ritirato = true; p.ritiratoDa = document.getElementById('modalInput').value;
-            p.dataRitiro = new Date().toLocaleString(); p.firma = canvas.toDataURL();
+            const tipo = document.getElementById('tipoUscita').value;
+            if(tipo === 'cliente') {
+                p.ritirato = true; 
+                p.isScaduto = false;
+                p.ritiratoDa = document.getElementById('modalInput').value;
+                p.dataRitiro = new Date().toLocaleString(); 
+                p.firma = canvas.toDataURL();
+            } else {
+                const dataInserita = document.getElementById('dataScadenzaRimozione').value;
+                p.ritirato = true;
+                p.isScaduto = true;
+                p.ritiratoDa = "SISTEMA (SCADUTO)";
+                p.dataRitiro = dataInserita.split("-").reverse().join("/"); // formatta data
+                p.firma = null;
+            }
             salva(); closeModal();
         };
     } else {
-        if(confirm("Ripristinare in giacenza?")) { p.ritirato = false; p.firma = null; salva(); aggiornaVista(); }
+        if(confirm("Ripristinare in giacenza?")) { 
+            p.ritirato = false; 
+            p.isScaduto = false;
+            p.firma = null; 
+            salva(); 
+            aggiornaVista(); 
+        }
     }
 }
 
@@ -354,7 +411,7 @@ function toggleSezioneRitirati() { const s = document.getElementById('sezioneRit
 function setTab(t){ tabAttiva = t; aggiornaVista(); }
 
 function cancellaRitirati(){
-    if(confirm(`Svuotare ritirati di ${tabAttiva}?`)) {
+    if(confirm(`Svuotare archivio (ritirati e scaduti) di ${tabAttiva}?`)) {
         if(tabAttiva === 'Tutti') pacchi = pacchi.filter(p => !p.ritirato);
         else pacchi = pacchi.filter(p => !(p.ritirato && p.corriere === tabAttiva));
         salva(); aggiornaVista();
