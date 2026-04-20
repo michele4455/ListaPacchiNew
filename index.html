@@ -430,6 +430,8 @@ function mostraFirma(id) {
                 <h1 style="color:#003399;">RICEVUTA DI CONSEGNA</h1>
             </div>
             <div style="background:#f9f9f9; padding:20px; border-radius:10px; border:1px solid #ddd;">
+                <p><b>Corriere:</b> ${p.corriere}</p>
+                <p><b>Codice Tracking:</b> ${p.codiceTracciabilita}</p>
                 <p><b>ID Pacco:</b> #${p.riconoscimento}</p>
                 <p><b>Arrivato il:</b> ${p.dataTestoInserimento}</p>
                 <p><b>Destinatario:</b> ${p.cognome.toUpperCase()} ${p.nome}</p>
