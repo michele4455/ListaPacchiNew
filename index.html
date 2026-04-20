@@ -96,21 +96,21 @@
         .tag-grandezza { background: var(--accent); color: var(--primary); padding: 4px 10px; border-radius: 6px; font-weight: 900; margin-right: 8px; border: 1px solid var(--primary); }
         .tag-corriere { background: var(--primary); color: white; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.75rem; text-transform: uppercase; margin-right: 12px; }
         
-        /* MODAL PRINCIPALE */
         #customModal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
         .modal-content { background: white; padding: 20px; border-radius: 20px; width: 95%; max-width: 800px; text-align: center; border-top: 10px solid var(--primary); position: relative;}
         .modal-body-flex { display: flex; gap: 20px; text-align: left; margin-top: 15px; flex-wrap: wrap; }
         .modal-left { flex: 1; min-width: 250px; }
         .modal-right { flex: 1; min-width: 300px; text-align: center; border-left: 1px solid #eee; padding-left: 20px; }
         
-        /* BOX SUCCESSO */
+        /* OVERLAY MESSAGGI DI SUCCESSO */
         #successOverlay { 
             display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; 
             background: rgba(255,255,255,0.95); align-items: center; justify-content: center; flex-direction: column;
         }
-        .success-card { text-align: center; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .success-icon { font-size: 80px; color: var(--success); margin-bottom: 10px; }
+        .success-card { text-align: center; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); padding: 20px; }
+        .success-icon { font-size: 80px; margin-bottom: 10px; }
         .success-text { font-size: 24px; font-weight: bold; color: var(--primary); }
+        .warning-text { font-size: 24px; font-weight: bold; color: var(--warning); }
 
         @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
@@ -121,10 +121,8 @@
 <body>
 
 <div id="successOverlay">
-    <div class="success-card">
-        <div class="success-icon">✅</div>
-        <div class="success-text">RITIRO COMPLETATO<br>CORRETTAMENTE</div>
-    </div>
+    <div class="success-card" id="successCard">
+        </div>
 </div>
 
 <div id="customModal">
@@ -291,7 +289,7 @@ function aggiungiPacco(){
 
 function aggiornaVista(){
     const sel = document.getElementById('corriereSelect');
-    sel.innerHTML = '<option value="">Corriere...</option>' + corrieri.map(c => `<option value="${c}">${c}</option>`).join('');
+    if(sel) sel.innerHTML = '<option value="">Corriere...</option>' + corrieri.map(c => `<option value="${c}">${c}</option>`).join('');
     
     const tabsBox = document.getElementById('tabs');
     tabsBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">Tutti</button>` +
@@ -358,12 +356,26 @@ function toggleCampiUscita() {
     document.getElementById('firmaSide').style.display = tipo === 'cliente' ? 'block' : 'none';
 }
 
-function showSuccessMessage() {
+// FUNZIONE MESSAGGI DI CONFERMA MIGLIORATA
+function showFeedback(tipo) {
+    const card = document.getElementById('successCard');
+    if(tipo === 'cliente') {
+        card.innerHTML = `
+            <div class="success-icon" style="color:var(--success);">✅</div>
+            <div class="success-text">RITIRO COMPLETATO<br>CORRETTAMENTE</div>
+        `;
+    } else {
+        card.innerHTML = `
+            <div class="success-icon">📦❌</div>
+            <div class="warning-text">PACCO SCADUTO!<br>METTILO DA PARTE IN ATTESA<br>DEL RITIRO DEL CORRIERE</div>
+        `;
+    }
+    
     document.getElementById('successOverlay').style.display = 'flex';
     setTimeout(() => {
         document.getElementById('successOverlay').style.display = 'none';
         aggiornaVista();
-    }, 2000);
+    }, 3000); // 3 secondi per leggere bene il messaggio dello scaduto
 }
 
 function handleToggle(id) {
@@ -398,7 +410,7 @@ function handleToggle(id) {
             }
             salva(); 
             document.getElementById('customModal').style.display = 'none';
-            showSuccessMessage(); // Mostra il nuovo pop-up animato
+            showFeedback(tipo); 
         };
     } else {
         if(confirm("Ripristinare in giacenza?")) { 
