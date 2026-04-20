@@ -23,7 +23,6 @@
             padding: 0; margin: 0; color: var(--text); 
         }
 
-        /* --- HEADER CON LOGOUT --- */
         .app-header { 
             background: var(--primary);
             padding: 30px 20px;
@@ -97,12 +96,16 @@
         .tag-corriere { background: var(--primary); color: white; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.75rem; text-transform: uppercase; margin-right: 12px; }
         
         .view-firma-link { color: var(--primary); text-decoration: none; cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-left: 10px; padding: 4px 8px; border: 1px solid var(--primary); border-radius: 5px; }
-
         .scadenza-alert { font-size: 1.5rem; cursor: help; margin-right: 15px; vertical-align: middle; }
 
+        /* MODAL AGGIORNATO PER LAYOUT ORIZZONTALE */
         #customModal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
-        .modal-content { background: white; padding: 30px; border-radius: 20px; width: 95%; max-width: 420px; text-align: center; border-top: 10px solid var(--primary); }
-        #signature-pad { border: 2px dashed #ccc; background: #fff; border-radius: 8px; margin-top: 10px; touch-action: none; }
+        .modal-content { background: white; padding: 20px; border-radius: 20px; width: 95%; max-width: 800px; text-align: center; border-top: 10px solid var(--primary); }
+        .modal-body-flex { display: flex; gap: 20px; text-align: left; margin-top: 15px; flex-wrap: wrap; }
+        .modal-left { flex: 1; min-width: 250px; }
+        .modal-right { flex: 1; min-width: 300px; text-align: center; border-left: 1px solid #eee; padding-left: 20px; }
+        
+        #signature-pad { border: 2px dashed #ccc; background: #fff; border-radius: 8px; touch-action: none; max-width: 100%; }
         .pacco-checkbox { transform: scale(2); cursor: pointer; accent-color: var(--primary); }
     </style>
 </head>
@@ -110,30 +113,35 @@
 
 <div id="customModal">
     <div class="modal-content">
-        <h3 id="modalTitle" style="color:var(--primary);">Gestione Uscita Pacco</h3>
-        <p id="modalText"></p>
-        
-        <select id="tipoUscita" style="width:100%; margin-bottom:15px;" onchange="toggleCampiUscita()">
+        <h3 id="modalTitle" style="color:var(--primary); margin-bottom:5px;">Gestione Uscita Pacco</h3>
+        <select id="tipoUscita" style="width:100%; margin-bottom:10px;" onchange="toggleCampiUscita()">
             <option value="cliente">Ritiro Cliente</option>
             <option value="scaduto">Pacco Scaduto (Reso)</option>
         </select>
 
-        <div id="boxRitiroCliente">
-            <input type="text" id="modalInput" style="width:100%; box-sizing:border-box; margin-bottom:15px;" placeholder="Chi ritira?">
-            <div id="firmaBox">
-                <canvas id="signature-pad" width="360" height="150"></canvas>
-                <button onclick="clearCanvas()" style="font-size:10px; background:#666; color:white; margin-top:5px; padding:5px 10px;">PULISCI</button>
+        <div class="modal-body-flex">
+            <div class="modal-left">
+                <div id="modalText" style="margin-bottom: 15px; font-size: 1.1rem;"></div>
+                <div id="boxRitiroDettagli">
+                    <label><b>Chi ritira?</b></label>
+                    <input type="text" id="modalInput" style="width:100%; margin-top:5px; margin-bottom:15px;" placeholder="Nome di chi ritira">
+                </div>
+                <div id="boxScadutoDettagli" style="display:none;">
+                    <label><b>Data Rimozione:</b></label>
+                    <input type="date" id="dataScadenzaRimozione" style="width:100%; margin-top:5px;">
+                </div>
+            </div>
+
+            <div class="modal-right" id="firmaSide">
+                <label><b>Firma qui sotto:</b></label>
+                <canvas id="signature-pad" width="360" height="180"></canvas>
+                <button onclick="clearCanvas()" style="font-size:10px; background:#666; color:white; margin-top:5px; padding:5px 10px;">PULISCI FIRMA</button>
             </div>
         </div>
 
-        <div id="boxPaccoScaduto" style="display:none;">
-            <p style="font-size: 0.9rem; color: #666;">Inserire data di rimozione/reso:</p>
-            <input type="date" id="dataScadenzaRimozione" style="width:100%; box-sizing:border-box; margin-bottom:15px;">
-        </div>
-
-        <div style="display:flex; gap:10px; margin-top:25px;">
+        <div style="display:flex; gap:10px; margin-top:20px;">
             <button onclick="closeModal()" style="flex:1; background:#e0e0e0; border:none;">ANNULLA</button>
-            <button id="modalConfirmBtn" style="flex:1">CONFERMA</button>
+            <button id="modalConfirmBtn" style="flex:1">CONFERMA E SALVA</button>
         </div>
     </div>
 </div>
@@ -249,13 +257,14 @@ function aggiungiPacco(){
     pacchi.push({
         id: Date.now(),
         dataInserimento: new Date().getTime(),
+        dataTestoInserimento: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
         codiceTracciabilita: document.getElementById('codiceTracciabilita').value || '-',
         riconoscimento: num,
         nome: n, cognome: c, corriere: corr,
         scaffale: document.getElementById('scaffaleSelect').value,
         grandezza: document.getElementById('grandezzaSelect').value,
         ritirato: false, 
-        isScaduto: false, // NUOVO CAMPO
+        isScaduto: false, 
         dataRitiro: null, 
         ritiratoDa: '', 
         firma: null
@@ -273,7 +282,6 @@ function aggiornaVista(){
         corrieri.map(c => `<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}">${c}</button>`).join('');
 
     const search = document.getElementById('search').value.toLowerCase();
-    
     const filterFn = p => (tabAttiva === 'Tutti' || p.corriere === tabAttiva) && 
         (p.cognome.toLowerCase().includes(search) || 
          String(p.riconoscimento).includes(search) || 
@@ -286,7 +294,6 @@ function aggiornaVista(){
     let ultimoID = perUltimoID.length > 0 ? perUltimoID[perUltimoID.length - 1].riconoscimento : "---";
 
     document.getElementById('counter').innerHTML = `📦 Giacenza ${tabAttiva}: ${inGiacenza.length} | 🏷️ Ultimo ID: #${ultimoID}`;
-    document.getElementById('btnSvuota').innerText = `SVUOTA ARCHIVIO (${tabAttiva})`;
     document.getElementById('contenitori').innerHTML = inGiacenza.map(p => generateHtml(p)).join('');
     document.getElementById('ritiratiContainer').innerHTML = ritirati.map(p => generateHtml(p)).join('');
 }
@@ -298,18 +305,14 @@ function generateHtml(p) {
     if (!p.ritirato && p.dataInserimento) {
         const oggi = new Date().getTime();
         const diffGiorni = (oggi - p.dataInserimento) / (1000 * 60 * 60 * 24);
-        if (diffGiorni >= 5) {
-            alertScadenza = `<span class="scadenza-alert" title="PACCO IN SCADENZA">⚠️</span>`;
-        }
+        if (diffGiorni >= 5) alertScadenza = `<span class="scadenza-alert" title="PACCO IN SCADENZA">⚠️</span>`;
     }
 
     let statoTesto = '';
     if(p.ritirato) {
-        if(p.isScaduto) {
-            statoTesto = `<div style="color:var(--warning); font-size:0.85rem; margin-top:5px; font-weight:bold;">🚫 RESO PER SCADENZA il ${p.dataRitiro}</div>`;
-        } else {
-            statoTesto = `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">✅ Ritirato da ${p.ritiratoDa} il ${p.dataRitiro} ${firmaLink}</div>`;
-        }
+        statoTesto = p.isScaduto ? 
+            `<div style="color:var(--warning); font-size:0.85rem; margin-top:5px; font-weight:bold;">🚫 RESO PER SCADENZA il ${p.dataRitiro}</div>` :
+            `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">✅ Ritirato da ${p.ritiratoDa} il ${p.dataRitiro} ${firmaLink}</div>`;
     }
 
     return `
@@ -318,7 +321,10 @@ function generateHtml(p) {
                 <span class="tag-grandezza">${p.grandezza}</span>
                 <span class="tag-corriere">${p.corriere}</span>
                 <strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome}<br>
-                <small style="display:block; margin-top:5px; color:#666;">📍 ${p.scaffale} • 🔍 TRK: ${p.codiceTracciabilita}</small>
+                <small style="display:block; margin-top:5px; color:#666;">
+                    📍 ${p.scaffale} • 🔍 TRK: ${p.codiceTracciabilita}<br>
+                    📅 Arrivato il: ${p.dataTestoInserimento || '-'}
+                </small>
                 ${statoTesto}
             </div>
             <div style="display:flex; align-items:center;">
@@ -331,17 +337,21 @@ function generateHtml(p) {
 
 function toggleCampiUscita() {
     const tipo = document.getElementById('tipoUscita').value;
-    document.getElementById('boxRitiroCliente').style.display = tipo === 'cliente' ? 'block' : 'none';
-    document.getElementById('boxPaccoScaduto').style.display = tipo === 'scaduto' ? 'block' : 'none';
+    document.getElementById('boxRitiroDettagli').style.display = tipo === 'cliente' ? 'block' : 'none';
+    document.getElementById('boxScadutoDettagli').style.display = tipo === 'scaduto' ? 'block' : 'none';
+    document.getElementById('firmaSide').style.display = tipo === 'cliente' ? 'block' : 'none';
 }
 
 function handleToggle(id) {
     const p = pacchi.find(x => x.id === id);
     if(!p.ritirato) {
         document.getElementById('customModal').style.display = 'flex';
-        document.getElementById('modalText').innerHTML = `Gestione pacco <b>#${p.riconoscimento}</b> di <b>${p.cognome}</b>`;
+        document.getElementById('modalText').innerHTML = `
+            <b>Pacco:</b> #${p.riconoscimento}<br>
+            <b>Cliente:</b> ${p.cognome.toUpperCase()}<br>
+            <b>Arrivato il:</b> ${p.dataTestoInserimento || '-'}
+        `;
         
-        // Reset modal
         document.getElementById('tipoUscita').value = 'cliente';
         toggleCampiUscita();
         document.getElementById('modalInput').value = p.cognome;
@@ -351,28 +361,25 @@ function handleToggle(id) {
         document.getElementById('modalConfirmBtn').onclick = () => {
             const tipo = document.getElementById('tipoUscita').value;
             if(tipo === 'cliente') {
-                p.ritirato = true; 
-                p.isScaduto = false;
+                p.ritirato = true; p.isScaduto = false;
                 p.ritiratoDa = document.getElementById('modalInput').value;
                 p.dataRitiro = new Date().toLocaleString(); 
                 p.firma = canvas.toDataURL();
             } else {
-                const dataInserita = document.getElementById('dataScadenzaRimozione').value;
-                p.ritirato = true;
-                p.isScaduto = true;
+                const d = document.getElementById('dataScadenzaRimozione').value;
+                p.ritirato = true; p.isScaduto = true;
                 p.ritiratoDa = "SISTEMA (SCADUTO)";
-                p.dataRitiro = dataInserita.split("-").reverse().join("/"); // formatta data
+                p.dataRitiro = d.split("-").reverse().join("/");
                 p.firma = null;
             }
-            salva(); closeModal();
+            salva(); 
+            alert("RITIRO COMPLETATO CORRETTAMENTE");
+            closeModal();
         };
     } else {
         if(confirm("Ripristinare in giacenza?")) { 
-            p.ritirato = false; 
-            p.isScaduto = false;
-            p.firma = null; 
-            salva(); 
-            aggiornaVista(); 
+            p.ritirato = false; p.isScaduto = false; p.firma = null; 
+            salva(); aggiornaVista(); 
         }
     }
 }
@@ -385,12 +392,10 @@ function mostraFirma(id) {
             <div style="text-align:center; border-bottom:3px solid #003399; padding-bottom:20px; margin-bottom:20px;">
                 <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp" width="80">
                 <h1 style="color:#003399;">RICEVUTA DI CONSEGNA</h1>
-                <p><b>Centro Post@ Anaclerio</b></p>
             </div>
             <div style="background:#f9f9f9; padding:20px; border-radius:10px; border:1px solid #ddd;">
                 <p><b>ID Pacco:</b> #${p.riconoscimento}</p>
-                <p><b>Corriere:</b> ${p.corriere}</p>
-                <p><b>Tracking:</b> ${p.codiceTracciabilita}</p>
+                <p><b>Arrivato il:</b> ${p.dataTestoInserimento}</p>
                 <p><b>Destinatario:</b> ${p.cognome.toUpperCase()} ${p.nome}</p>
                 <hr>
                 <p style="color:#00b894;"><b>Ritirato il:</b> ${p.dataRitiro}</p>
@@ -400,7 +405,6 @@ function mostraFirma(id) {
                 <p>Firma:</p>
                 <img src="${p.firma}" style="border:2px solid #003399; border-radius:15px; width:400px;">
             </div>
-            <div style="margin-top:20px; text-align:center;"><button onclick="window.print()" style="padding:10px 20px; cursor:pointer;">STAMPA</button></div>
         </body>
     `);
 }
