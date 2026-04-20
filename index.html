@@ -96,13 +96,15 @@
         .tag-grandezza { background: var(--accent); color: var(--primary); padding: 4px 10px; border-radius: 6px; font-weight: 900; margin-right: 8px; border: 1px solid var(--primary); }
         .tag-corriere { background: var(--primary); color: white; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.75rem; text-transform: uppercase; margin-right: 12px; }
         
+        .view-firma-link { color: var(--primary); text-decoration: none; cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-left: 10px; padding: 4px 8px; border: 1px solid var(--primary); border-radius: 5px; }
+        .scadenza-alert { font-size: 1.5rem; cursor: help; margin-right: 15px; vertical-align: middle; }
+
         #customModal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
         .modal-content { background: white; padding: 20px; border-radius: 20px; width: 95%; max-width: 800px; text-align: center; border-top: 10px solid var(--primary); position: relative;}
         .modal-body-flex { display: flex; gap: 20px; text-align: left; margin-top: 15px; flex-wrap: wrap; }
         .modal-left { flex: 1; min-width: 250px; }
         .modal-right { flex: 1; min-width: 300px; text-align: center; border-left: 1px solid #eee; padding-left: 20px; }
         
-        /* OVERLAY MESSAGGI DI SUCCESSO */
         #successOverlay { 
             display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; 
             background: rgba(255,255,255,0.95); align-items: center; justify-content: center; flex-direction: column;
@@ -121,8 +123,7 @@
 <body>
 
 <div id="successOverlay">
-    <div class="success-card" id="successCard">
-        </div>
+    <div class="success-card" id="successCard"></div>
 </div>
 
 <div id="customModal">
@@ -289,7 +290,7 @@ function aggiungiPacco(){
 
 function aggiornaVista(){
     const sel = document.getElementById('corriereSelect');
-    if(sel) sel.innerHTML = '<option value="">Corriere...</option>' + corrieri.map(c => `<option value="${c}">${c}</option>`).join('');
+    if(sel && sel.innerHTML === "") sel.innerHTML = '<option value="">Corriere...</option>' + corrieri.map(c => `<option value="${c}">${c}</option>`).join('');
     
     const tabsBox = document.getElementById('tabs');
     tabsBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">Tutti</button>` +
@@ -356,7 +357,6 @@ function toggleCampiUscita() {
     document.getElementById('firmaSide').style.display = tipo === 'cliente' ? 'block' : 'none';
 }
 
-// FUNZIONE MESSAGGI DI CONFERMA MIGLIORATA
 function showFeedback(tipo) {
     const card = document.getElementById('successCard');
     if(tipo === 'cliente') {
@@ -375,7 +375,7 @@ function showFeedback(tipo) {
     setTimeout(() => {
         document.getElementById('successOverlay').style.display = 'none';
         aggiornaVista();
-    }, 3000); // 3 secondi per leggere bene il messaggio dello scaduto
+    }, 3000);
 }
 
 function handleToggle(id) {
@@ -422,7 +422,7 @@ function handleToggle(id) {
 
 function mostraFirma(id) {
     const p = pacchi.find(x => x.id == id);
-    const win = window.open("", "Firma", "width=600,height=700");
+    const win = window.open("", "Firma", "width=600,height=800");
     win.document.write(`
         <body style="font-family:'Segoe UI', sans-serif; padding:40px; color:#333;">
             <div style="text-align:center; border-bottom:3px solid #003399; padding-bottom:20px; margin-bottom:20px;">
@@ -439,8 +439,14 @@ function mostraFirma(id) {
             </div>
             <div style="margin-top:30px; text-align:center;">
                 <p>Firma:</p>
-                <img src="${p.firma}" style="border:2px solid #003399; border-radius:15px; width:400px;">
+                <img src="${p.firma}" style="border:2px solid #003399; border-radius:15px; width:400px; max-width:100%;">
             </div>
+            <div style="margin-top:40px; text-align:center; no-print">
+                <button onclick="window.print()" style="padding:15px 30px; background:#003399; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">🖨️ STAMPA RICEVUTA</button>
+            </div>
+            <style>
+                @media print { button { display:none; } }
+            </style>
         </body>
     `);
 }
