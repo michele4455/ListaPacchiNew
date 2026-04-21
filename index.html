@@ -251,7 +251,7 @@
 <div id="loginPage">
     <div class="login-box">
         <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp" width="120">
-        <h2 style="color: var(--primary);">Accesso Gestione Cloud</h2>
+        <h2 style="color: var(--primary);">Accesso Gestione</h2>
         <input type="email" id="loginEmail" placeholder="Email" style="margin-bottom:10px; width:100%">
         <input type="password" id="loginPassword" placeholder="Password" style="margin-bottom:20px; width:100%">
         <button onclick="login()">Entra nel Sistema</button>
@@ -287,7 +287,7 @@
             <button onclick="aggiungiPacco()">AGGIUNGI</button>
         </div>
 
-        <div class="status-bar" id="counter">Sincronizzazione Cloud...</div>
+        <div class="status-bar" id="counter">Caricamento...</div>
         <input type="text" id="search" style="margin-bottom:25px; padding: 16px; border-radius: 50px; width:100%" placeholder="🔍 Cerca cliente, ID o Tracking..." oninput="aggiornaVista()">
         
         <div class="tabs" id="tabs"></div>
@@ -315,7 +315,6 @@ const firebaseConfig = {
   appId: "1:437363404417:web:67f2a8d4d12c6fca1fa780"
 };
 
-// Inizializza Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
@@ -328,17 +327,14 @@ const canvas = document.getElementById('signature-pad');
 const ctx = canvas.getContext('2d');
 let drawing = false;
 
-// --- GESTIONE SINCRONIZZAZIONE E MIGRAZIONE ---
 db.ref('pacchi').on('value', (snapshot) => {
     const dataFromCloud = snapshot.val();
     const localData = localStorage.getItem('pacchi');
 
-    // SE il cloud è vuoto MA ho dati locali, faccio l'upload automatico (MIGRAZIONE)
     if (!dataFromCloud && localData) {
-        console.log("Migrazione dati locali in corso...");
         pacchi = JSON.parse(localData);
-        salva(); // Salva su Cloud
-        localStorage.removeItem('pacchi'); // Pulisce il locale
+        salva(); 
+        localStorage.removeItem('pacchi'); 
     } else {
         pacchi = dataFromCloud ? dataFromCloud : [];
     }
@@ -349,7 +345,6 @@ function salva(){
     db.ref('pacchi').set(pacchi); 
 }
 
-// --- FUNZIONI GESTIONALI ---
 function gestisciAutocomplete(val) {
     const box = document.getElementById('suggestionsBox');
     const nomeInput = document.getElementById('nome');
@@ -459,7 +454,7 @@ function aggiornaVista(){
     
     let ultimoID = perUltimoID.length > 0 ? perUltimoID[perUltimoID.length - 1].riconoscimento : "---";
     const counter = document.getElementById('counter');
-    if(counter) counter.innerHTML = `📦 Cloud Giacenza ${tabAttiva}: ${inGiacenza.length} | 🏷️ Ultimo ID: #${ultimoID}`;
+    if(counter) counter.innerHTML = `📦 Giacenza ${tabAttiva}: ${inGiacenza.length} | 🏷️ Ultimo ID: #${ultimoID}`;
     
     document.getElementById('contenitori').innerHTML = inGiacenza.map(p => generateHtml(p)).join('');
     document.getElementById('ritiratiContainer').innerHTML = ritirati.map(p => generateHtml(p)).join('');
