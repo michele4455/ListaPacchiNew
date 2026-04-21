@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>📦 Gestionale Pacchi Centro Post@ Anaclerio</title>
+    <title>📦 Gestione Pacchi Postali Pro</title>
     <style>
         :root { 
             --primary: #003399; 
@@ -89,6 +89,7 @@
 
         .form-group button { background-color: var(--primary); color: var(--accent); border: none; cursor: pointer; font-weight: bold; text-transform: uppercase; }
 
+        /* AUTOCOMPLETE */
         .autocomplete-container { position: relative; width: 100%; }
         .suggestions-list {
             position: absolute;
@@ -116,27 +117,30 @@
 
         .status-bar { background: var(--white); border: 2px solid var(--primary); color: var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.1rem; }
         
-        /* RIPRISTINO TAB ORIGINALI (FATTI MEGLIO) */
-        .tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 25px; }
-        .tabs button { 
+        /* TABS E BOTTONI MODAL (GRAFICA A PILLOLA) */
+        .tabs, .modal-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 25px; }
+        .tabs button, .modal-actions button { 
             background-color: #dee2e6; 
             color: #495057; 
             border: 2px solid transparent; 
-            padding: 10px 20px; 
+            padding: 10px 25px; 
             border-radius: 25px; 
             cursor: pointer; 
             width: auto; 
             font-size: 14px;
             text-transform: uppercase;
             transition: 0.3s;
+            font-weight: 600;
         }
         .tabs button.active { 
             background-color: var(--accent); 
             color: var(--primary); 
             font-weight: 800; 
             border: 2px solid var(--primary);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
+        /* Bottoni specifici del Modal */
+        .btn-conferma { background-color: var(--primary) !important; color: var(--accent) !important; }
+        .btn-annulla { background-color: #666 !important; color: white !important; }
 
         .pacco { 
             background: var(--white); border-left: 8px solid var(--primary); padding: 20px; 
@@ -153,8 +157,9 @@
         .view-firma-link { color: var(--primary); text-decoration: none; cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-left: 10px; padding: 4px 8px; border: 1px solid var(--primary); border-radius: 5px; }
         .scadenza-alert { font-size: 1.5rem; cursor: help; margin-right: 15px; vertical-align: middle; }
 
+        /* MODAL */
         #customModal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
-        .modal-content { background: white; padding: 20px; border-radius: 20px; width: 95%; max-width: 800px; text-align: center; border-top: 10px solid var(--primary); position: relative;}
+        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 95%; max-width: 800px; text-align: center; border-top: 10px solid var(--primary); position: relative;}
         .modal-body-flex { display: flex; gap: 20px; text-align: left; margin-top: 15px; flex-wrap: wrap; }
         .modal-left { flex: 1; min-width: 250px; }
         .modal-right { flex: 1; min-width: 300px; text-align: center; border-left: 1px solid #eee; padding-left: 20px; }
@@ -187,18 +192,18 @@
 
 <div id="customModal">
     <div class="modal-content">
-        <h3 id="modalTitle" style="color:var(--primary); margin-bottom:5px;">Gestione Uscita Pacco</h3>
-        <select id="tipoUscita" onchange="toggleCampiUscita()" style="width:100%">
+        <h3 id="modalTitle" style="color:var(--primary); margin-bottom:15px;">Gestione Uscita Pacco</h3>
+        <select id="tipoUscita" onchange="toggleCampiUscita()" style="margin-bottom:10px;">
             <option value="cliente">Ritiro Cliente</option>
             <option value="scaduto">Pacco Scaduto (Reso)</option>
         </select>
 
         <div class="modal-body-flex">
             <div class="modal-left">
-                <div id="modalText" style="margin-bottom: 15px; font-size: 1.1rem;"></div>
+                <div id="modalText" style="margin-bottom: 15px; font-size: 1.1rem; line-height: 1.5;"></div>
                 <div id="boxRitiroDettagli">
                     <label><b>Chi ritira?</b></label>
-                    <input type="text" id="modalInput" style="margin-top:5px; margin-bottom:15px; width:100%" placeholder="Nome di chi ritira">
+                    <input type="text" id="modalInput" style="margin-top:5px; margin-bottom:15px;" placeholder="Nome di chi ritira">
                     <div id="boxPagamentoNoPudo" class="paga-box" style="display:none;">
                         <input type="checkbox" id="checkPagamento" style="width: auto; transform: scale(1.5); margin: 0 10px;">
                         <span>PAGAMENTO € 0.50 RICEVUTO</span>
@@ -206,20 +211,20 @@
                 </div>
                 <div id="boxScadutoDettagli" style="display:none;">
                     <label><b>Data Rimozione:</b></label>
-                    <input type="date" id="dataScadenzaRimozione" style="margin-top:5px; width:100%">
+                    <input type="date" id="dataScadenzaRimozione" style="margin-top:5px;">
                 </div>
             </div>
 
             <div class="modal-right" id="firmaSide">
                 <label><b>Firma qui sotto:</b></label>
                 <canvas id="signature-pad" width="360" height="180"></canvas>
-                <button onclick="clearCanvas()" style="font-size:10px; background:#666; color:white; margin-top:5px; padding:5px 10px; width: auto;">PULISCI FIRMA</button>
+                <button onclick="clearCanvas()" style="font-size:10px; background:#666; color:white; margin-top:5px; padding:5px 10px; width: auto; border-radius:5px; border:none; cursor:pointer;">PULISCI FIRMA</button>
             </div>
         </div>
 
-        <div style="display:flex; gap:10px; margin-top:20px;">
-            <button onclick="closeModal()" style="flex:1; background:#e0e0e0; color:#333; width:auto">ANNULLA</button>
-            <button id="modalConfirmBtn" style="flex:1; width:auto">CONFERMA E SALVA</button>
+        <div class="modal-actions" style="margin-top:30px;">
+            <button onclick="closeModal()" class="btn-annulla">ANNULLA</button>
+            <button id="modalConfirmBtn" class="btn-conferma">CONFERMA E SALVA</button>
         </div>
     </div>
 </div>
@@ -228,9 +233,9 @@
     <div class="login-box">
         <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp" width="120">
         <h2>Accesso</h2>
-        <input type="email" id="loginEmail" placeholder="Email" style="margin-bottom:10px; width:100%">
-        <input type="password" id="loginPassword" placeholder="Password" style="margin-bottom:20px; width:100%">
-        <button onclick="login()" style="width:100%">ENTRA</button>
+        <input type="email" id="loginEmail" placeholder="Email" style="margin-bottom:10px;">
+        <input type="password" id="loginPassword" placeholder="Password" style="margin-bottom:20px;">
+        <button onclick="login()">ENTRA</button>
     </div>
 </div>
 
@@ -264,7 +269,7 @@
         </div>
 
         <div class="status-bar" id="counter">Caricamento...</div>
-        <input type="text" id="search" style="margin-bottom:25px; padding: 16px; border-radius: 50px; width:100%" placeholder="🔍 Cerca cliente, ID o Tracking..." oninput="aggiornaVista()">
+        <input type="text" id="search" style="margin-bottom:25px; padding: 16px; border-radius: 50px;" placeholder="🔍 Cerca cliente, ID o Tracking..." oninput="aggiornaVista()">
         
         <div class="tabs" id="tabs"></div>
         <div id="contenitori"></div>
@@ -272,7 +277,7 @@
         <div style="margin-top:50px;">
             <h3 onclick="toggleSezioneRitirati()" style="cursor:pointer; background:white; padding:15px; border-radius:12px; color:var(--primary); box-shadow:0 3px 6px rgba(0,0,0,0.05); border: 2px solid var(--primary);">ARCHIVIO RITIRATI / SCADUTI ▼</h3>
             <div id="sezioneRitirati" style="display:none;">
-                <button id="btnSvuota" onclick="cancellaRitirati()" style="background:#ff4757; color:white; font-size:10px; margin:10px 0; padding:10px; border:none; width: auto;">SVUOTA ARCHIVIO FILTRATO</button>
+                <button id="btnSvuota" onclick="cancellaRitirati()" style="background:#ff4757; color:white; font-size:10px; margin:10px 0; padding:10px; border:none; width: auto; border-radius:20px; cursor:pointer; font-weight:bold;">SVUOTA ARCHIVIO FILTRATO</button>
                 <div id="ritiratiContainer"></div>
             </div>
         </div>
