@@ -39,7 +39,7 @@
             background: #ff4757;
             color: white;
             padding: 8px 15px;
-            border-radius: 8px;
+            border-radius: 25px; /* Arrotondato */
             font-size: 0.8rem;
             border: none;
             cursor: pointer;
@@ -56,6 +56,7 @@
 
         #loginPage { display: flex; justify-content: center; align-items: center; height: 100vh; background: var(--primary); }
         .login-box { background: var(--white); padding: 40px; border-radius: 15px; text-align: center; width: 100%; max-width: 350px; border-top: 8px solid var(--accent); }
+        .login-box button { background: var(--primary); color: var(--accent); border-radius: 25px; padding: 15px; border: none; font-weight: bold; cursor: pointer; }
 
         .container { max-width: 1000px; margin: 0 auto; padding: 0 20px 40px 20px; }
 
@@ -82,59 +83,51 @@
             width: 100%; 
         }
 
-        input:focus, select:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 8px rgba(255, 204, 0, 0.4);
+        .form-group button { 
+            background-color: var(--primary); 
+            color: var(--accent); 
+            border: none; 
+            cursor: pointer; 
+            font-weight: bold; 
+            text-transform: uppercase;
+            border-radius: 25px; /* Arrotondato */
         }
-
-        .form-group button { background-color: var(--primary); color: var(--accent); border: none; cursor: pointer; font-weight: bold; text-transform: uppercase; }
-
-        .autocomplete-container { position: relative; width: 100%; }
-        .suggestions-list {
-            position: absolute;
-            top: 100%; left: 0; right: 0;
-            background: white;
-            border: 2px solid var(--primary);
-            border-top: none;
-            border-radius: 0 0 10px 10px;
-            z-index: 999;
-            max-height: 200px;
-            overflow-y: auto;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-            display: none;
-        }
-        .suggestion-item {
-            padding: 12px 15px;
-            cursor: pointer;
-            border-bottom: 1px solid #eee;
-            font-size: 14px;
-            display: flex;
-            justify-content: space-between;
-        }
-        .suggestion-item:hover { background-color: #fff9db; }
-        .suggestion-item b { color: var(--primary); }
 
         .status-bar { background: var(--white); border: 2px solid var(--primary); color: var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.1rem; }
         
-        /* RIPRISTINO TAB ESATTI COME DA FOTO */
+        /* TAB CORRIERI ARROTONDATI (A PILLOLA) */
         .tabs { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 25px; }
         .tabs button { 
-            background-color: #e9ecef; 
+            background-color: #dee2e6; 
             color: #495057; 
-            border: 1px solid #ced4da; 
-            padding: 8px 20px; 
-            border-radius: 50px; 
+            border: 2px solid transparent; 
+            padding: 10px 25px; 
+            border-radius: 50px; /* Effetto Pillola */
             cursor: pointer; 
             width: auto; 
             font-size: 14px;
+            font-weight: 600;
             transition: 0.3s;
         }
         .tabs button.active { 
             background-color: var(--accent); 
             color: var(--primary); 
-            font-weight: bold; 
+            font-weight: 800; 
             border: 2px solid var(--primary);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* BOX RITIRO (MODAL) BOTTONI ARROTONDATI */
+        #customModal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 95%; max-width: 800px; text-align: center; border-top: 10px solid var(--primary); position: relative;}
+        .modal-btn { 
+            padding: 15px 30px; 
+            border-radius: 50px; /* Effetto Pillola */
+            border: none; 
+            cursor: pointer; 
+            font-weight: bold; 
+            width: auto; 
+            min-width: 150px;
+            text-transform: uppercase;
         }
 
         .pacco { 
@@ -150,34 +143,48 @@
         .tag-corriere { background: var(--primary); color: white; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.75rem; text-transform: uppercase; margin-right: 12px; }
         
         .view-firma-link { color: var(--primary); text-decoration: none; cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-left: 10px; padding: 4px 8px; border: 1px solid var(--primary); border-radius: 5px; }
-        .scadenza-alert { font-size: 1.5rem; cursor: help; margin-right: 15px; vertical-align: middle; }
 
-        #customModal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; }
-        .modal-content { background: white; padding: 20px; border-radius: 20px; width: 95%; max-width: 800px; text-align: center; border-top: 10px solid var(--primary); position: relative;}
-        .modal-body-flex { display: flex; gap: 20px; text-align: left; margin-top: 15px; flex-wrap: wrap; }
-        .modal-left { flex: 1; min-width: 250px; }
-        .modal-right { flex: 1; min-width: 300px; text-align: center; border-left: 1px solid #eee; padding-left: 20px; }
-        
-        .modal-btn { padding: 15px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; width: 100%; }
-
-        #successOverlay { 
-            display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; 
-            background: rgba(255,255,255,0.95); align-items: center; justify-content: center; flex-direction: column;
+        /* PULSANTI ARCHIVIO */
+        #btnSvuota { 
+            background:#ff4757; 
+            color:white; 
+            padding:12px 25px; 
+            border:none; 
+            border-radius:50px; /* Effetto Pillola */
+            cursor:pointer; 
+            font-weight:bold;
+            margin-bottom: 15px;
         }
-        .success-card { text-align: center; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); padding: 20px; }
-        .success-icon { font-size: 80px; margin-bottom: 10px; }
-        .success-text { font-size: 24px; font-weight: bold; color: var(--primary); }
-        .warning-text { font-size: 24px; font-weight: bold; color: var(--warning); }
 
-        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-
-        #signature-pad { border: 2px dashed #ccc; background: #fff; border-radius: 8px; touch-action: none; max-width: 100%; }
+        #signature-pad { border: 2px dashed #ccc; background: #fff; border-radius: 15px; touch-action: none; max-width: 100%; }
         .pacco-checkbox { transform: scale(2); cursor: pointer; accent-color: var(--primary); }
         
         .highlight-trk { color: #333; font-weight: bold; border-bottom: 2px solid var(--accent); padding: 0 2px; }
         .paga-box { background: #fff9db; padding: 10px; border: 2px solid #fab005; border-radius: 10px; margin-top: 10px; display: flex; align-items: center; gap: 10px; font-weight: bold; }
         .tag-pagato { color: #d9480f; font-weight: bold; font-size: 0.8rem; background: #fff4e6; padding: 2px 6px; border-radius: 4px; margin-left: 5px; border: 1px solid #ffd8a8; }
         .tag-non-pagato { color: #c92a2a; font-weight: bold; font-size: 0.8rem; background: #fff5f5; padding: 2px 6px; border-radius: 4px; margin-left: 5px; border: 1px solid #ffc9c9; }
+
+        /* AUTOCOMPLETE */
+        .autocomplete-container { position: relative; width: 100%; }
+        .suggestions-list {
+            position: absolute;
+            top: 100%; left: 0; right: 0;
+            background: white;
+            border: 2px solid var(--primary);
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            z-index: 999;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .suggestion-item { padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #eee; }
+
+        #successOverlay { 
+            display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; 
+            background: rgba(255,255,255,0.95); align-items: center; justify-content: center; flex-direction: column;
+        }
     </style>
 </head>
 <body>
@@ -188,18 +195,18 @@
 
 <div id="customModal">
     <div class="modal-content">
-        <h3 id="modalTitle" style="color:var(--primary); margin-bottom:5px;">Gestione Uscita Pacco</h3>
-        <select id="tipoUscita" onchange="toggleCampiUscita()" style="width:100%">
+        <h3 id="modalTitle" style="color:var(--primary); margin-bottom:10px;">Gestione Uscita Pacco</h3>
+        <select id="tipoUscita" onchange="toggleCampiUscita()" style="margin-bottom:15px;">
             <option value="cliente">Ritiro Cliente</option>
             <option value="scaduto">Pacco Scaduto (Reso)</option>
         </select>
 
-        <div class="modal-body-flex">
-            <div class="modal-left">
-                <div id="modalText" style="margin-bottom: 15px; font-size: 1.1rem;"></div>
+        <div style="display: flex; gap: 20px; text-align: left; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 250px;">
+                <div id="modalText" style="margin-bottom: 15px; line-height: 1.5;"></div>
                 <div id="boxRitiroDettagli">
                     <label><b>Chi ritira?</b></label>
-                    <input type="text" id="modalInput" style="margin-top:5px; margin-bottom:15px; width:100%" placeholder="Nome di chi ritira">
+                    <input type="text" id="modalInput" style="margin-top:5px; margin-bottom:10px;" placeholder="Nome di chi ritira">
                     <div id="boxPagamentoNoPudo" class="paga-box" style="display:none;">
                         <input type="checkbox" id="checkPagamento" style="width: auto; transform: scale(1.5); margin: 0 10px;">
                         <span>PAGAMENTO € 0.50 RICEVUTO</span>
@@ -207,18 +214,18 @@
                 </div>
                 <div id="boxScadutoDettagli" style="display:none;">
                     <label><b>Data Rimozione:</b></label>
-                    <input type="date" id="dataScadenzaRimozione" style="margin-top:5px; width:100%">
+                    <input type="date" id="dataScadenzaRimozione">
                 </div>
             </div>
 
-            <div class="modal-right" id="firmaSide">
+            <div style="flex: 1; min-width: 300px; text-align: center; border-left: 1px solid #eee; padding-left: 20px;" id="firmaSide">
                 <label><b>Firma qui sotto:</b></label>
                 <canvas id="signature-pad" width="360" height="180"></canvas>
-                <button onclick="clearCanvas()" style="font-size:10px; background:#666; color:white; margin-top:5px; padding:5px 10px; width: auto; border:none; border-radius:5px;">PULISCI FIRMA</button>
+                <button onclick="clearCanvas()" style="font-size:10px; background:#666; color:white; margin-top:5px; padding:5px 15px; border-radius:20px; border:none; cursor:pointer;">PULISCI FIRMA</button>
             </div>
         </div>
 
-        <div style="display:flex; gap:10px; margin-top:20px;">
+        <div style="display:flex; gap:15px; justify-content: center; margin-top:30px;">
             <button onclick="closeModal()" class="modal-btn" style="background:#e0e0e0; color:#333;">ANNULLA</button>
             <button id="modalConfirmBtn" class="modal-btn" style="background:var(--primary); color:var(--accent);">CONFERMA E SALVA</button>
         </div>
@@ -229,9 +236,9 @@
     <div class="login-box">
         <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp" width="120">
         <h2>Accesso</h2>
-        <input type="email" id="loginEmail" placeholder="Email" style="margin-bottom:10px; width:100%">
-        <input type="password" id="loginPassword" placeholder="Password" style="margin-bottom:20px; width:100%">
-        <button onclick="login()" style="width:100%">ENTRA</button>
+        <input type="email" id="loginEmail" placeholder="Email" style="margin-bottom:10px;">
+        <input type="password" id="loginPassword" placeholder="Password" style="margin-bottom:20px;">
+        <button onclick="login()">ENTRA</button>
     </div>
 </div>
 
@@ -265,7 +272,7 @@
         </div>
 
         <div class="status-bar" id="counter">Caricamento...</div>
-        <input type="text" id="search" style="margin-bottom:25px; padding: 16px; border-radius: 50px; width:100%" placeholder="🔍 Cerca cliente, ID o Tracking..." oninput="aggiornaVista()">
+        <input type="text" id="search" style="margin-bottom:25px; padding: 16px; border-radius: 50px;" placeholder="🔍 Cerca cliente, ID o Tracking..." oninput="aggiornaVista()">
         
         <div class="tabs" id="tabs"></div>
         <div id="contenitori"></div>
@@ -273,7 +280,7 @@
         <div style="margin-top:50px;">
             <h3 onclick="toggleSezioneRitirati()" style="cursor:pointer; background:white; padding:15px; border-radius:12px; color:var(--primary); box-shadow:0 3px 6px rgba(0,0,0,0.05); border: 2px solid var(--primary);">ARCHIVIO RITIRATI / SCADUTI ▼</h3>
             <div id="sezioneRitirati" style="display:none;">
-                <button id="btnSvuota" onclick="cancellaRitirati()" style="background:#ff4757; color:white; font-size:10px; margin:10px 0; padding:10px; border:none; width: auto; border-radius:5px; cursor:pointer;">SVUOTA ARCHIVIO FILTRATO</button>
+                <button id="btnSvuota" onclick="cancellaRitirati()">SVUOTA ARCHIVIO FILTRATO</button>
                 <div id="ritiratiContainer"></div>
             </div>
         </div>
@@ -284,61 +291,10 @@
 let pacchi = JSON.parse(localStorage.getItem('pacchi')) || [];
 const corrieri = ["InPost", "UPS", "Punto Poste", "DHL", "BRT", "GLS", "Amazon", "Corrieri No Pudo"];
 let tabAttiva = 'Tutti';
-let timeoutInattivita;
 
 const canvas = document.getElementById('signature-pad');
 const ctx = canvas.getContext('2d');
 let drawing = false;
-
-function gestisciAutocomplete(val) {
-    const box = document.getElementById('suggestionsBox');
-    const nomeInput = document.getElementById('nome');
-    if (!val || val.trim() === "") {
-        nomeInput.value = "";
-        box.style.display = 'none';
-        return;
-    }
-    const query = val.toLowerCase();
-    const matches = [];
-    const seen = new Set();
-    pacchi.forEach(p => {
-        const fullKey = `${p.cognome}|${p.nome}`.toLowerCase();
-        if (p.cognome.toLowerCase().includes(query) && !seen.has(fullKey)) {
-            matches.push({ cognome: p.cognome, nome: p.nome });
-            seen.add(fullKey);
-        }
-    });
-    if (matches.length > 0) {
-        box.innerHTML = matches.map(m => `
-            <div class="suggestion-item" onclick="selezionaSuggerimento('${m.cognome.replace(/'/g, "\\'")}', '${m.nome.replace(/'/g, "\\'")}')">
-                <span><b>${m.cognome.toUpperCase()}</b> ${m.nome}</span>
-            </div>
-        `).join('');
-        box.style.display = 'block';
-    } else {
-        box.style.display = 'none';
-    }
-}
-
-function selezionaSuggerimento(cog, nom) {
-    document.getElementById('cognome').value = cog;
-    document.getElementById('nome').value = nom;
-    document.getElementById('suggestionsBox').style.display = 'none';
-}
-
-document.addEventListener('click', (e) => {
-    if (!e.target.closest('.autocomplete-container')) {
-        document.getElementById('suggestionsBox').style.display = 'none';
-    }
-});
-
-function resetInattivita() {
-    clearTimeout(timeoutInattivita);
-    timeoutInattivita = setTimeout(logout, 10 * 60 * 1000); 
-}
-window.onload = resetInattivita;
-document.onmousemove = resetInattivita;
-document.onkeypress = resetInattivita;
 
 function getPos(e) { const rect = canvas.getBoundingClientRect(); return {x: (e.clientX || e.touches[0].clientX) - rect.left, y: (e.clientY || e.touches[0].clientY) - rect.top}; }
 canvas.addEventListener('mousedown', (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
@@ -354,37 +310,28 @@ function login(){
         localStorage.setItem('loggedIn', 'true');
         document.getElementById('loginPage').style.display='none';
         document.getElementById('mainPage').style.display='block';
-        resetInattivita();
         aggiornaVista();
     } else alert("Credenziali errate");
 }
 
-function logout() {
-    localStorage.removeItem('loggedIn');
-    location.reload();
-}
+function logout() { localStorage.removeItem('loggedIn'); location.reload(); }
 
 function aggiungiPacco(){
     const n = document.getElementById('nome').value.trim();
     const c = document.getElementById('cognome').value.trim();
     const corr = document.getElementById('corriereSelect').value;
-    const cr = document.getElementById('codiceRiconoscimento').value.trim();
     if(!c || !corr) return alert("Mancano dati!");
-    let num = cr || (pacchi.filter(p => p.corriere === corr && !p.ritirato).length + 1);
-    if(!cr) {
-        const pG = pacchi.filter(p => p.corriere === corr && !p.ritirato);
-        num = pG.length > 0 ? parseInt(pG[pG.length-1].riconoscimento) + 1 : 1;
-    }
+    
     pacchi.push({
         id: Date.now(),
         dataInserimento: new Date().getTime(),
         dataTestoInserimento: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
         codiceTracciabilita: document.getElementById('codiceTracciabilita').value || '-',
-        riconoscimento: num,
+        riconoscimento: document.getElementById('codiceRiconoscimento').value || (pacchi.filter(p=>p.corriere===corr).length + 1),
         nome: n, cognome: c, corriere: corr,
         scaffale: document.getElementById('scaffaleSelect').value,
         grandezza: document.getElementById('grandezzaSelect').value,
-        ritirato: false, isScaduto: false, dataRitiro: null, ritiratoDa: '', firma: null, pudoStatus: 'nessuno'
+        ritirato: false, isScaduto: false, pudoStatus: 'nessuno'
     });
     salva(); aggiornaVista();
     ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
@@ -392,34 +339,75 @@ function aggiungiPacco(){
 
 function aggiornaVista(){
     const sel = document.getElementById('corriereSelect');
-    if(sel && sel.innerHTML === "") sel.innerHTML = '<option value="">Corriere...</option>' + corrieri.map(c => `<option value="${c}">${c}</option>`).join('');
+    if(sel.innerHTML === "") sel.innerHTML = '<option value="">Corriere...</option>' + corrieri.map(c => `<option value="${c}">${c}</option>`).join('');
+    
     const tabsBox = document.getElementById('tabs');
     tabsBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">Tutti</button>` + corrieri.map(c => `<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}">${c}</button>`).join('');
+    
     const search = document.getElementById('search').value.toLowerCase();
-    const filterFn = p => (tabAttiva === 'Tutti' || p.corriere === tabAttiva) && (p.cognome.toLowerCase().includes(search) || String(p.riconoscimento).includes(search) || p.codiceTracciabilita.toLowerCase().includes(search));
+    const filterFn = p => (tabAttiva === 'Tutti' || p.corriere === tabAttiva) && (p.cognome.toLowerCase().includes(search) || String(p.riconoscimento).includes(search));
+    
     const inGiacenza = pacchi.filter(p => !p.ritirato && filterFn(p));
     const ritirati = pacchi.filter(p => p.ritirato && filterFn(p)).reverse();
-    const perUltimoID = pacchi.filter(p => !p.ritirato && (tabAttiva === 'Tutti' || p.corriere === tabAttiva));
-    let ultimoID = perUltimoID.length > 0 ? perUltimoID[perUltimoID.length - 1].riconoscimento : "---";
-    document.getElementById('counter').innerHTML = `📦 Giacenza ${tabAttiva}: ${inGiacenza.length} | 🏷️ Ultimo ID: #${ultimoID}`;
+    
+    document.getElementById('counter').innerHTML = `📦 Giacenza ${tabAttiva}: ${inGiacenza.length}`;
     document.getElementById('contenitori').innerHTML = inGiacenza.map(p => generateHtml(p)).join('');
     document.getElementById('ritiratiContainer').innerHTML = ritirati.map(p => generateHtml(p)).join('');
 }
 
 function generateHtml(p) {
-    let firmaLink = (p.ritirato && p.firma && !p.isScaduto) ? `<span class="view-firma-link" onclick="mostraFirma('${p.id}')">VEDI FIRMA</span>` : '';
-    let alertScadenza = '';
-    if (!p.ritirato && p.dataInserimento) {
-        const oggi = new Date().getTime();
-        const diffGiorni = (oggi - p.dataInserimento) / (1000 * 60 * 60 * 24);
-        if (diffGiorni >= 5) alertScadenza = `<span class="scadenza-alert" title="PACCO IN SCADENZA">⚠️</span>`;
+    let notaPudo = "";
+    if(p.ritirato && p.corriere === "Corrieri No Pudo") {
+        notaPudo = p.pudoStatus === 'pagato' ? '<span class="tag-pagato">€0.50 PAGATO</span>' : '<span class="tag-non-pagato">€0.50 NON PAGATO</span>';
     }
-    let statoTesto = '';
-    if(p.ritirato) {
-        let notaPudo = p.pudoStatus === 'pagato' ? '<span class="tag-pagato">(Pagato €0.50)</span>' : (p.pudoStatus === 'non_pagato' ? '<span class="tag-non-pagato">(Non Pagato)</span>' : '');
-        statoTesto = p.isScaduto ? `<div style="color:var(--warning); font-size:0.85rem; margin-top:5px; font-weight:bold;">🚫 RESO PER SCADENZA il ${p.dataRitiro}</div>` : `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">✅ Ritirato da ${p.ritiratoDa} il ${p.dataRitiro} ${notaPudo} ${firmaLink}</div>`;
+    let stato = p.ritirato ? `<br><small style="color:var(--success)">Consegnato a ${p.ritiratoDa} il ${p.dataRitiro} ${notaPudo}</small>` : "";
+    if(p.isScaduto) stato = `<br><small style="color:var(--warning)">RESO PER SCADENZA il ${p.dataRitiro}</small>`;
+
+    return `<div class="pacco ${p.ritirato?'ritirato':''} ${p.isScaduto?'scaduto':''}">
+        <div>
+            <span class="tag-grandezza">${p.grandezza}</span>
+            <span class="tag-corriere">${p.corriere}</span>
+            <strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome}
+            <br><small>📍 ${p.scaffale} | 🔍 ${p.codiceTracciabilita}</small>
+            ${stato}
+        </div>
+        <input type="checkbox" class="pacco-checkbox" ${p.ritirato?'checked':''} onchange="handleToggle(${p.id})">
+    </div>`;
+}
+
+function handleToggle(id) {
+    const p = pacchi.find(x => x.id === id);
+    if(!p.ritirato) {
+        document.getElementById('customModal').style.display = 'flex';
+        document.getElementById('modalText').innerHTML = `Pacco <b>#${p.riconoscimento}</b> di <b>${p.cognome.toUpperCase()}</b>`;
+        document.getElementById('boxPagamentoNoPudo').style.display = (p.corriere === 'Corrieri No Pudo') ? 'flex' : 'none';
+        document.getElementById('modalInput').value = p.cognome;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        document.getElementById('modalConfirmBtn').onclick = () => {
+            const tipo = document.getElementById('tipoUscita').value;
+            p.ritirato = true;
+            p.dataRitiro = new Date().toLocaleString();
+            if(tipo === 'cliente') {
+                p.ritiratoDa = document.getElementById('modalInput').value;
+                p.firma = canvas.toDataURL();
+                if(p.corriere === 'Corrieri No Pudo') p.pudoStatus = document.getElementById('checkPagamento').checked ? 'pagato' : 'non_pagato';
+            } else {
+                p.isScaduto = true;
+                p.ritiratoDa = "RESO";
+            }
+            salva(); closeModal(); showFeedback(tipo);
+        };
+    } else {
+        if(confirm("Ripristinare in giacenza?")) { p.ritirato = false; p.isScaduto = false; salva(); aggiornaVista(); }
     }
-    return `<div class="pacco ${p.ritirato ? (p.isScaduto ? 'scaduto' : 'ritirato') : ''}"><div style="flex-grow:1"><span class="tag-grandezza">${p.grandezza}</span><span class="tag-corriere">${p.corriere}</span><strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome}<br><small style="display:block; margin-top:5px; color:#666;">📍 ${p.scaffale} • 🔍 TRK: <span class="highlight-trk">${p.codiceTracciabilita}</span><br>📅 Arrivato il: ${p.dataTestoInserimento || '-'}</small>${statoTesto}</div><div style="display:flex; align-items:center;">${alertScadenza}<input type="checkbox" class="pacco-checkbox" ${p.ritirato ? 'checked' : ''} onchange="handleToggle(${p.id})"></div></div>`;
+}
+
+function showFeedback(tipo) {
+    const card = document.getElementById('successCard');
+    card.innerHTML = tipo === 'cliente' ? `<h1 style="color:green">RITIRATO! ✅</h1>` : `<h1 style="color:red">RESO REGISTRATO! 📦</h1>`;
+    document.getElementById('successOverlay').style.display = 'flex';
+    setTimeout(() => { document.getElementById('successOverlay').style.display = 'none'; aggiornaVista(); }, 2000);
 }
 
 function toggleCampiUscita() {
@@ -429,56 +417,31 @@ function toggleCampiUscita() {
     document.getElementById('firmaSide').style.display = tipo === 'cliente' ? 'block' : 'none';
 }
 
-function showFeedback(tipo) {
-    const card = document.getElementById('successCard');
-    card.innerHTML = tipo === 'cliente' ? `<div class="success-icon" style="color:var(--success);">✅</div><div class="success-text">RITIRO COMPLETATO<br>CORRETTAMENTE</div>` : `<div class="success-icon">📦❌</div><div class="warning-text">PACCO SCADUTO!<br>METTILO DA PARTE IN ATTESA<br>DEL RITIRO DEL CORRIERE</div>`;
-    document.getElementById('successOverlay').style.display = 'flex';
-    setTimeout(() => { document.getElementById('successOverlay').style.display = 'none'; aggiornaVista(); }, 3000);
-}
-
-function handleToggle(id) {
-    const p = pacchi.find(x => x.id === id);
-    if(!p.ritirato) {
-        document.getElementById('customModal').style.display = 'flex';
-        document.getElementById('modalText').innerHTML = `<b>Pacco:</b> #${p.riconoscimento}<br><b>Cliente:</b> ${p.cognome.toUpperCase()}<br><b>Arrivato il:</b> ${p.dataTestoInserimento || '-'}`;
-        document.getElementById('boxPagamentoNoPudo').style.display = (p.corriere === 'Corrieri No Pudo') ? 'flex' : 'none';
-        document.getElementById('checkPagamento').checked = false;
-        document.getElementById('tipoUscita').value = 'cliente';
-        toggleCampiUscita();
-        document.getElementById('modalInput').value = p.cognome;
-        document.getElementById('dataScadenzaRimozione').valueAsDate = new Date();
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        document.getElementById('modalConfirmBtn').onclick = () => {
-            const tipo = document.getElementById('tipoUscita').value;
-            if(tipo === 'cliente') {
-                p.ritirato = true; p.isScaduto = false; p.ritiratoDa = document.getElementById('modalInput').value;
-                p.dataRitiro = new Date().toLocaleString(); p.firma = canvas.toDataURL();
-                if(p.corriere === 'Corrieri No Pudo') p.pudoStatus = document.getElementById('checkPagamento').checked ? 'pagato' : 'non_pagato';
-            } else {
-                const d = document.getElementById('dataScadenzaRimozione').value;
-                p.ritirato = true; p.isScaduto = true; p.ritiratoDa = "SISTEMA (SCADUTO)"; p.dataRitiro = d.split("-").reverse().join("/"); p.firma = null; p.pudoStatus = 'nessuno';
-            }
-            salva(); document.getElementById('customModal').style.display = 'none'; showFeedback(tipo); 
-        };
-    } else {
-        if(confirm("Ripristinare in giacenza?")) { p.ritirato = false; p.isScaduto = false; p.firma = null; p.pudoStatus = 'nessuno'; salva(); aggiornaVista(); }
+function gestisciAutocomplete(val) {
+    const box = document.getElementById('suggestionsBox');
+    if (!val) { box.style.display = 'none'; return; }
+    const matches = pacchi.filter(p => p.cognome.toLowerCase().includes(val.toLowerCase()));
+    if (matches.length > 0) {
+        box.innerHTML = matches.map(m => `<div class="suggestion-item" onclick="selezionaSuggerimento('${m.cognome}', '${m.nome}')">${m.cognome} ${m.nome}</div>`).join('');
+        box.style.display = 'block';
     }
 }
-
-function mostraFirma(id) {
-    const p = pacchi.find(x => x.id == id);
-    const win = window.open("", "Firma", "width=600,height=800");
-    win.document.write(`<body style="font-family:'Segoe UI', sans-serif; padding:40px; color:#333;"><div style="text-align:center; border-bottom:3px solid #003399; padding-bottom:20px; margin-bottom:20px;"><img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp" width="80"><h1 style="color:#003399;">RICEVUTA DI CONSEGNA</h1></div><div style="background:#f9f9f9; padding:20px; border-radius:10px; border:1px solid #ddd;"><p><b>Corriere:</b> ${p.corriere}</p><p><b>Codice Tracking:</b> ${p.codiceTracciabilita}</p><p><b>ID Pacco:</b> #${p.riconoscimento}</p><p><b>Arrivato il:</b> ${p.dataTestoInserimento}</p><p><b>Destinatario:</b> ${p.cognome.toUpperCase()} ${p.nome}</p><hr><p style="color:#00b894;"><b>Ritirato il:</b> ${p.dataRitiro}</p><p><b>Consegnato a:</b> ${p.ritiratoDa}</p>${p.pudoStatus === 'pagato' ? '<p style="color:#d9480f"><b>Pagamento €0.50:</b> RICEVUTO</p>' : (p.pudoStatus === 'non_pagato' ? '<p style="color:#c92a2a"><b>Pagamento €0.50:</b> NON PERCEPITO</p>' : '')}</div><div style="margin-top:30px; text-align:center;"><p>Firma:</p><img src="${p.firma}" style="border:2px solid #003399; border-radius:15px; width:400px; max-width:100%;"></div><div style="margin-top:40px; text-align:center;"><button onclick="window.print()" style="padding:15px 30px; background:#003399; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">🖨️ STAMPA RICEVUTA</button></div></body>`);
+function selezionaSuggerimento(c, n) {
+    document.getElementById('cognome').value = c;
+    document.getElementById('nome').value = n;
+    document.getElementById('suggestionsBox').style.display = 'none';
 }
 
+function setTab(t) { tabAttiva = t; aggiornaVista(); }
 function closeModal() { document.getElementById('customModal').style.display = 'none'; }
 function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
-function toggleSezioneRitirati() { const s = document.getElementById('sezioneRitirati'); s.style.display = s.style.display === 'none' ? 'block' : 'none'; }
-function setTab(t){ tabAttiva = t; aggiornaVista(); }
+function toggleSezioneRitirati() { 
+    const s = document.getElementById('sezioneRitirati'); 
+    s.style.display = s.style.display === 'none' ? 'block' : 'none'; 
+}
 function cancellaRitirati(){
-    if(confirm(`Svuotare archivio (ritirati e scaduti) di ${tabAttiva}?`)) {
-        if(tabAttiva === 'Tutti') pacchi = pacchi.filter(p => !p.ritirato);
-        else pacchi = pacchi.filter(p => !(p.ritirato && p.corriere === tabAttiva));
+    if(confirm("Svuotare l'archivio visualizzato?")) {
+        pacchi = pacchi.filter(p => !p.ritirato || (tabAttiva !== 'Tutti' && p.corriere !== tabAttiva));
         salva(); aggiornaVista();
     }
 }
