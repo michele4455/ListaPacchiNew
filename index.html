@@ -118,6 +118,10 @@
 
         #signature-pad { border: 2px dashed #ccc; background: #fff; border-radius: 8px; touch-action: none; max-width: 100%; }
         .pacco-checkbox { transform: scale(2); cursor: pointer; accent-color: var(--primary); }
+        
+        /* Nuovi stili richiesti */
+        .highlight-trk { color: var(--primary); font-weight: 800; background: #eef2ff; padding: 2px 5px; border-radius: 4px; }
+        .paga-box { background: #fff9db; padding: 10px; border: 2px solid #fab005; border-radius: 10px; margin-top: 10px; display: flex; align-items: center; gap: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -140,6 +144,11 @@
                 <div id="boxRitiroDettagli">
                     <label><b>Chi ritira?</b></label>
                     <input type="text" id="modalInput" style="width:100%; margin-top:5px; margin-bottom:15px; box-sizing: border-box;" placeholder="Nome di chi ritira">
+                    
+                    <div id="boxPagamentoNoPudo" class="paga-box" style="display:none;">
+                        <input type="checkbox" id="checkPagamento" style="transform: scale(1.5);">
+                        <span>PAGAMENTO € 0.50 RICEVUTO</span>
+                    </div>
                 </div>
                 <div id="boxScadutoDettagli" style="display:none;">
                     <label><b>Data Rimozione:</b></label>
@@ -337,7 +346,7 @@ function generateHtml(p) {
                 <span class="tag-corriere">${p.corriere}</span>
                 <strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome}<br>
                 <small style="display:block; margin-top:5px; color:#666;">
-                    📍 ${p.scaffale} • 🔍 TRK: ${p.codiceTracciabilita}<br>
+                    📍 ${p.scaffale} • 🔍 TRK: <span class="highlight-trk">${p.codiceTracciabilita}</span><br>
                     📅 Arrivato il: ${p.dataTestoInserimento || '-'}
                 </small>
                 ${statoTesto}
@@ -388,6 +397,10 @@ function handleToggle(id) {
             <b>Arrivato il:</b> ${p.dataTestoInserimento || '-'}
         `;
         
+        // MOSTRA/NASCONDI BOX PAGAMENTO PER CORRIERI NO PUDO
+        document.getElementById('boxPagamentoNoPudo').style.display = (p.corriere === 'Corrieri No Pudo') ? 'flex' : 'none';
+        document.getElementById('checkPagamento').checked = false;
+
         document.getElementById('tipoUscita').value = 'cliente';
         toggleCampiUscita();
         document.getElementById('modalInput').value = p.cognome;
@@ -396,6 +409,13 @@ function handleToggle(id) {
 
         document.getElementById('modalConfirmBtn').onclick = () => {
             const tipo = document.getElementById('tipoUscita').value;
+            
+            // Se è un Corriere No Pudo, obbliga a spuntare il pagamento
+            if(tipo === 'cliente' && p.corriere === 'Corrieri No Pudo' && !document.getElementById('checkPagamento').checked){
+                alert("Attenzione: Confermare la riscossione dei 0.50€ prima di procedere.");
+                return;
+            }
+
             if(tipo === 'cliente') {
                 p.ritirato = true; p.isScaduto = false;
                 p.ritiratoDa = document.getElementById('modalInput').value;
