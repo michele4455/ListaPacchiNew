@@ -62,6 +62,7 @@
         .form-group { 
             display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; 
             background: var(--white); padding: 25px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 25px; 
+            position: relative;
         }
         input, select, button { 
             padding: 14px; 
@@ -77,6 +78,34 @@
             box-shadow: 0 0 8px rgba(255, 204, 0, 0.4);
         }
         button { background-color: var(--primary); color: var(--accent); border: none; cursor: pointer; font-weight: bold; text-transform: uppercase; }
+
+        /* NUOVA GRAFICA SUGGERIMENTI */
+        .autocomplete-container { position: relative; width: 100%; }
+        .suggestions-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid var(--primary);
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            z-index: 999;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .suggestion-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .suggestion-item:hover { background-color: #fff9db; }
+        .suggestion-item b { color: var(--primary); }
 
         .status-bar { background: var(--white); border: 2px solid var(--primary); color: var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.1rem; }
         
@@ -126,8 +155,6 @@
     </style>
 </head>
 <body>
-
-<datalist id="nomiSuggeriti"></datalist>
 
 <div id="successOverlay">
     <div class="success-card" id="successCard"></div>
@@ -196,7 +223,12 @@
         <div class="form-group">
             <input type="text" id="codiceTracciabilita" placeholder="Tracking (TRK)">
             <input type="text" id="codiceRiconoscimento" placeholder="ID Pacco">
-            <input type="text" id="cognome" placeholder="Cognome" list="nomiSuggeriti" oninput="controllaSuggerimento(this.value)">
+            
+            <div class="autocomplete-container">
+                <input type="text" id="cognome" placeholder="Cognome" oninput="gestisciAutocomplete(this.value)" autocomplete="off">
+                <div id="suggestionsBox" class="suggestions-list"></div>
+            </div>
+            
             <input type="text" id="nome" placeholder="Nome">
             <select id="corriereSelect"></select>
             <select id="scaffaleSelect">
@@ -235,6 +267,59 @@ const canvas = document.getElementById('signature-pad');
 const ctx = canvas.getContext('2d');
 let drawing = false;
 
+// --- GESTIONE AUTOCOMPLETE PERSONALIZZATA ---
+function gestisciAutocomplete(val) {
+    const box = document.getElementById('suggestionsBox');
+    const nomeInput = document.getElementById('nome');
+    
+    // Se il cognome viene cancellato o è vuoto, svuota anche il nome
+    if (!val || val.trim() === "") {
+        nomeInput.value = "";
+        box.style.display = 'none';
+        return;
+    }
+
+    // Filtra i nominativi unici dal database
+    const query = val.toLowerCase();
+    const matches = [];
+    const seen = new Set();
+
+    pacchi.forEach(p => {
+        const fullKey = `${p.cognome}|${p.nome}`.toLowerCase();
+        if (p.cognome.toLowerCase().includes(query) && !seen.has(fullKey)) {
+            matches.push({ cognome: p.cognome, nome: p.nome });
+            seen.add(fullKey);
+        }
+    });
+
+    if (matches.length > 0) {
+        box.innerHTML = matches.map(m => `
+            <div class="suggestion-item" onclick="selezionaSuggerimento('${m.cognome.replace(/'/g, "\\'")}', '${m.nome.replace(/'/g, "\\'")}')">
+                <span><b>${m.cognome.toUpperCase()}</b> ${m.nome}</span>
+                <small style="color:#999">precedente</small>
+            </div>
+        `).join('');
+        box.style.display = 'block';
+    } else {
+        box.style.display = 'none';
+    }
+}
+
+function selezionaSuggerimento(cog, nom) {
+    document.getElementById('cognome').value = cog;
+    document.getElementById('nome').value = nom;
+    document.getElementById('suggestionsBox').style.display = 'none';
+}
+
+// Chiude i suggerimenti se clicchi fuori
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.autocomplete-container')) {
+        document.getElementById('suggestionsBox').style.display = 'none';
+    }
+});
+
+// --- RESTO DEL CODICE INVARIATO ---
+
 function resetInattivita() {
     clearTimeout(timeoutInattivita);
     timeoutInattivita = setTimeout(logout, 10 * 60 * 1000); 
@@ -250,30 +335,7 @@ window.addEventListener('mouseup', () => drawing = false);
 canvas.addEventListener('touchstart', (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
 canvas.addEventListener('touchmove', (e) => { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
 
-function salva(){ 
-    localStorage.setItem('pacchi', JSON.stringify(pacchi)); 
-    aggiornaDatalist();
-}
-
-// Funzione per gestire i suggerimenti nomi
-function aggiornaDatalist() {
-    const list = document.getElementById('nomiSuggeriti');
-    const nomiUnici = new Set();
-    pacchi.forEach(p => {
-        if(p.cognome && p.nome) {
-            nomiUnici.add(`${p.cognome.toUpperCase()} | ${p.nome}`);
-        }
-    });
-    list.innerHTML = Array.from(nomiUnici).sort().map(n => `<option value="${n}">`).join('');
-}
-
-function controllaSuggerimento(valore) {
-    if(valore.includes(' | ')) {
-        const parti = valore.split(' | ');
-        document.getElementById('cognome').value = parti[0];
-        document.getElementById('nome').value = parti[1];
-    }
-}
+function salva(){ localStorage.setItem('pacchi', JSON.stringify(pacchi)); }
 
 function login(){
     if(document.getElementById('loginEmail').value === 'centroposte1@gmail.com' && document.getElementById('loginPassword').value === '2025754785478'){
@@ -347,7 +409,6 @@ function aggiornaVista(){
     document.getElementById('counter').innerHTML = `📦 Giacenza ${tabAttiva}: ${inGiacenza.length} | 🏷️ Ultimo ID: #${ultimoID}`;
     document.getElementById('contenitori').innerHTML = inGiacenza.map(p => generateHtml(p)).join('');
     document.getElementById('ritiratiContainer').innerHTML = ritirati.map(p => generateHtml(p)).join('');
-    aggiornaDatalist();
 }
 
 function generateHtml(p) {
