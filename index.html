@@ -116,19 +116,26 @@
 
         .status-bar { background: var(--white); border: 2px solid var(--primary); color: var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.1rem; }
         
-        /* BOTTONI ORIGINALI RIPRISTINATI */
-        .tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 25px; }
+        /* RIPRISTINO TAB ESATTI COME DA FOTO */
+        .tabs { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 25px; }
         .tabs button { 
-            background-color: #dee2e6; 
+            background-color: #e9ecef; 
             color: #495057; 
-            border: 2px solid transparent; 
-            padding: 10px 20px; 
-            border-radius: 10px; /* Tornati squadrati come prima */
+            border: 1px solid #ced4da; 
+            padding: 8px 20px; 
+            border-radius: 50px; 
             cursor: pointer; 
             width: auto; 
             font-size: 14px;
+            transition: 0.3s;
         }
-        .tabs button.active { background-color: var(--accent); color: var(--primary); font-weight: 800; border: 2px solid var(--primary); }
+        .tabs button.active { 
+            background-color: var(--accent); 
+            color: var(--primary); 
+            font-weight: bold; 
+            border: 2px solid var(--primary);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
 
         .pacco { 
             background: var(--white); border-left: 8px solid var(--primary); padding: 20px; 
@@ -151,7 +158,6 @@
         .modal-left { flex: 1; min-width: 250px; }
         .modal-right { flex: 1; min-width: 300px; text-align: center; border-left: 1px solid #eee; padding-left: 20px; }
         
-        /* Bottoni Modal Originali */
         .modal-btn { padding: 15px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; width: 100%; }
 
         #successOverlay { 
