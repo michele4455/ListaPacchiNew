@@ -55,7 +55,25 @@
         }
 
         #loginPage { display: flex; justify-content: center; align-items: center; height: 100vh; background: var(--primary); }
-        .login-box { background: var(--white); padding: 40px; border-radius: 15px; text-align: center; width: 100%; max-width: 350px; border-top: 8px solid var(--accent); }
+        .login-box { background: var(--white); padding: 40px; border-radius: 20px; text-align: center; width: 100%; max-width: 350px; border-top: 8px solid var(--accent); box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        
+        /* AGGIUSTAMENTO PULSANTE LOGIN */
+        .login-box button {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary);
+            color: var(--accent);
+            border: none;
+            border-radius: 50px; /* Arrotondato */
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        .login-box button:hover {
+            background-color: var(--primary-dark);
+            transform: scale(1.02);
+        }
 
         .container { max-width: 1000px; margin: 0 auto; padding: 0 20px 40px 20px; }
 
@@ -116,25 +134,32 @@
 
         .status-bar { background: var(--white); border: 2px solid var(--primary); color: var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.1rem; }
         
-        /* RIPRISTINO TAB ESATTI COME DA FOTO */
-        .tabs { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 25px; }
+        /* RESTYLING TABS CORRIERI */
+        .tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 25px; }
         .tabs button { 
-            background-color: #e9ecef; 
-            color: #495057; 
-            border: 1px solid #ced4da; 
-            padding: 8px 20px; 
+            background-color: #ffffff; 
+            color: var(--primary); 
+            border: 2px solid var(--primary); 
+            padding: 10px 22px; 
             border-radius: 50px; 
             cursor: pointer; 
             width: auto; 
-            font-size: 14px;
-            transition: 0.3s;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .tabs button:hover {
+            background-color: #f0f7ff;
+            transform: translateY(-2px);
         }
         .tabs button.active { 
             background-color: var(--accent); 
             color: var(--primary); 
-            font-weight: bold; 
+            font-weight: 800; 
             border: 2px solid var(--primary);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 10px rgba(0, 51, 153, 0.2);
+            transform: translateY(-2px);
         }
 
         .pacco { 
@@ -228,10 +253,10 @@
 <div id="loginPage">
     <div class="login-box">
         <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp" width="120">
-        <h2>Accesso</h2>
+        <h2 style="color: var(--primary);">Accesso Gestione</h2>
         <input type="email" id="loginEmail" placeholder="Email" style="margin-bottom:10px; width:100%">
         <input type="password" id="loginPassword" placeholder="Password" style="margin-bottom:20px; width:100%">
-        <button onclick="login()" style="width:100%">ENTRA</button>
+        <button onclick="login()">Entra nel Sistema</button>
     </div>
 </div>
 
@@ -281,6 +306,7 @@
 </div>
 
 <script>
+// Logica JavaScript invariata (come richiesto)
 let pacchi = JSON.parse(localStorage.getItem('pacchi')) || [];
 const corrieri = ["InPost", "UPS", "Punto Poste", "DHL", "BRT", "GLS", "Amazon", "Corrieri No Pudo"];
 let tabAttiva = 'Tutti';
