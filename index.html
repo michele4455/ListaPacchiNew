@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>📦Gestionale Pacchi Centro Post@ Anaclerio📦</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
     <style>
         :root { 
             --primary: #003399; 
@@ -133,24 +137,19 @@
 
         .status-bar { background: var(--white); border: 2px solid var(--primary); color: var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.1rem; }
         
-        /* TAB CORRIERI - DIMENSIONI MEDIE (OTTIMIZZATE) */
         .tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 25px; }
         .tabs button { 
             background-color: #ffffff; 
             color: var(--primary); 
             border: 2px solid var(--primary); 
-            padding: 10px 18px; /* Ridotto rispetto a prima */
+            padding: 10px 18px; 
             border-radius: 50px; 
             cursor: pointer; 
             width: auto; 
-            font-size: 14px; /* Ridotto rispetto a prima */
+            font-size: 14px; 
             font-weight: 700; 
             transition: all 0.2s ease;
             box-shadow: 0 2px 4px rgba(0,0,0,0.06);
-        }
-        .tabs button:hover {
-            background-color: #f0f7ff;
-            transform: translateY(-2px);
         }
         .tabs button.active { 
             background-color: var(--accent); 
@@ -252,7 +251,7 @@
 <div id="loginPage">
     <div class="login-box">
         <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp" width="120">
-        <h2 style="color: var(--primary);">Accesso Gestione</h2>
+        <h2 style="color: var(--primary);">Accesso Gestione Cloud</h2>
         <input type="email" id="loginEmail" placeholder="Email" style="margin-bottom:10px; width:100%">
         <input type="password" id="loginPassword" placeholder="Password" style="margin-bottom:20px; width:100%">
         <button onclick="login()">Entra nel Sistema</button>
@@ -288,7 +287,7 @@
             <button onclick="aggiungiPacco()">AGGIUNGI</button>
         </div>
 
-        <div class="status-bar" id="counter">Caricamento...</div>
+        <div class="status-bar" id="counter">Sincronizzazione Cloud...</div>
         <input type="text" id="search" style="margin-bottom:25px; padding: 16px; border-radius: 50px; width:100%" placeholder="🔍 Cerca cliente, ID o Tracking..." oninput="aggiornaVista()">
         
         <div class="tabs" id="tabs"></div>
@@ -305,7 +304,22 @@
 </div>
 
 <script>
-let pacchi = JSON.parse(localStorage.getItem('pacchi')) || [];
+// --- CONFIGURAZIONE FIREBASE ---
+const firebaseConfig = {
+  apiKey: "AIzaSyA9hwljJQARUJTCbGRSGt77AsOLKEeFZGY",
+  authDomain: "gestionale-anaclerio.firebaseapp.com",
+  databaseURL: "https://gestionale-anaclerio-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "gestionale-anaclerio",
+  storageBucket: "gestionale-anaclerio.firebasestorage.app",
+  messagingSenderId: "437363404417",
+  appId: "1:437363404417:web:67f2a8d4d12c6fca1fa780"
+};
+
+// Inizializza Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let pacchi = [];
 const corrieri = ["InPost", "UPS", "Punto Poste", "DHL", "BRT", "GLS", "Amazon", "Corrieri No Pudo"];
 let tabAttiva = 'Tutti';
 let timeoutInattivita;
@@ -314,6 +328,28 @@ const canvas = document.getElementById('signature-pad');
 const ctx = canvas.getContext('2d');
 let drawing = false;
 
+// --- GESTIONE SINCRONIZZAZIONE E MIGRAZIONE ---
+db.ref('pacchi').on('value', (snapshot) => {
+    const dataFromCloud = snapshot.val();
+    const localData = localStorage.getItem('pacchi');
+
+    // SE il cloud è vuoto MA ho dati locali, faccio l'upload automatico (MIGRAZIONE)
+    if (!dataFromCloud && localData) {
+        console.log("Migrazione dati locali in corso...");
+        pacchi = JSON.parse(localData);
+        salva(); // Salva su Cloud
+        localStorage.removeItem('pacchi'); // Pulisce il locale
+    } else {
+        pacchi = dataFromCloud ? dataFromCloud : [];
+    }
+    aggiornaVista();
+});
+
+function salva(){ 
+    db.ref('pacchi').set(pacchi); 
+}
+
+// --- FUNZIONI GESTIONALI ---
 function gestisciAutocomplete(val) {
     const box = document.getElementById('suggestionsBox');
     const nomeInput = document.getElementById('nome');
@@ -350,19 +386,10 @@ function selezionaSuggerimento(cog, nom) {
     document.getElementById('suggestionsBox').style.display = 'none';
 }
 
-document.addEventListener('click', (e) => {
-    if (!e.target.closest('.autocomplete-container')) {
-        document.getElementById('suggestionsBox').style.display = 'none';
-    }
-});
-
 function resetInattivita() {
     clearTimeout(timeoutInattivita);
-    timeoutInattivita = setTimeout(logout, 10 * 60 * 1000); 
+    timeoutInattivita = setTimeout(logout, 15 * 60 * 1000); 
 }
-window.onload = resetInattivita;
-document.onmousemove = resetInattivita;
-document.onkeypress = resetInattivita;
 
 function getPos(e) { const rect = canvas.getBoundingClientRect(); return {x: (e.clientX || e.touches[0].clientX) - rect.left, y: (e.clientY || e.touches[0].clientY) - rect.top}; }
 canvas.addEventListener('mousedown', (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
@@ -370,8 +397,6 @@ canvas.addEventListener('mousemove', (e) => { if(!drawing) return; e.preventDefa
 window.addEventListener('mouseup', () => drawing = false);
 canvas.addEventListener('touchstart', (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
 canvas.addEventListener('touchmove', (e) => { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
-
-function salva(){ localStorage.setItem('pacchi', JSON.stringify(pacchi)); }
 
 function login(){
     if(document.getElementById('loginEmail').value === 'centroposte1@gmail.com' && document.getElementById('loginPassword').value === '2025754785478'){
@@ -394,11 +419,13 @@ function aggiungiPacco(){
     const corr = document.getElementById('corriereSelect').value;
     const cr = document.getElementById('codiceRiconoscimento').value.trim();
     if(!c || !corr) return alert("Mancano dati!");
-    let num = cr || (pacchi.filter(p => p.corriere === corr && !p.ritirato).length + 1);
+    
+    let num = cr;
     if(!cr) {
         const pG = pacchi.filter(p => p.corriere === corr && !p.ritirato);
         num = pG.length > 0 ? parseInt(pG[pG.length-1].riconoscimento) + 1 : 1;
     }
+    
     pacchi.push({
         id: Date.now(),
         dataInserimento: new Date().getTime(),
@@ -410,22 +437,30 @@ function aggiungiPacco(){
         grandezza: document.getElementById('grandezzaSelect').value,
         ritirato: false, isScaduto: false, dataRitiro: null, ritiratoDa: '', firma: null, pudoStatus: 'nessuno'
     });
-    salva(); aggiornaVista();
+    salva(); 
     ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
 }
 
 function aggiornaVista(){
     const sel = document.getElementById('corriereSelect');
     if(sel && sel.innerHTML === "") sel.innerHTML = '<option value="">Corriere...</option>' + corrieri.map(c => `<option value="${c}">${c}</option>`).join('');
+    
     const tabsBox = document.getElementById('tabs');
-    tabsBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">Tutti</button>` + corrieri.map(c => `<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}">${c}</button>`).join('');
-    const search = document.getElementById('search').value.toLowerCase();
+    if(tabsBox) tabsBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">Tutti</button>` + corrieri.map(c => `<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}">${c}</button>`).join('');
+    
+    const searchInput = document.getElementById('search');
+    const search = searchInput ? searchInput.value.toLowerCase() : "";
+    
     const filterFn = p => (tabAttiva === 'Tutti' || p.corriere === tabAttiva) && (p.cognome.toLowerCase().includes(search) || String(p.riconoscimento).includes(search) || p.codiceTracciabilita.toLowerCase().includes(search));
+    
     const inGiacenza = pacchi.filter(p => !p.ritirato && filterFn(p));
     const ritirati = pacchi.filter(p => p.ritirato && filterFn(p)).reverse();
     const perUltimoID = pacchi.filter(p => !p.ritirato && (tabAttiva === 'Tutti' || p.corriere === tabAttiva));
+    
     let ultimoID = perUltimoID.length > 0 ? perUltimoID[perUltimoID.length - 1].riconoscimento : "---";
-    document.getElementById('counter').innerHTML = `📦 Giacenza ${tabAttiva}: ${inGiacenza.length} | 🏷️ Ultimo ID: #${ultimoID}`;
+    const counter = document.getElementById('counter');
+    if(counter) counter.innerHTML = `📦 Cloud Giacenza ${tabAttiva}: ${inGiacenza.length} | 🏷️ Ultimo ID: #${ultimoID}`;
+    
     document.getElementById('contenitori').innerHTML = inGiacenza.map(p => generateHtml(p)).join('');
     document.getElementById('ritiratiContainer').innerHTML = ritirati.map(p => generateHtml(p)).join('');
 }
@@ -444,21 +479,6 @@ function generateHtml(p) {
         statoTesto = p.isScaduto ? `<div style="color:var(--warning); font-size:0.85rem; margin-top:5px; font-weight:bold;">🚫 RESO PER SCADENZA il ${p.dataRitiro}</div>` : `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">✅ Ritirato da ${p.ritiratoDa} il ${p.dataRitiro} ${notaPudo} ${firmaLink}</div>`;
     }
     return `<div class="pacco ${p.ritirato ? (p.isScaduto ? 'scaduto' : 'ritirato') : ''}"><div style="flex-grow:1"><span class="tag-grandezza">${p.grandezza}</span><span class="tag-corriere">${p.corriere}</span><strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome}<br><small style="display:block; margin-top:5px; color:#666;">📍 ${p.scaffale} • 🔍 TRK: <span class="highlight-trk">${p.codiceTracciabilita}</span><br>📅 Arrivato il: ${p.dataTestoInserimento || '-'}</small>${statoTesto}</div><div style="display:flex; align-items:center;">${alertScadenza}<input type="checkbox" class="pacco-checkbox" ${p.ritirato ? 'checked' : ''} onchange="handleToggle(${p.id})"></div></div>`;
-}
-
-function toggleCampiUscita() {
-    const tipo = document.getElementById('tipoUscita').value;
-    document.getElementById('boxRitiroDettagli').style.display = tipo === 'cliente' ? 'block' : 'none';
-    document.getElementById('boxScadutoDettagli').style.display = tipo === 'scaduto' ? 'none' : 'none';
-    document.getElementById('boxScadutoDettagli').style.display = tipo === 'scaduto' ? 'block' : 'none';
-    document.getElementById('firmaSide').style.display = tipo === 'cliente' ? 'block' : 'none';
-}
-
-function showFeedback(tipo) {
-    const card = document.getElementById('successCard');
-    card.innerHTML = tipo === 'cliente' ? `<div class="success-icon" style="color:var(--success);">✅</div><div class="success-text">RITIRO COMPLETATO<br>CORRETTAMENTE</div>` : `<div class="success-icon">📦❌</div><div class="warning-text">PACCO SCADUTO!<br>METTILO DA PARTE IN ATTESA<br>DEL RITIRO DEL CORRIERE</div>`;
-    document.getElementById('successOverlay').style.display = 'flex';
-    setTimeout(() => { document.getElementById('successOverlay').style.display = 'none'; aggiornaVista(); }, 3000);
 }
 
 function handleToggle(id) {
@@ -486,8 +506,22 @@ function handleToggle(id) {
             salva(); document.getElementById('customModal').style.display = 'none'; showFeedback(tipo); 
         };
     } else {
-        if(confirm("Ripristinare in giacenza?")) { p.ritirato = false; p.isScaduto = false; p.firma = null; p.pudoStatus = 'nessuno'; salva(); aggiornaVista(); }
+        if(confirm("Ripristinare in giacenza?")) { p.ritirato = false; p.isScaduto = false; p.firma = null; p.pudoStatus = 'nessuno'; salva(); }
     }
+}
+
+function showFeedback(tipo) {
+    const card = document.getElementById('successCard');
+    card.innerHTML = tipo === 'cliente' ? `<div class="success-icon" style="color:var(--success);">✅</div><div class="success-text">RITIRO COMPLETATO<br>CORRETTAMENTE</div>` : `<div class="success-icon">📦❌</div><div class="warning-text">PACCO SCADUTO!<br>METTILO DA PARTE IN ATTESA<br>DEL RITIRO DEL CORRIERE</div>`;
+    document.getElementById('successOverlay').style.display = 'flex';
+    setTimeout(() => { document.getElementById('successOverlay').style.display = 'none'; }, 3000);
+}
+
+function toggleCampiUscita() {
+    const tipo = document.getElementById('tipoUscita').value;
+    document.getElementById('boxRitiroDettagli').style.display = tipo === 'cliente' ? 'block' : 'none';
+    document.getElementById('boxScadutoDettagli').style.display = tipo === 'scaduto' ? 'block' : 'none';
+    document.getElementById('firmaSide').style.display = tipo === 'cliente' ? 'block' : 'none';
 }
 
 function mostraFirma(id) {
@@ -504,14 +538,13 @@ function cancellaRitirati(){
     if(confirm(`Svuotare archivio (ritirati e scaduti) di ${tabAttiva}?`)) {
         if(tabAttiva === 'Tutti') pacchi = pacchi.filter(p => !p.ritirato);
         else pacchi = pacchi.filter(p => !(p.ritirato && p.corriere === tabAttiva));
-        salva(); aggiornaVista();
+        salva();
     }
 }
 
 if(localStorage.getItem('loggedIn') === 'true') {
     document.getElementById('loginPage').style.display='none';
     document.getElementById('mainPage').style.display='block';
-    aggiornaVista();
 }
 </script>
 </body>
