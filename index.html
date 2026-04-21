@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>📦 Gestione Pacchi Postali Pro</title>
+    <title>📦 Gestionale Pacchi Centro Post@ Anaclerio</title>
     <style>
         :root { 
             --primary: #003399; 
@@ -89,15 +89,10 @@
 
         .form-group button { background-color: var(--primary); color: var(--accent); border: none; cursor: pointer; font-weight: bold; text-transform: uppercase; }
 
-        .autocomplete-container { 
-            position: relative; 
-            width: 100%; 
-        }
+        .autocomplete-container { position: relative; width: 100%; }
         .suggestions-list {
             position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
+            top: 100%; left: 0; right: 0;
             background: white;
             border: 2px solid var(--primary);
             border-top: none;
@@ -121,7 +116,7 @@
 
         .status-bar { background: var(--white); border: 2px solid var(--primary); color: var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.1rem; }
         
-        /* CORREZIONE PULSANTI TABS (RIMESSI CORTI) */
+        /* RIPRISTINO TAB ORIGINALI (FATTI MEGLIO) */
         .tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 25px; }
         .tabs button { 
             background-color: #dee2e6; 
@@ -130,11 +125,18 @@
             padding: 10px 20px; 
             border-radius: 25px; 
             cursor: pointer; 
-            width: auto; /* Torna alla larghezza del testo */
+            width: auto; 
             font-size: 14px;
-            font-weight: normal;
+            text-transform: uppercase;
+            transition: 0.3s;
         }
-        .tabs button.active { background-color: var(--accent); color: var(--primary); font-weight: 800; border: 2px solid var(--primary); }
+        .tabs button.active { 
+            background-color: var(--accent); 
+            color: var(--primary); 
+            font-weight: 800; 
+            border: 2px solid var(--primary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
 
         .pacco { 
             background: var(--white); border-left: 8px solid var(--primary); padding: 20px; 
@@ -197,7 +199,6 @@
                 <div id="boxRitiroDettagli">
                     <label><b>Chi ritira?</b></label>
                     <input type="text" id="modalInput" style="margin-top:5px; margin-bottom:15px; width:100%" placeholder="Nome di chi ritira">
-                    
                     <div id="boxPagamentoNoPudo" class="paga-box" style="display:none;">
                         <input type="checkbox" id="checkPagamento" style="width: auto; transform: scale(1.5); margin: 0 10px;">
                         <span>PAGAMENTO € 0.50 RICEVUTO</span>
