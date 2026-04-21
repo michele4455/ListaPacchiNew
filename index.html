@@ -57,14 +57,13 @@
         #loginPage { display: flex; justify-content: center; align-items: center; height: 100vh; background: var(--primary); }
         .login-box { background: var(--white); padding: 40px; border-radius: 20px; text-align: center; width: 100%; max-width: 350px; border-top: 8px solid var(--accent); box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         
-        /* AGGIUSTAMENTO PULSANTE LOGIN */
         .login-box button {
             width: 100%;
             padding: 14px;
             background-color: var(--primary);
             color: var(--accent);
             border: none;
-            border-radius: 50px; /* Arrotondato */
+            border-radius: 50px;
             font-weight: bold;
             text-transform: uppercase;
             cursor: pointer;
@@ -134,32 +133,33 @@
 
         .status-bar { background: var(--white); border: 2px solid var(--primary); color: var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.1rem; }
         
-        /* RESTYLING TABS CORRIERI */
-        .tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 25px; }
+        /* TAB CORRIERI PIÙ GRANDI */
+        .tabs { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 30px; }
         .tabs button { 
             background-color: #ffffff; 
             color: var(--primary); 
             border: 2px solid var(--primary); 
-            padding: 10px 22px; 
+            padding: 14px 28px; /* Aumentato padding */
             border-radius: 50px; 
             cursor: pointer; 
             width: auto; 
-            font-size: 13px;
-            font-weight: 600;
+            font-size: 16px; /* Aumentato font size */
+            font-weight: 700; /* Più grassetto */
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.08);
         }
         .tabs button:hover {
             background-color: #f0f7ff;
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 12px rgba(0,0,0,0.12);
         }
         .tabs button.active { 
             background-color: var(--accent); 
             color: var(--primary); 
-            font-weight: 800; 
-            border: 2px solid var(--primary);
-            box-shadow: 0 4px 10px rgba(0, 51, 153, 0.2);
-            transform: translateY(-2px);
+            font-weight: 900; 
+            border: 3px solid var(--primary); /* Bordo leggermente più spesso */
+            box-shadow: 0 6px 15px rgba(0, 51, 153, 0.25);
+            transform: translateY(-3px) scale(1.05); /* Effetto zoom attivo */
         }
 
         .pacco { 
@@ -306,7 +306,6 @@
 </div>
 
 <script>
-// Logica JavaScript invariata (come richiesto)
 let pacchi = JSON.parse(localStorage.getItem('pacchi')) || [];
 const corrieri = ["InPost", "UPS", "Punto Poste", "DHL", "BRT", "GLS", "Amazon", "Corrieri No Pudo"];
 let tabAttiva = 'Tutti';
@@ -451,6 +450,7 @@ function generateHtml(p) {
 function toggleCampiUscita() {
     const tipo = document.getElementById('tipoUscita').value;
     document.getElementById('boxRitiroDettagli').style.display = tipo === 'cliente' ? 'block' : 'none';
+    document.getElementById('boxScadutoDettagli').style.display = tipo === 'scaduto' ? 'none' : 'none'; // Correzione logica rimozione
     document.getElementById('boxScadutoDettagli').style.display = tipo === 'scaduto' ? 'block' : 'none';
     document.getElementById('firmaSide').style.display = tipo === 'cliente' ? 'block' : 'none';
 }
