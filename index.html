@@ -59,7 +59,6 @@
 
         .container { max-width: 1000px; margin: 0 auto; padding: 0 20px 40px 20px; }
 
-        /* FORM GRID SISTEMATA */
         .form-group { 
             display: grid; 
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
@@ -72,7 +71,7 @@
             align-items: start;
         }
 
-        input, select, button { 
+        input, select, .form-group button { 
             padding: 14px; 
             font-size: 14px; 
             border-radius: 10px; 
@@ -80,7 +79,7 @@
             outline: none; 
             transition: all 0.3s;
             box-sizing: border-box;
-            width: 100%; /* Forza la larghezza piena */
+            width: 100%; 
         }
 
         input:focus, select:focus {
@@ -88,9 +87,8 @@
             box-shadow: 0 0 8px rgba(255, 204, 0, 0.4);
         }
 
-        button { background-color: var(--primary); color: var(--accent); border: none; cursor: pointer; font-weight: bold; text-transform: uppercase; }
+        .form-group button { background-color: var(--primary); color: var(--accent); border: none; cursor: pointer; font-weight: bold; text-transform: uppercase; }
 
-        /* AUTOCOMPLETE FIX LARGHEZZA */
         .autocomplete-container { 
             position: relative; 
             width: 100%; 
@@ -123,8 +121,19 @@
 
         .status-bar { background: var(--white); border: 2px solid var(--primary); color: var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.1rem; }
         
+        /* CORREZIONE PULSANTI TABS (RIMESSI CORTI) */
         .tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 25px; }
-        .tabs button { background-color: #dee2e6; color: #495057; border: 2px solid transparent; padding: 10px 20px; border-radius: 25px; cursor: pointer; }
+        .tabs button { 
+            background-color: #dee2e6; 
+            color: #495057; 
+            border: 2px solid transparent; 
+            padding: 10px 20px; 
+            border-radius: 25px; 
+            cursor: pointer; 
+            width: auto; /* Torna alla larghezza del testo */
+            font-size: 14px;
+            font-weight: normal;
+        }
         .tabs button.active { background-color: var(--accent); color: var(--primary); font-weight: 800; border: 2px solid var(--primary); }
 
         .pacco { 
@@ -177,7 +186,7 @@
 <div id="customModal">
     <div class="modal-content">
         <h3 id="modalTitle" style="color:var(--primary); margin-bottom:5px;">Gestione Uscita Pacco</h3>
-        <select id="tipoUscita" onchange="toggleCampiUscita()">
+        <select id="tipoUscita" onchange="toggleCampiUscita()" style="width:100%">
             <option value="cliente">Ritiro Cliente</option>
             <option value="scaduto">Pacco Scaduto (Reso)</option>
         </select>
@@ -187,7 +196,7 @@
                 <div id="modalText" style="margin-bottom: 15px; font-size: 1.1rem;"></div>
                 <div id="boxRitiroDettagli">
                     <label><b>Chi ritira?</b></label>
-                    <input type="text" id="modalInput" style="margin-top:5px; margin-bottom:15px;" placeholder="Nome di chi ritira">
+                    <input type="text" id="modalInput" style="margin-top:5px; margin-bottom:15px; width:100%" placeholder="Nome di chi ritira">
                     
                     <div id="boxPagamentoNoPudo" class="paga-box" style="display:none;">
                         <input type="checkbox" id="checkPagamento" style="width: auto; transform: scale(1.5); margin: 0 10px;">
@@ -196,7 +205,7 @@
                 </div>
                 <div id="boxScadutoDettagli" style="display:none;">
                     <label><b>Data Rimozione:</b></label>
-                    <input type="date" id="dataScadenzaRimozione" style="margin-top:5px;">
+                    <input type="date" id="dataScadenzaRimozione" style="margin-top:5px; width:100%">
                 </div>
             </div>
 
@@ -208,8 +217,8 @@
         </div>
 
         <div style="display:flex; gap:10px; margin-top:20px;">
-            <button onclick="closeModal()" style="flex:1; background:#e0e0e0; color:#333;">ANNULLA</button>
-            <button id="modalConfirmBtn" style="flex:1">CONFERMA E SALVA</button>
+            <button onclick="closeModal()" style="flex:1; background:#e0e0e0; color:#333; width:auto">ANNULLA</button>
+            <button id="modalConfirmBtn" style="flex:1; width:auto">CONFERMA E SALVA</button>
         </div>
     </div>
 </div>
@@ -218,9 +227,9 @@
     <div class="login-box">
         <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp" width="120">
         <h2>Accesso</h2>
-        <input type="email" id="loginEmail" placeholder="Email" style="margin-bottom:10px;">
-        <input type="password" id="loginPassword" placeholder="Password" style="margin-bottom:20px;">
-        <button onclick="login()">ENTRA</button>
+        <input type="email" id="loginEmail" placeholder="Email" style="margin-bottom:10px; width:100%">
+        <input type="password" id="loginPassword" placeholder="Password" style="margin-bottom:20px; width:100%">
+        <button onclick="login()" style="width:100%">ENTRA</button>
     </div>
 </div>
 
@@ -237,14 +246,11 @@
         <div class="form-group">
             <input type="text" id="codiceTracciabilita" placeholder="Tracking (TRK)">
             <input type="text" id="codiceRiconoscimento" placeholder="ID Pacco">
-            
             <div class="autocomplete-container">
                 <input type="text" id="cognome" placeholder="Cognome" oninput="gestisciAutocomplete(this.value)" autocomplete="off">
                 <div id="suggestionsBox" class="suggestions-list"></div>
             </div>
-            
             <input type="text" id="nome" placeholder="Nome">
-            
             <select id="corriereSelect"></select>
             <select id="scaffaleSelect">
                 <option value="">Scaffale...</option>
@@ -257,7 +263,7 @@
         </div>
 
         <div class="status-bar" id="counter">Caricamento...</div>
-        <input type="text" id="search" style="margin-bottom:25px; padding: 16px; border-radius: 50px;" placeholder="🔍 Cerca cliente, ID o Tracking..." oninput="aggiornaVista()">
+        <input type="text" id="search" style="margin-bottom:25px; padding: 16px; border-radius: 50px; width:100%" placeholder="🔍 Cerca cliente, ID o Tracking..." oninput="aggiornaVista()">
         
         <div class="tabs" id="tabs"></div>
         <div id="contenitori"></div>
@@ -282,7 +288,6 @@ const canvas = document.getElementById('signature-pad');
 const ctx = canvas.getContext('2d');
 let drawing = false;
 
-// --- GESTIONE AUTOCOMPLETE ---
 function gestisciAutocomplete(val) {
     const box = document.getElementById('suggestionsBox');
     const nomeInput = document.getElementById('nome');
@@ -325,7 +330,6 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// --- LOGICA CORE ---
 function resetInattivita() {
     clearTimeout(timeoutInattivita);
     timeoutInattivita = setTimeout(logout, 10 * 60 * 1000); 
