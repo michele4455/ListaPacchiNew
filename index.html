@@ -119,9 +119,10 @@
         #signature-pad { border: 2px dashed #ccc; background: #fff; border-radius: 8px; touch-action: none; max-width: 100%; }
         .pacco-checkbox { transform: scale(2); cursor: pointer; accent-color: var(--primary); }
         
-        /* Nuovi stili richiesti */
-        .highlight-trk { color: var(--primary); font-weight: 800; background: #eef2ff; padding: 2px 5px; border-radius: 4px; }
+        /* Evidenza Tracking - Più sobria */
+        .highlight-trk { color: #333; font-weight: bold; border-bottom: 2px solid var(--accent); padding: 0 2px; }
         .paga-box { background: #fff9db; padding: 10px; border: 2px solid #fab005; border-radius: 10px; margin-top: 10px; display: flex; align-items: center; gap: 10px; font-weight: bold; }
+        .tag-pagato { color: #d9480f; font-weight: bold; font-size: 0.8rem; background: #fff4e6; padding: 2px 6px; border-radius: 4px; margin-left: 5px; border: 1px solid #ffd8a8; }
     </style>
 </head>
 <body>
@@ -291,7 +292,8 @@ function aggiungiPacco(){
         isScaduto: false, 
         dataRitiro: null, 
         ritiratoDa: '', 
-        firma: null
+        firma: null,
+        pagatoPudo: false
     });
     salva(); aggiornaVista();
     ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
@@ -334,9 +336,10 @@ function generateHtml(p) {
 
     let statoTesto = '';
     if(p.ritirato) {
+        let notaPagamento = p.pagatoPudo ? '<span class="tag-pagato">(Pagato €0.50)</span>' : '';
         statoTesto = p.isScaduto ? 
             `<div style="color:var(--warning); font-size:0.85rem; margin-top:5px; font-weight:bold;">🚫 RESO PER SCADENZA il ${p.dataRitiro}</div>` :
-            `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">✅ Ritirato da ${p.ritiratoDa} il ${p.dataRitiro} ${firmaLink}</div>`;
+            `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">✅ Ritirato da ${p.ritiratoDa} il ${p.dataRitiro} ${notaPagamento} ${firmaLink}</div>`;
     }
 
     return `
@@ -397,7 +400,6 @@ function handleToggle(id) {
             <b>Arrivato il:</b> ${p.dataTestoInserimento || '-'}
         `;
         
-        // MOSTRA/NASCONDI BOX PAGAMENTO PER CORRIERI NO PUDO
         document.getElementById('boxPagamentoNoPudo').style.display = (p.corriere === 'Corrieri No Pudo') ? 'flex' : 'none';
         document.getElementById('checkPagamento').checked = false;
 
@@ -410,7 +412,6 @@ function handleToggle(id) {
         document.getElementById('modalConfirmBtn').onclick = () => {
             const tipo = document.getElementById('tipoUscita').value;
             
-            // Se è un Corriere No Pudo, obbliga a spuntare il pagamento
             if(tipo === 'cliente' && p.corriere === 'Corrieri No Pudo' && !document.getElementById('checkPagamento').checked){
                 alert("Attenzione: Confermare la riscossione dei 0.50€ prima di procedere.");
                 return;
@@ -421,12 +422,14 @@ function handleToggle(id) {
                 p.ritiratoDa = document.getElementById('modalInput').value;
                 p.dataRitiro = new Date().toLocaleString(); 
                 p.firma = canvas.toDataURL();
+                p.pagatoPudo = (p.corriere === 'Corrieri No Pudo');
             } else {
                 const d = document.getElementById('dataScadenzaRimozione').value;
                 p.ritirato = true; p.isScaduto = true;
                 p.ritiratoDa = "SISTEMA (SCADUTO)";
                 p.dataRitiro = d.split("-").reverse().join("/");
                 p.firma = null;
+                p.pagatoPudo = false;
             }
             salva(); 
             document.getElementById('customModal').style.display = 'none';
@@ -434,7 +437,7 @@ function handleToggle(id) {
         };
     } else {
         if(confirm("Ripristinare in giacenza?")) { 
-            p.ritirato = false; p.isScaduto = false; p.firma = null; 
+            p.ritirato = false; p.isScaduto = false; p.firma = null; p.pagatoPudo = false;
             salva(); aggiornaVista(); 
         }
     }
@@ -457,7 +460,7 @@ function mostraFirma(id) {
                 <p><b>Destinatario:</b> ${p.cognome.toUpperCase()} ${p.nome}</p>
                 <hr>
                 <p style="color:#00b894;"><b>Ritirato il:</b> ${p.dataRitiro}</p>
-                <p><b>Consegnato a:</b> ${p.ritiratoDa}</p>
+                <p><b>Consegnato a:</b> ${p.ritiratoDa} ${p.pagatoPudo ? '(Pagamento €0.50 Ok)' : ''}</p>
             </div>
             <div style="margin-top:30px; text-align:center;">
                 <p>Firma:</p>
