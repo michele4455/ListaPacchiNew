@@ -119,7 +119,6 @@
         #signature-pad { border: 2px dashed #ccc; background: #fff; border-radius: 8px; touch-action: none; max-width: 100%; }
         .pacco-checkbox { transform: scale(2); cursor: pointer; accent-color: var(--primary); }
         
-        /* Stili Personalizzati */
         .highlight-trk { color: #333; font-weight: bold; border-bottom: 2px solid var(--accent); padding: 0 2px; }
         .paga-box { background: #fff9db; padding: 10px; border: 2px solid #fab005; border-radius: 10px; margin-top: 10px; display: flex; align-items: center; gap: 10px; font-weight: bold; }
         .tag-pagato { color: #d9480f; font-weight: bold; font-size: 0.8rem; background: #fff4e6; padding: 2px 6px; border-radius: 4px; margin-left: 5px; border: 1px solid #ffd8a8; }
@@ -127,6 +126,8 @@
     </style>
 </head>
 <body>
+
+<datalist id="nomiSuggeriti"></datalist>
 
 <div id="successOverlay">
     <div class="success-card" id="successCard"></div>
@@ -195,8 +196,8 @@
         <div class="form-group">
             <input type="text" id="codiceTracciabilita" placeholder="Tracking (TRK)">
             <input type="text" id="codiceRiconoscimento" placeholder="ID Pacco">
+            <input type="text" id="cognome" placeholder="Cognome" list="nomiSuggeriti" oninput="controllaSuggerimento(this.value)">
             <input type="text" id="nome" placeholder="Nome">
-            <input type="text" id="cognome" placeholder="Cognome">
             <select id="corriereSelect"></select>
             <select id="scaffaleSelect">
                 <option value="">Scaffale...</option>
@@ -249,7 +250,30 @@ window.addEventListener('mouseup', () => drawing = false);
 canvas.addEventListener('touchstart', (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
 canvas.addEventListener('touchmove', (e) => { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
 
-function salva(){ localStorage.setItem('pacchi', JSON.stringify(pacchi)); }
+function salva(){ 
+    localStorage.setItem('pacchi', JSON.stringify(pacchi)); 
+    aggiornaDatalist();
+}
+
+// Funzione per gestire i suggerimenti nomi
+function aggiornaDatalist() {
+    const list = document.getElementById('nomiSuggeriti');
+    const nomiUnici = new Set();
+    pacchi.forEach(p => {
+        if(p.cognome && p.nome) {
+            nomiUnici.add(`${p.cognome.toUpperCase()} | ${p.nome}`);
+        }
+    });
+    list.innerHTML = Array.from(nomiUnici).sort().map(n => `<option value="${n}">`).join('');
+}
+
+function controllaSuggerimento(valore) {
+    if(valore.includes(' | ')) {
+        const parti = valore.split(' | ');
+        document.getElementById('cognome').value = parti[0];
+        document.getElementById('nome').value = parti[1];
+    }
+}
 
 function login(){
     if(document.getElementById('loginEmail').value === 'centroposte1@gmail.com' && document.getElementById('loginPassword').value === '2025754785478'){
@@ -294,7 +318,7 @@ function aggiungiPacco(){
         dataRitiro: null, 
         ritiratoDa: '', 
         firma: null,
-        pudoStatus: 'nessuno' // 'pagato', 'non_pagato', 'nessuno'
+        pudoStatus: 'nessuno'
     });
     salva(); aggiornaVista();
     ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
@@ -323,29 +347,26 @@ function aggiornaVista(){
     document.getElementById('counter').innerHTML = `📦 Giacenza ${tabAttiva}: ${inGiacenza.length} | 🏷️ Ultimo ID: #${ultimoID}`;
     document.getElementById('contenitori').innerHTML = inGiacenza.map(p => generateHtml(p)).join('');
     document.getElementById('ritiratiContainer').innerHTML = ritirati.map(p => generateHtml(p)).join('');
+    aggiornaDatalist();
 }
 
 function generateHtml(p) {
     let firmaLink = (p.ritirato && p.firma && !p.isScaduto) ? `<span class="view-firma-link" onclick="mostraFirma('${p.id}')">VEDI FIRMA</span>` : '';
-    
     let alertScadenza = '';
     if (!p.ritirato && p.dataInserimento) {
         const oggi = new Date().getTime();
         const diffGiorni = (oggi - p.dataInserimento) / (1000 * 60 * 60 * 24);
         if (diffGiorni >= 5) alertScadenza = `<span class="scadenza-alert" title="PACCO IN SCADENZA">⚠️</span>`;
     }
-
     let statoTesto = '';
     if(p.ritirato) {
         let notaPudo = '';
         if(p.pudoStatus === 'pagato') notaPudo = '<span class="tag-pagato">(Pagato €0.50)</span>';
         else if(p.pudoStatus === 'non_pagato') notaPudo = '<span class="tag-non-pagato">(Non Pagato)</span>';
-
         statoTesto = p.isScaduto ? 
             `<div style="color:var(--warning); font-size:0.85rem; margin-top:5px; font-weight:bold;">🚫 RESO PER SCADENZA il ${p.dataRitiro}</div>` :
             `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">✅ Ritirato da ${p.ritiratoDa} il ${p.dataRitiro} ${notaPudo} ${firmaLink}</div>`;
     }
-
     return `
         <div class="pacco ${p.ritirato ? (p.isScaduto ? 'scaduto' : 'ritirato') : ''}">
             <div style="flex-grow:1">
@@ -376,73 +397,41 @@ function toggleCampiUscita() {
 function showFeedback(tipo) {
     const card = document.getElementById('successCard');
     if(tipo === 'cliente') {
-        card.innerHTML = `
-            <div class="success-icon" style="color:var(--success);">✅</div>
-            <div class="success-text">RITIRO COMPLETATO<br>CORRETTAMENTE</div>
-        `;
+        card.innerHTML = `<div class="success-icon" style="color:var(--success);">✅</div><div class="success-text">RITIRO COMPLETATO<br>CORRETTAMENTE</div>`;
     } else {
-        card.innerHTML = `
-            <div class="success-icon">📦❌</div>
-            <div class="warning-text">PACCO SCADUTO!<br>METTILO DA PARTE IN ATTESA<br>DEL RITIRO DEL CORRIERE</div>
-        `;
+        card.innerHTML = `<div class="success-icon">📦❌</div><div class="warning-text">PACCO SCADUTO!<br>METTILO DA PARTE IN ATTESA<br>DEL RITIRO DEL CORRIERE</div>`;
     }
-    
     document.getElementById('successOverlay').style.display = 'flex';
-    setTimeout(() => {
-        document.getElementById('successOverlay').style.display = 'none';
-        aggiornaVista();
-    }, 3000);
+    setTimeout(() => { document.getElementById('successOverlay').style.display = 'none'; aggiornaVista(); }, 3000);
 }
 
 function handleToggle(id) {
     const p = pacchi.find(x => x.id === id);
     if(!p.ritirato) {
         document.getElementById('customModal').style.display = 'flex';
-        document.getElementById('modalText').innerHTML = `
-            <b>Pacco:</b> #${p.riconoscimento}<br>
-            <b>Cliente:</b> ${p.cognome.toUpperCase()}<br>
-            <b>Arrivato il:</b> ${p.dataTestoInserimento || '-'}
-        `;
-        
+        document.getElementById('modalText').innerHTML = `<b>Pacco:</b> #${p.riconoscimento}<br><b>Cliente:</b> ${p.cognome.toUpperCase()}<br><b>Arrivato il:</b> ${p.dataTestoInserimento || '-'}`;
         document.getElementById('boxPagamentoNoPudo').style.display = (p.corriere === 'Corrieri No Pudo') ? 'flex' : 'none';
         document.getElementById('checkPagamento').checked = false;
-
         document.getElementById('tipoUscita').value = 'cliente';
         toggleCampiUscita();
         document.getElementById('modalInput').value = p.cognome;
         document.getElementById('dataScadenzaRimozione').valueAsDate = new Date();
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
         document.getElementById('modalConfirmBtn').onclick = () => {
             const tipo = document.getElementById('tipoUscita').value;
-            
             if(tipo === 'cliente') {
-                p.ritirato = true; p.isScaduto = false;
-                p.ritiratoDa = document.getElementById('modalInput').value;
-                p.dataRitiro = new Date().toLocaleString(); 
-                p.firma = canvas.toDataURL();
-                
-                // Gestione status PUDO opzionale
-                if(p.corriere === 'Corrieri No Pudo') {
-                    p.pudoStatus = document.getElementById('checkPagamento').checked ? 'pagato' : 'non_pagato';
-                }
+                p.ritirato = true; p.isScaduto = false; p.ritiratoDa = document.getElementById('modalInput').value;
+                p.dataRitiro = new Date().toLocaleString(); p.firma = canvas.toDataURL();
+                if(p.corriere === 'Corrieri No Pudo') p.pudoStatus = document.getElementById('checkPagamento').checked ? 'pagato' : 'non_pagato';
             } else {
                 const d = document.getElementById('dataScadenzaRimozione').value;
-                p.ritirato = true; p.isScaduto = true;
-                p.ritiratoDa = "SISTEMA (SCADUTO)";
-                p.dataRitiro = d.split("-").reverse().join("/");
-                p.firma = null;
-                p.pudoStatus = 'nessuno';
+                p.ritirato = true; p.isScaduto = true; p.ritiratoDa = "SISTEMA (SCADUTO)";
+                p.dataRitiro = d.split("-").reverse().join("/"); p.firma = null; p.pudoStatus = 'nessuno';
             }
-            salva(); 
-            document.getElementById('customModal').style.display = 'none';
-            showFeedback(tipo); 
+            salva(); document.getElementById('customModal').style.display = 'none'; showFeedback(tipo); 
         };
     } else {
-        if(confirm("Ripristinare in giacenza?")) { 
-            p.ritirato = false; p.isScaduto = false; p.firma = null; p.pudoStatus = 'nessuno';
-            salva(); aggiornaVista(); 
-        }
+        if(confirm("Ripristinare in giacenza?")) { p.ritirato = false; p.isScaduto = false; p.firma = null; p.pudoStatus = 'nessuno'; salva(); aggiornaVista(); }
     }
 }
 
@@ -467,16 +456,8 @@ function mostraFirma(id) {
                 ${p.pudoStatus === 'pagato' ? '<p style="color:#d9480f"><b>Pagamento €0.50:</b> RICEVUTO</p>' : ''}
                 ${p.pudoStatus === 'non_pagato' ? '<p style="color:#c92a2a"><b>Pagamento €0.50:</b> NON PERCEPITO</p>' : ''}
             </div>
-            <div style="margin-top:30px; text-align:center;">
-                <p>Firma:</p>
-                <img src="${p.firma}" style="border:2px solid #003399; border-radius:15px; width:400px; max-width:100%;">
-            </div>
-            <div style="margin-top:40px; text-align:center; no-print">
-                <button onclick="window.print()" style="padding:15px 30px; background:#003399; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">🖨️ STAMPA RICEVUTA</button>
-            </div>
-            <style>
-                @media print { button { display:none; } }
-            </style>
+            <div style="margin-top:30px; text-align:center;"><p>Firma:</p><img src="${p.firma}" style="border:2px solid #003399; border-radius:15px; width:400px; max-width:100%;"></div>
+            <div style="margin-top:40px; text-align:center;"><button onclick="window.print()" style="padding:15px 30px; background:#003399; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">🖨️ STAMPA RICEVUTA</button></div>
         </body>
     `);
 }
@@ -485,7 +466,6 @@ function closeModal() { document.getElementById('customModal').style.display = '
 function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 function toggleSezioneRitirati() { const s = document.getElementById('sezioneRitirati'); s.style.display = s.style.display === 'none' ? 'block' : 'none'; }
 function setTab(t){ tabAttiva = t; aggiornaVista(); }
-
 function cancellaRitirati(){
     if(confirm(`Svuotare archivio (ritirati e scaduti) di ${tabAttiva}?`)) {
         if(tabAttiva === 'Tutti') pacchi = pacchi.filter(p => !p.ritirato);
