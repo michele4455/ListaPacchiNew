@@ -133,33 +133,32 @@
 
         .status-bar { background: var(--white); border: 2px solid var(--primary); color: var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.1rem; }
         
-        /* TAB CORRIERI PIÙ GRANDI */
-        .tabs { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 30px; }
+        /* TAB CORRIERI - DIMENSIONI MEDIE (OTTIMIZZATE) */
+        .tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 25px; }
         .tabs button { 
             background-color: #ffffff; 
             color: var(--primary); 
             border: 2px solid var(--primary); 
-            padding: 14px 28px; /* Aumentato padding */
+            padding: 10px 18px; /* Ridotto rispetto a prima */
             border-radius: 50px; 
             cursor: pointer; 
             width: auto; 
-            font-size: 16px; /* Aumentato font size */
-            font-weight: 700; /* Più grassetto */
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+            font-size: 14px; /* Ridotto rispetto a prima */
+            font-weight: 700; 
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.06);
         }
         .tabs button:hover {
             background-color: #f0f7ff;
-            transform: translateY(-3px);
-            box-shadow: 0 5px 12px rgba(0,0,0,0.12);
+            transform: translateY(-2px);
         }
         .tabs button.active { 
             background-color: var(--accent); 
             color: var(--primary); 
-            font-weight: 900; 
-            border: 3px solid var(--primary); /* Bordo leggermente più spesso */
-            box-shadow: 0 6px 15px rgba(0, 51, 153, 0.25);
-            transform: translateY(-3px) scale(1.05); /* Effetto zoom attivo */
+            font-weight: 800; 
+            border-color: var(--primary);
+            box-shadow: 0 4px 10px rgba(0, 51, 153, 0.15);
+            transform: translateY(-2px);
         }
 
         .pacco { 
@@ -450,7 +449,7 @@ function generateHtml(p) {
 function toggleCampiUscita() {
     const tipo = document.getElementById('tipoUscita').value;
     document.getElementById('boxRitiroDettagli').style.display = tipo === 'cliente' ? 'block' : 'none';
-    document.getElementById('boxScadutoDettagli').style.display = tipo === 'scaduto' ? 'none' : 'none'; // Correzione logica rimozione
+    document.getElementById('boxScadutoDettagli').style.display = tipo === 'scaduto' ? 'none' : 'none';
     document.getElementById('boxScadutoDettagli').style.display = tipo === 'scaduto' ? 'block' : 'none';
     document.getElementById('firmaSide').style.display = tipo === 'cliente' ? 'block' : 'none';
 }
