@@ -146,7 +146,7 @@
         @keyframes alertBlink { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
         .scadenza-alert { font-size: 1.8rem; cursor: pointer; margin-right: 15px; vertical-align: middle; animation: alertBlink 1s infinite; display: inline-block; }
 
-        /* STILE EMOJI CENTRATE */
+        /* STILE EMOJI CENTRATE NELLA LISTA */
         .stato-emoji {
             display: inline-flex;
             align-items: center;
@@ -157,7 +157,6 @@
             line-height: 1;
         }
 
-        /* MODALE SCORREVOLE PER ZOOM 150% */
         #customModal { 
             display: none; 
             position: fixed; 
@@ -595,7 +594,16 @@ function mostraFirma(id) {
 
 function showFeedback(tipo) {
     const card = document.getElementById('successCard');
-    card.innerHTML = `<h2 style="color:${tipo === 'cliente' ? 'var(--success)' : 'var(--warning)'}; font-size: 2rem;">${tipo === 'cliente' ? 'RITIRO COMPLETATO' : 'PACCO RESO (SCADUTO)'}</h2>`;
+    let icona = tipo === 'cliente' ? '✅' : '📦❌';
+    let titolo = tipo === 'cliente' ? 'RITIRO COMPLETATO' : 'PACCO RESO (SCADUTO)';
+    let colore = tipo === 'cliente' ? 'var(--success)' : 'var(--warning)';
+
+    card.innerHTML = `
+        <div style="font-size: 6rem; margin-bottom: 20px;">${icona}</div>
+        <h2 style="color:${colore}; font-size: 2.5rem; margin: 0; font-weight: 900;">${titolo}</h2>
+        <p style="color: #666; font-size: 1.2rem; font-weight: bold; margin-top: 10px;">Operazione registrata con successo</p>
+    `;
+
     document.getElementById('successOverlay').style.display = 'flex';
     setTimeout(() => { document.getElementById('successOverlay').style.display = 'none'; }, 2000);
 }
