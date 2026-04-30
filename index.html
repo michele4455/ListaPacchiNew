@@ -146,7 +146,6 @@
         @keyframes alertBlink { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
         .scadenza-alert { font-size: 1.8rem; cursor: pointer; margin-right: 15px; vertical-align: middle; animation: alertBlink 1s infinite; display: inline-block; }
 
-        /* STILE EMOJI CENTRATE NELLA LISTA */
         .stato-emoji {
             display: inline-flex;
             align-items: center;
@@ -481,7 +480,12 @@ function generateHtml(p) {
 
 function handleRitira(id, forzaScaduto = false) {
     const p = pacchi.find(x => x.id === id);
-    const stessiPacchi = pacchi.filter(px => !px.ritirato && px.cognome.toLowerCase() === p.cognome.toLowerCase());
+    // MODIFICATO: Controllo sia Cognome che Nome per il ritiro multiplo
+    const stessiPacchi = pacchi.filter(px => 
+        !px.ritirato && 
+        px.cognome.toLowerCase() === p.cognome.toLowerCase() &&
+        px.nome.toLowerCase() === p.nome.toLowerCase()
+    );
     
     document.getElementById('customModal').style.display = 'flex';
     document.getElementById('tipoUscita').value = forzaScaduto ? 'scaduto' : 'cliente';
