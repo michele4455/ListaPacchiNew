@@ -146,7 +146,7 @@
         @keyframes alertBlink { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
         .scadenza-alert { font-size: 1.8rem; cursor: pointer; margin-right: 15px; vertical-align: middle; animation: alertBlink 1s infinite; display: inline-block; }
 
-        /* MODIFICA PER ZOOM 150% */
+        /* MODALE SCORREVOLE PER ZOOM 150% */
         #customModal { 
             display: none; 
             position: fixed; 
@@ -156,21 +156,20 @@
             background: rgba(0,0,0,0.6); 
             align-items: center; 
             justify-content: center; 
-            overflow-y: auto; /* Permette lo scroll se il contenuto è troppo alto */
+            overflow-y: auto; 
             padding: 20px 0;
         }
         .modal-content { 
             background: white; 
-            padding: 20px; 
+            padding: 25px; 
             border-radius: 20px; 
             width: 95%; 
             max-width: 800px; 
             text-align: center; 
             border-top: 10px solid var(--primary); 
             position: relative;
-            margin: auto; /* Centra verticalmente nello scroll */
+            margin: auto; 
         }
-        /* FINE MODIFICA */
 
         .modal-body-flex { display: flex; gap: 20px; text-align: left; margin-top: 15px; flex-wrap: wrap; }
         .modal-left { flex: 1; min-width: 250px; }
@@ -178,7 +177,7 @@
         
         .modal-btn { padding: 15px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; width: 100%; }
 
-        #successOverlay { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); align-items: center; justify-content: center; flex-direction: column; }
+        #successOverlay { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); align-items: center; justify-content: center; flex-direction: column; }
         
         #signature-pad { border: 2px dashed #ccc; background: #fff; border-radius: 8px; touch-action: none; max-width: 100%; }
         .highlight-trk { color: #333; font-weight: bold; border-bottom: 2px solid var(--accent); padding: 0 2px; cursor: copy; }
@@ -195,7 +194,7 @@
 <body onmousedown="resetInattivita()" onkeypress="resetInattivita()" ontouchstart="resetInattivita()">
 
 <div id="successOverlay">
-    <div class="success-card" id="successCard"></div>
+    <div id="successCard" style="text-align:center;"></div>
 </div>
 
 <div id="customModal">
@@ -208,7 +207,7 @@
 
         <div class="modal-body-flex">
             <div class="modal-left">
-                <div id="modalText" style="margin-bottom: 15px; font-size: 1rem; background: #f0f4f8; padding: 10px; border-radius: 10px; max-height: 200px; overflow-y: auto; text-align: left;"></div>
+                <div id="modalText" style="margin-bottom: 15px; font-size: 1rem; background: #f0f4f8; padding: 10px; border-radius: 10px; max-height: 250px; overflow-y: auto; text-align: left;"></div>
                 <div id="boxRitiroDettagli">
                     <label><b>Chi ritira?</b></label>
                     <input type="text" id="modalInput" style="margin-top:5px; margin-bottom:15px; width:100%" placeholder="Nome di chi ritira">
@@ -444,7 +443,7 @@ function generateHtml(p) {
     let statoTesto = '';
     if(p.ritirato) {
         let notaPudo = p.pudoStatus === 'pagato' ? '<span class="tag-pagato">(Pagato €0.50)</span>' : (p.pudoStatus === 'non_pagato' ? '<span class="tag-non-pagato">(Non Pagato)</span>' : '');
-        statoTesto = p.isScaduto ? `<div style="color:var(--warning); font-size:0.85rem; margin-top:5px; font-weight:bold;">🚫 RESO PER SCADENZA il ${p.dataRitiro}</div>` : `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">✅ Ritirato da ${p.ritiratoDa} il ${p.dataRitiro} ${notaPudo} ${firmaLink}</div>`;
+        statoTesto = p.isScaduto ? `<div style="color:var(--warning); font-size:0.85rem; margin-top:5px; font-weight:bold;">PACCO SCADUTO (RESO) il ${p.dataRitiro}</div>` : `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">RITIRATO DA ${p.ritiratoDa} IL ${p.dataRitiro} ${notaPudo} ${firmaLink}</div>`;
     }
 
     const altriPacchi = p.ritirato ? 0 : pacchi.filter(px => !px.ritirato && px.cognome.toLowerCase() === p.cognome.toLowerCase() && px.id !== p.id).length;
@@ -479,7 +478,7 @@ function handleRitira(id, forzaScaduto = false) {
                 <input type="checkbox" class="chk-multi-ritiro" data-id="${sp.id}" data-corriere="${sp.corriere}" ${isTarget ? 'checked' : ''}>
                 <div>
                     <strong>#${sp.riconoscimento}</strong> - ${sp.corriere}<br>
-                    <small>TRK: ${sp.codiceTracciabilita}</small>
+                    <small>TRK: ${sp.codiceTracciabilita} | Arrivato: ${sp.dataTestoInserimento || '-'}</small>
                 </div>
             </label>
         `;
@@ -534,7 +533,7 @@ function handleRitira(id, forzaScaduto = false) {
 function ripristinaPacco(id) {
     if(confirm("Ripristinare in giacenza?")) {
         const p = pacchi.find(x => x.id === id);
-        p.ritirato = false; p.isScaduto = false; p.firma = null; p.pudoStatus = 'nessuno'; p.sessioneRitiro = null;
+        p.ritirato = false; p.isScaduto = false; p.firma = null; p.pudoStatus = 'none'; p.sessioneRitiro = null;
         salva();
     }
 }
@@ -547,7 +546,7 @@ function mostraFirma(id) {
     let listaPacchiHtml = pacchiSessione.map(px => `
         <div style="border-bottom:1px solid #eee; padding:10px 0;">
             <b>Pacco:</b> #${px.riconoscimento} - <b>Corriere:</b> ${px.corriere}<br>
-            <small>TRK: ${px.codiceTracciabilita}</small>
+            <small>TRK: ${px.codiceTracciabilita} | <b>Arrivato il:</b> ${px.dataTestoInserimento || '-'}</small>
             ${px.pudoStatus === 'pagato' ? '<span style="color:green; font-weight:bold; margin-left:10px;">[PAGATO €0.50]</span>' : ''}
         </div>
     `).join('');
@@ -579,9 +578,9 @@ function mostraFirma(id) {
 
 function showFeedback(tipo) {
     const card = document.getElementById('successCard');
-    card.innerHTML = tipo === 'cliente' ? `<div style="font-size:80px; color:var(--success);">✅</div><div style="font-size:24px; font-weight:bold; color:var(--primary);">RITIRO COMPLETATO</div>` : `<div style="font-size:80px;">📦❌</div><div style="font-size:24px; font-weight:bold; color:var(--warning);">PACCO SCADUTO!</div>`;
+    card.innerHTML = `<h2 style="color:${tipo === 'cliente' ? 'var(--success)' : 'var(--warning)'}; font-size: 2rem;">${tipo === 'cliente' ? 'RITIRO COMPLETATO' : 'PACCO RESO (SCADUTO)'}</h2>`;
     document.getElementById('successOverlay').style.display = 'flex';
-    setTimeout(() => { document.getElementById('successOverlay').style.display = 'none'; }, 3000);
+    setTimeout(() => { document.getElementById('successOverlay').style.display = 'none'; }, 2000);
 }
 
 function toggleCampiUscita() {
