@@ -163,6 +163,9 @@
         .tag-non-pagato { color: #c92a2a; font-weight: bold; font-size: 0.8rem; background: #fff5f5; padding: 2px 6px; border-radius: 4px; margin-left: 5px; border: 1px solid #ffc9c9; }
         
         .multi-badge { background: #ff4757; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; margin-left: 5px; vertical-align: middle; }
+        
+        .item-selezione { display: flex; align-items: center; background: white; margin-bottom: 5px; padding: 8px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer; }
+        .item-selezione input { width: auto; margin-right: 10px; transform: scale(1.3); }
     </style>
 </head>
 <body onmousedown="resetInattivita()" onkeypress="resetInattivita()" ontouchstart="resetInattivita()">
@@ -181,13 +184,13 @@
 
         <div class="modal-body-flex">
             <div class="modal-left">
-                <div id="modalText" style="margin-bottom: 15px; font-size: 1.1rem; background: #f0f4f8; padding: 10px; border-radius: 10px;"></div>
+                <div id="modalText" style="margin-bottom: 15px; font-size: 1rem; background: #f0f4f8; padding: 10px; border-radius: 10px; max-height: 250px; overflow-y: auto; text-align: left;"></div>
                 <div id="boxRitiroDettagli">
                     <label><b>Chi ritira?</b></label>
                     <input type="text" id="modalInput" style="margin-top:5px; margin-bottom:15px; width:100%" placeholder="Nome di chi ritira">
                     <div id="boxPagamentoNoPudo" class="paga-box" style="display:none;">
                         <input type="checkbox" id="checkPagamento" style="width: auto; transform: scale(1.5); margin: 0 10px;">
-                        <span>PAGAMENTO € 0.50 RICEVUTO (Per tutti i pacchi No Pudo)</span>
+                        <span>PAGAMENTO € 0.50 RICEVUTO (Per i pacchi No Pudo selezionati)</span>
                     </div>
                 </div>
                 <div id="boxScadutoDettagli" style="display:none;">
@@ -444,45 +447,59 @@ function handleRitira(id, forzaScaduto = false) {
     document.getElementById('customModal').style.display = 'flex';
     document.getElementById('tipoUscita').value = forzaScaduto ? 'scaduto' : 'cliente';
     
-    let htmlLista = `<b>Cliente:</b> ${p.cognome.toUpperCase()} ${p.nome}<br>`;
-    if (stessiPacchi.length > 1 && !forzaScaduto) {
-        htmlLista += `<div style="color:red; font-weight:bold; margin-top:5px;">Rilevati ${stessiPacchi.length} pacchi per questo cliente:</div>`;
-        stessiPacchi.forEach(sp => {
-            htmlLista += `• #${sp.riconoscimento} (${sp.corriere})<br>`;
-        });
-    } else {
-        htmlLista += `<b>Pacco:</b> #${p.riconoscimento} (${p.corriere})`;
-    }
+    let htmlLista = `<p style="margin-top:0;"><b>Seleziona i pacchi da ritirare:</b></p>`;
+    stessiPacchi.forEach(sp => {
+        const isTarget = sp.id === id;
+        htmlLista += `
+            <label class="item-selezione">
+                <input type="checkbox" class="chk-multi-ritiro" data-id="${sp.id}" data-corriere="${sp.corriere}" ${isTarget ? 'checked' : ''}>
+                <div>
+                    <strong>#${sp.riconoscimento}</strong> - ${sp.corriere}<br>
+                    <small>TRK: ${sp.codiceTracciabilita}</small>
+                </div>
+            </label>
+        `;
+    });
+
     document.getElementById('modalText').innerHTML = htmlLista;
 
-    const hasNoPudo = stessiPacchi.some(px => px.corriere === 'Corrieri No Pudo');
-    document.getElementById('boxPagamentoNoPudo').style.display = (hasNoPudo && !forzaScaduto) ? 'flex' : 'none';
+    // Listener per aggiornare il box pagamento No Pudo in base alla selezione
+    const updatePudoBox = () => {
+        const selectedCheckboxes = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked'));
+        const hasNoPudoSelected = selectedCheckboxes.some(cb => cb.dataset.corriere === 'Corrieri No Pudo');
+        document.getElementById('boxPagamentoNoPudo').style.display = (hasNoPudoSelected && document.getElementById('tipoUscita').value === 'cliente') ? 'flex' : 'none';
+    };
+
+    document.querySelectorAll('.chk-multi-ritiro').forEach(cb => cb.addEventListener('change', updatePudoBox));
     
     toggleCampiUscita();
+    updatePudoBox();
+    
     document.getElementById('modalInput').value = p.cognome;
     document.getElementById('dataScadenzaRimozione').valueAsDate = new Date();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     document.getElementById('modalConfirmBtn').onclick = () => {
+        const selectedIds = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked')).map(cb => parseInt(cb.dataset.id));
+        if (selectedIds.length === 0) return alert("Seleziona almeno un pacco!");
+
         const tipo = document.getElementById('tipoUscita').value;
         const firmaData = canvas.toDataURL();
         const dataAttuale = new Date().toLocaleString();
         const ritiratoDa = document.getElementById('modalInput').value;
         const pagato = document.getElementById('checkPagamento').checked;
         const dataScad = document.getElementById('dataScadenzaRimozione').value.split("-").reverse().join("/");
+        const sessioneId = Date.now();
 
-        const pacchiDaProcessare = (tipo === 'scaduto') ? [p] : stessiPacchi;
-
-        pacchiDaProcessare.forEach(px => {
+        selectedIds.forEach(sid => {
+            const px = pacchi.find(x => x.id === sid);
             px.ritirato = true;
             px.dataRitiro = (tipo === 'cliente') ? dataAttuale : dataScad;
             px.ritiratoDa = (tipo === 'cliente') ? ritiratoDa : "SISTEMA (SCADUTO)";
             px.isScaduto = (tipo === 'scaduto');
             px.firma = (tipo === 'cliente') ? firmaData : null;
             if(px.corriere === 'Corrieri No Pudo') px.pudoStatus = pagato ? 'pagato' : 'non_pagato';
-            
-            // Per i ritiri multipli, salviamo l'ID della sessione per "Vedi Firma"
-            if(pacchiDaProcessare.length > 1) px.sessioneRitiro = id;
+            if(selectedIds.length > 1) px.sessioneRitiro = sessioneId;
         });
 
         salva();
@@ -501,8 +518,7 @@ function ripristinaPacco(id) {
 
 function mostraFirma(id) {
     const p = pacchi.find(x => x.id == id);
-    // Cerca tutti i pacchi ritirati insieme in questa sessione
-    const pacchiSessione = p.sessioneRitiro ? pacchi.filter(px => px.sessioneRitiro === p.sessioneRitiro || px.id === p.sessioneRitiro) : [p];
+    const pacchiSessione = p.sessioneRitiro ? pacchi.filter(px => px.sessioneRitiro === p.sessioneRitiro) : [p];
     
     const win = window.open("", "Firma", "width=600,height=800");
     let listaPacchiHtml = pacchiSessione.map(px => `
@@ -550,6 +566,8 @@ function toggleCampiUscita() {
     document.getElementById('boxRitiroDettagli').style.display = tipo === 'cliente' ? 'block' : 'none';
     document.getElementById('boxScadutoDettagli').style.display = tipo === 'scaduto' ? 'block' : 'none';
     document.getElementById('firmaSide').style.display = tipo === 'cliente' ? 'block' : 'none';
+    // Se passiamo a scaduto, nascondiamo comunque il box pagamento No Pudo
+    if (tipo === 'scaduto') document.getElementById('boxPagamentoNoPudo').style.display = 'none';
 }
 
 function closeModal() { document.getElementById('customModal').style.display = 'none'; }
