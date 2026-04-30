@@ -146,6 +146,17 @@
         @keyframes alertBlink { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
         .scadenza-alert { font-size: 1.8rem; cursor: pointer; margin-right: 15px; vertical-align: middle; animation: alertBlink 1s infinite; display: inline-block; }
 
+        /* STILE EMOJI CENTRATE */
+        .stato-emoji {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            vertical-align: middle;
+            margin-right: 10px;
+            font-size: 1.5rem;
+            line-height: 1;
+        }
+
         /* MODALE SCORREVOLE PER ZOOM 150% */
         #customModal { 
             display: none; 
@@ -184,8 +195,6 @@
         .paga-box { background: #fff9db; padding: 10px; border: 2px solid #fab005; border-radius: 10px; margin-top: 10px; display: flex; align-items: center; gap: 10px; font-weight: bold; }
         .tag-pagato { color: #d9480f; font-weight: bold; font-size: 0.8rem; background: #fff4e6; padding: 2px 6px; border-radius: 4px; margin-left: 5px; border: 1px solid #ffd8a8; }
         .tag-non-pagato { color: #c92a2a; font-weight: bold; font-size: 0.8rem; background: #fff5f5; padding: 2px 6px; border-radius: 4px; margin-left: 5px; border: 1px solid #ffc9c9; }
-        
-        .multi-badge { background: #ff4757; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; margin-left: 5px; vertical-align: middle; }
         
         .item-selezione { display: flex; align-items: center; background: white; margin-bottom: 5px; padding: 8px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer; }
         .item-selezione input { width: auto; margin-right: 10px; transform: scale(1.3); }
@@ -441,23 +450,31 @@ function generateHtml(p) {
     }
     
     let statoTesto = '';
+    let emojiIcona = '';
     if(p.ritirato) {
         let notaPudo = p.pudoStatus === 'pagato' ? '<span class="tag-pagato">(Pagato €0.50)</span>' : (p.pudoStatus === 'non_pagato' ? '<span class="tag-non-pagato">(Non Pagato)</span>' : '');
-        statoTesto = p.isScaduto ? `<div style="color:var(--warning); font-size:0.85rem; margin-top:5px; font-weight:bold;">PACCO SCADUTO (RESO) il ${p.dataRitiro}</div>` : `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">RITIRATO DA ${p.ritiratoDa} IL ${p.dataRitiro} ${notaPudo} ${firmaLink}</div>`;
+        
+        if (p.isScaduto) {
+            emojiIcona = '<span class="stato-emoji">📦❌</span>';
+            statoTesto = `<div style="color:var(--warning); font-size:0.85rem; margin-top:5px; font-weight:bold;">PACCO SCADUTO (RESO) il ${p.dataRitiro}</div>`;
+        } else {
+            emojiIcona = '<span class="stato-emoji">✅</span>';
+            statoTesto = `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">RITIRATO DA ${p.ritiratoDa} IL ${p.dataRitiro} ${notaPudo} ${firmaLink}</div>`;
+        }
     }
-
-    const altriPacchi = p.ritirato ? 0 : pacchi.filter(px => !px.ritirato && px.cognome.toLowerCase() === p.cognome.toLowerCase() && px.id !== p.id).length;
-    const badgeMulti = altriPacchi > 0 ? `<span class="multi-badge">+${altriPacchi} altri</span>` : '';
 
     const azione = p.ritirato 
         ? `<button class="btn-ripristina" onclick="ripristinaPacco(${p.id})">RIPRISTINA</button>` 
         : `<button class="ritira-btn" onclick="handleRitira(${p.id})">RITIRA</button>`;
 
     return `<div class="pacco ${p.ritirato ? (p.isScaduto ? 'scaduto' : 'ritirato') : ''}">
-        <div style="flex-grow:1">
-            <span class="tag-grandezza">${p.grandezza}</span><span class="tag-corriere">${p.corriere}</span><strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome} ${badgeMulti}
-            <br><small style="display:block; margin-top:5px; color:#666;">📍 ${p.scaffale} • 🔍 TRK: <span class="highlight-trk" onclick="copiaTracking('${p.codiceTracciabilita}')">${p.codiceTracciabilita}</span><br>📅 Arrivato il: ${p.dataTestoInserimento || '-'}</small>
-            ${statoTesto}
+        <div style="flex-grow:1; display: flex; align-items: center;">
+            ${emojiIcona}
+            <div>
+                <span class="tag-grandezza">${p.grandezza}</span><span class="tag-corriere">${p.corriere}</span><strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome}
+                <br><small style="display:block; margin-top:5px; color:#666;">📍 ${p.scaffale} • 🔍 TRK: <span class="highlight-trk" onclick="copiaTracking('${p.codiceTracciabilita}')">${p.codiceTracciabilita}</span><br>📅 Arrivato il: ${p.dataTestoInserimento || '-'}</small>
+                ${statoTesto}
+            </div>
         </div>
         <div style="display:flex; align-items:center;">${alertScadenza} ${azione}</div>
     </div>`;
