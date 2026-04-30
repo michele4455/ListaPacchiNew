@@ -197,13 +197,17 @@
         #signature-pad { border: 2px dashed #ccc; background: #fff; border-radius: 8px; touch-action: none; max-width: 100%; }
         .pacco-checkbox { transform: scale(2); cursor: pointer; accent-color: var(--primary); }
         
-        .highlight-trk { color: #333; font-weight: bold; border-bottom: 2px solid var(--accent); padding: 0 2px; }
+        .highlight-trk { 
+            color: #333; font-weight: bold; border-bottom: 2px solid var(--accent); padding: 0 2px; cursor: copy; 
+        }
+        .highlight-trk:active { background: var(--accent); }
+
         .paga-box { background: #fff9db; padding: 10px; border: 2px solid #fab005; border-radius: 10px; margin-top: 10px; display: flex; align-items: center; gap: 10px; font-weight: bold; }
         .tag-pagato { color: #d9480f; font-weight: bold; font-size: 0.8rem; background: #fff4e6; padding: 2px 6px; border-radius: 4px; margin-left: 5px; border: 1px solid #ffd8a8; }
         .tag-non-pagato { color: #c92a2a; font-weight: bold; font-size: 0.8rem; background: #fff5f5; padding: 2px 6px; border-radius: 4px; margin-left: 5px; border: 1px solid #ffc9c9; }
     </style>
 </head>
-<body>
+<body onmousedown="resetInattivita()" onkeypress="resetInattivita()" ontouchstart="resetInattivita()">
 
 <div id="successOverlay">
     <div class="success-card" id="successCard"></div>
@@ -288,7 +292,7 @@
         </div>
 
         <div class="status-bar" id="counter">Caricamento...</div>
-        <input type="text" id="search" style="margin-bottom:25px; padding: 16px; border-radius: 50px; width:100%" placeholder="🔍 Cerca cliente, ID o Tracking..." oninput="aggiornaVista()">
+        <input type="text" id="search" style="margin-bottom:25px; padding: 166px; border-radius: 50px; width:100%; padding: 16px;" placeholder="🔍 Cerca cliente, ID o Tracking..." oninput="aggiornaVista()">
         
         <div class="tabs" id="tabs"></div>
         <div id="contenitori"></div>
@@ -383,7 +387,26 @@ function selezionaSuggerimento(cog, nom) {
 
 function resetInattivita() {
     clearTimeout(timeoutInattivita);
-    timeoutInattivita = setTimeout(logout, 15 * 60 * 1000); 
+    timeoutInattivita = setTimeout(logout, 15 * 60 * 1000); // 15 MINUTI
+}
+
+function copiaTracking(testo) {
+    if(!testo || testo === '-') return;
+    navigator.clipboard.writeText(testo).then(() => {
+        const temp = document.createElement('div');
+        temp.innerHTML = "Copiato!";
+        temp.style.position = 'fixed';
+        temp.style.bottom = '20px';
+        temp.style.left = '50%';
+        temp.style.transform = 'translateX(-50%)';
+        temp.style.background = '#333';
+        temp.style.color = 'white';
+        temp.style.padding = '10px 20px';
+        temp.style.borderRadius = '20px';
+        temp.style.zIndex = '9999';
+        document.body.appendChild(temp);
+        setTimeout(() => temp.remove(), 1500);
+    });
 }
 
 function getPos(e) { const rect = canvas.getBoundingClientRect(); return {x: (e.clientX || e.touches[0].clientX) - rect.left, y: (e.clientY || e.touches[0].clientY) - rect.top}; }
@@ -473,7 +496,7 @@ function generateHtml(p) {
         let notaPudo = p.pudoStatus === 'pagato' ? '<span class="tag-pagato">(Pagato €0.50)</span>' : (p.pudoStatus === 'non_pagato' ? '<span class="tag-non-pagato">(Non Pagato)</span>' : '');
         statoTesto = p.isScaduto ? `<div style="color:var(--warning); font-size:0.85rem; margin-top:5px; font-weight:bold;">🚫 RESO PER SCADENZA il ${p.dataRitiro}</div>` : `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">✅ Ritirato da ${p.ritiratoDa} il ${p.dataRitiro} ${notaPudo} ${firmaLink}</div>`;
     }
-    return `<div class="pacco ${p.ritirato ? (p.isScaduto ? 'scaduto' : 'ritirato') : ''}"><div style="flex-grow:1"><span class="tag-grandezza">${p.grandezza}</span><span class="tag-corriere">${p.corriere}</span><strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome}<br><small style="display:block; margin-top:5px; color:#666;">📍 ${p.scaffale} • 🔍 TRK: <span class="highlight-trk">${p.codiceTracciabilita}</span><br>📅 Arrivato il: ${p.dataTestoInserimento || '-'}</small>${statoTesto}</div><div style="display:flex; align-items:center;">${alertScadenza}<input type="checkbox" class="pacco-checkbox" ${p.ritirato ? 'checked' : ''} onchange="handleToggle(${p.id})"></div></div>`;
+    return `<div class="pacco ${p.ritirato ? (p.isScaduto ? 'scaduto' : 'ritirato') : ''}"><div style="flex-grow:1"><span class="tag-grandezza">${p.grandezza}</span><span class="tag-corriere">${p.corriere}</span><strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome}<br><small style="display:block; margin-top:5px; color:#666;">📍 ${p.scaffale} • 🔍 TRK: <span class="highlight-trk" onclick="copiaTracking('${p.codiceTracciabilita}')" title="Clicca per copiare">${p.codiceTracciabilita}</span><br>📅 Arrivato il: ${p.dataTestoInserimento || '-'}</small>${statoTesto}</div><div style="display:flex; align-items:center;">${alertScadenza}<input type="checkbox" class="pacco-checkbox" ${p.ritirato ? 'checked' : ''} onchange="handleToggle(${p.id})"></div></div>`;
 }
 
 function handleToggle(id) {
@@ -540,6 +563,7 @@ function cancellaRitirati(){
 if(localStorage.getItem('loggedIn') === 'true') {
     document.getElementById('loginPage').style.display='none';
     document.getElementById('mainPage').style.display='block';
+    resetInattivita();
 }
 </script>
 </body>
