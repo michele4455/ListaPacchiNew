@@ -27,6 +27,15 @@
             padding: 0; margin: 0; color: var(--text); 
         }
 
+        /* Stile Orologio */
+        #liveClock {
+            color: var(--accent);
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
         .app-header { 
             background: var(--primary);
             padding: 30px 20px;
@@ -139,6 +148,25 @@
         
         .ritira-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .ritira-btn:hover { background: var(--primary-dark); }
+        
+        /* Stile pulsante modifica */
+        .edit-btn { 
+            background: #eee; 
+            color: #333; 
+            border: none; 
+            width: 35px; 
+            height: 35px; 
+            border-radius: 50%; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-left: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        .edit-btn:hover { background: #ddd; }
+
         .btn-ripristina { background: #666; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.7rem; }
 
         .view-firma-link { color: var(--primary); text-decoration: none; cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-left: 10px; padding: 4px 8px; border: 1px solid var(--primary); border-radius: 5px; }
@@ -257,6 +285,7 @@
     <div class="app-header">
         <button class="logout-btn" onclick="logout()">LOGOUT</button>
         <div class="header-content">
+            <span id="liveClock">Caricamento data...</span>
             <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp">
             <h1>Centro Post@ Anaclerio</h1>
         </div>
@@ -279,7 +308,7 @@
             <select id="grandezzaSelect">
                 <option value="P">P</option><option value="M">M</option><option value="G">G</option>
             </select>
-            <button onclick="aggiungiPacco()">AGGIUNGI</button>
+            <button id="btnSalvaPacco" onclick="aggiungiPacco()">AGGIUNGI</button>
         </div>
 
         <div class="status-bar" id="counter">Caricamento...</div>
@@ -316,10 +345,20 @@ let pacchi = [];
 const corrieri = ["InPost", "UPS", "Punto Poste", "DHL", "BRT", "GLS", "Amazon", "Corrieri No Pudo"];
 let tabAttiva = 'Tutti';
 let timeoutInattivita;
+let paccoInModifica = null;
 
 const canvas = document.getElementById('signature-pad');
 const ctx = canvas.getContext('2d');
 let drawing = false;
+
+// Funzione Orologio
+function updateClock() {
+    const now = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+    document.getElementById('liveClock').textContent = now.toLocaleDateString('it-IT', options);
+}
+setInterval(updateClock, 1000);
+updateClock();
 
 db.ref('pacchi').on('value', (snapshot) => {
     pacchi = snapshot.val() ? snapshot.val() : [];
@@ -396,25 +435,59 @@ function aggiungiPacco(){
     const cr = document.getElementById('codiceRiconoscimento').value.trim();
     if(!c || !corr) return alert("Mancano dati!");
     
-    let num = cr;
-    if(!cr) {
-        const pG = pacchi.filter(p => p.corriere === corr && !p.ritirato);
-        num = pG.length > 0 ? parseInt(pG[pG.length-1].riconoscimento) + 1 : 1;
+    if (paccoInModifica !== null) {
+        // Logica di Modifica
+        const idx = pacchi.findIndex(p => p.id === paccoInModifica);
+        if (idx !== -1) {
+            pacchi[idx].nome = n;
+            pacchi[idx].cognome = c;
+            pacchi[idx].corriere = corr;
+            pacchi[idx].riconoscimento = cr;
+            pacchi[idx].codiceTracciabilita = document.getElementById('codiceTracciabilita').value || '-';
+            pacchi[idx].scaffale = document.getElementById('scaffaleSelect').value;
+            pacchi[idx].grandezza = document.getElementById('grandezzaSelect').value;
+        }
+        paccoInModifica = null;
+        document.getElementById('btnSalvaPacco').textContent = "AGGIUNGI";
+    } else {
+        // Logica Nuovo Pacco
+        let num = cr;
+        if(!cr) {
+            const pG = pacchi.filter(p => p.corriere === corr && !p.ritirato);
+            num = pG.length > 0 ? parseInt(pG[pG.length-1].riconoscimento) + 1 : 1;
+        }
+        
+        pacchi.push({
+            id: Date.now(),
+            dataInserimento: new Date().getTime(),
+            dataTestoInserimento: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+            codiceTracciabilita: document.getElementById('codiceTracciabilita').value || '-',
+            riconoscimento: num,
+            nome: n, cognome: c, corriere: corr,
+            scaffale: document.getElementById('scaffaleSelect').value,
+            grandezza: document.getElementById('grandezzaSelect').value,
+            ritirato: false, isScaduto: false, dataRitiro: null, ritiratoDa: '', firma: null, pudoStatus: 'nessuno'
+        });
     }
-    
-    pacchi.push({
-        id: Date.now(),
-        dataInserimento: new Date().getTime(),
-        dataTestoInserimento: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-        codiceTracciabilita: document.getElementById('codiceTracciabilita').value || '-',
-        riconoscimento: num,
-        nome: n, cognome: c, corriere: corr,
-        scaffale: document.getElementById('scaffaleSelect').value,
-        grandezza: document.getElementById('grandezzaSelect').value,
-        ritirato: false, isScaduto: false, dataRitiro: null, ritiratoDa: '', firma: null, pudoStatus: 'nessuno'
-    });
     salva(); 
     ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
+}
+
+function modificaPacco(id) {
+    const p = pacchi.find(x => x.id === id);
+    if(!p) return;
+    
+    paccoInModifica = id;
+    document.getElementById('codiceTracciabilita').value = p.codiceTracciabilita;
+    document.getElementById('codiceRiconoscimento').value = p.riconoscimento;
+    document.getElementById('cognome').value = p.cognome;
+    document.getElementById('nome').value = p.nome;
+    document.getElementById('corriereSelect').value = p.corriere;
+    document.getElementById('scaffaleSelect').value = p.scaffale;
+    document.getElementById('grandezzaSelect').value = p.grandezza;
+    
+    document.getElementById('btnSalvaPacco').textContent = "SALVA MODIFICHE";
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function aggiornaVista(){
@@ -424,7 +497,8 @@ function aggiornaVista(){
     const tabsBox = document.getElementById('tabs');
     if(tabsBox) tabsBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">Tutti</button>` + corrieri.map(c => `<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}">${c}</button>`).join('');
     
-    const search = document.getElementById('search').value.toLowerCase();
+    const searchInput = document.getElementById('search');
+    const search = searchInput.value.toLowerCase();
     const filterFn = p => (tabAttiva === 'Tutti' || p.corriere === tabAttiva) && (p.cognome.toLowerCase().includes(search) || String(p.riconoscimento).includes(search) || p.codiceTracciabilita.toLowerCase().includes(search));
     
     const inGiacenza = pacchi.filter(p => !p.ritirato && filterFn(p));
@@ -463,7 +537,7 @@ function generateHtml(p) {
 
     const azione = p.ritirato 
         ? `<button class="btn-ripristina" onclick="ripristinaPacco(${p.id})">RIPRISTINA</button>` 
-        : `<button class="ritira-btn" onclick="handleRitira(${p.id})">RITIRA</button>`;
+        : `<button class="ritira-btn" onclick="handleRitira(${p.id})">RITIRA</button> <button class="edit-btn" onclick="modificaPacco(${p.id})">...</button>`;
 
     return `<div class="pacco ${p.ritirato ? (p.isScaduto ? 'scaduto' : 'ritirato') : ''}">
         <div style="flex-grow:1; display: flex; align-items: center;">
@@ -543,6 +617,10 @@ function handleRitira(id, forzaScaduto = false) {
             if(selectedIds.length > 1) px.sessioneRitiro = sessioneId;
         });
 
+        // Reset Ricerca e Torna a Tutti dopo il ritiro
+        document.getElementById('search').value = '';
+        tabAttiva = 'Tutti';
+        
         salva();
         closeModal();
         showFeedback(tipo);
