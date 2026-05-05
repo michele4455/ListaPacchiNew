@@ -7,7 +7,7 @@
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <!-- Libreria per Scansione QR e Codici a Barre -->
+    <!-- Libreria necessaria per la scansione[cite: 1] -->
     <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
@@ -115,38 +115,41 @@
 
         .form-group button { background-color: var(--primary); color: var(--accent); border: none; cursor: pointer; font-weight: bold; text-transform: uppercase; }
 
-        /* FIX CAMERA DENTRO IL CAMPO TRACKING[cite: 1] */
-        .tracking-wrapper { 
-            position: relative; 
+        /* FIX CAMERA DENTRO IL CAMPO[cite: 1] */
+        .tracking-container {
+            position: relative;
             width: 100%;
         }
-        .tracking-wrapper input { 
-            padding-right: 45px !important; /* Spazio per non sovrapporre testo e icona[cite: 1] */
+        .tracking-container input {
+            padding-right: 45px !important; /* Spazio per l'icona[cite: 1] */
         }
-        .cam-trigger { 
+        .cam-btn {
             position: absolute;
-            right: 8px;
+            right: 10px;
             top: 50%;
             transform: translateY(-50%);
-            background: transparent;
+            background: none;
             border: none;
             font-size: 1.4rem;
             cursor: pointer;
-            z-index: 10;
-            padding: 5px;
-            line-height: 1;
+            padding: 0;
+            z-index: 5;
             display: flex;
             align-items: center;
-            justify-content: center;
         }
 
         /* Overlay Scanner */
-        #scanner-container { 
-            display: none; position: fixed; top:0; left:0; width:100%; height:100%; 
-            background: rgba(0,0,0,0.85); z-index: 5000; flex-direction: column; 
-            align-items: center; justify-content: center; 
+        #scanner-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 9999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
-        #interactive { width: 90%; max-width: 500px; background: #000; border-radius: 10px; overflow: hidden; }
+        #reader { width: 90%; max-width: 500px; background: white; border-radius: 10px; overflow: hidden; }
 
         .suggestions-list {
             position: absolute;
@@ -265,10 +268,10 @@
 </head>
 <body onmousedown="resetInattivita()" onkeypress="resetInattivita()" ontouchstart="resetInattivita()">
 
-<!-- Scanner Overlay UI -->
-<div id="scanner-container">
-    <div id="interactive"></div>
-    <button onclick="stopScan()" style="margin-top:20px; padding:15px 30px; background:white; border:none; border-radius:50px; font-weight:bold;">CHIUDI CAMERA</button>
+<!-- Overlay Scanner[cite: 1] -->
+<div id="scanner-overlay">
+    <div id="reader"></div>
+    <button onclick="stopScan()" style="margin-top:20px; padding:15px 30px; background:white; border:none; border-radius:50px; font-weight:bold; cursor:pointer;">CHIUDI CAMERA</button>
 </div>
 
 <div id="successOverlay">
@@ -287,7 +290,6 @@
     </div>
 </div>
 
-<!-- MODAL USCITA -->
 <div id="customModal">
     <div class="modal-content">
         <h3 id="modalTitle" style="color:var(--primary); margin:0 0 10px 0;">Gestione Uscita Pacco</h3>
@@ -349,10 +351,10 @@
 
     <div class="container">
         <div class="form-group">
-            <!-- CAMPO TRK CON CAMERA DENTRO[cite: 1] -->
-            <div class="tracking-wrapper">
+            <!-- CAMPO TRACKING CON CAMERA INTEGRATA[cite: 1] -->
+            <div class="tracking-container">
                 <input type="text" id="codiceTracciabilita" placeholder="Tracking (TRK)">
-                <button class="cam-trigger" onclick="startScan()" title="Scansiona Codice">📷</button>
+                <button type="button" class="cam-btn" onclick="startScan()" title="Scansiona Codice">📷</button>
             </div>
             
             <input type="text" id="codiceRiconoscimento" placeholder="ID Pacco">
@@ -389,7 +391,7 @@
 </div>
 
 <script>
-// --- LOGICA E FUNZIONALITÀ (Tutto invariato come richiesto) ---
+// --- CONFIGURAZIONE E VARIABILI ---
 const firebaseConfig = {
   apiKey: "AIzaSyA9hwljJQARUJTCbGRSGt77AsOLKEeFZGY",
   authDomain: "gestionale-anaclerio.firebaseapp.com",
@@ -407,42 +409,45 @@ let pacchi = [];
 const corrieri = ["InPost", "UPS", "Punto Poste", "DHL", "BRT", "GLS", "Amazon", "Corrieri No Pudo"];
 let tabAttiva = 'Tutti';
 let timeoutInattivita;
-let scanner = null;
+let html5QrCode = null;
 
 const canvas = document.getElementById('signature-pad');
 const ctx = canvas.getContext('2d');
 let drawing = false;
 
+// --- FUNZIONI SCANNER[cite: 1] ---
 function startScan() {
-    document.getElementById('scanner-container').style.display = 'flex';
-    scanner = new Html5Qrcode("interactive");
+    document.getElementById('scanner-overlay').style.display = 'flex';
+    html5QrCode = new Html5Qrcode("reader");
     const config = { fps: 15, qrbox: { width: 250, height: 150 } };
     
-    scanner.start({ facingMode: "environment" }, config, (decodedText) => {
+    html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
         document.getElementById('codiceTracciabilita').value = decodedText;
         stopScan();
     }).catch(err => {
-        console.error("Errore Camera", err);
+        console.error("Errore camera:", err);
         stopScan();
     });
 }
 
 function stopScan() {
-    if (scanner) {
-        scanner.stop().then(() => {
-            document.getElementById('scanner-container').style.display = 'none';
+    if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+            document.getElementById('scanner-overlay').style.display = 'none';
         }).catch(() => {
-            document.getElementById('scanner-container').style.display = 'none';
+            document.getElementById('scanner-overlay').style.display = 'none';
         });
     }
 }
 
+// --- LOGICA GESTIONALE (Tua originale) ---
 function updateClock() {
     const ora = new Date();
     const opzioni = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
     document.getElementById('liveDateTime').innerText = ora.toLocaleDateString('it-IT', opzioni).toUpperCase();
 }
 setInterval(updateClock, 1000);
+updateClock();
 
 db.ref('pacchi').on('value', (snapshot) => {
     pacchi = snapshot.val() ? snapshot.val() : [];
@@ -450,6 +455,32 @@ db.ref('pacchi').on('value', (snapshot) => {
 });
 
 function salva(){ db.ref('pacchi').set(pacchi); }
+
+function gestisciAutocomplete(val) {
+    const box = document.getElementById('suggestionsBox');
+    const nomeInput = document.getElementById('nome');
+    if (!val || val.trim() === "") { nomeInput.value = ""; box.style.display = 'none'; return; }
+    const query = val.toLowerCase();
+    const matches = [];
+    const seen = new Set();
+    pacchi.forEach(p => {
+        const fullKey = `${p.cognome}|${p.nome}`.toLowerCase();
+        if (p.cognome.toLowerCase().includes(query) && !seen.has(fullKey)) {
+            matches.push({ cognome: p.cognome, nome: p.nome });
+            seen.add(fullKey);
+        }
+    });
+    if (matches.length > 0) {
+        box.innerHTML = matches.map(m => `<div class="suggestion-item" onclick="selezionaSuggerimento('${m.cognome.replace(/'/g, "\\'")}', '${m.nome.replace(/'/g, "\\'")}')"><span><b>${m.cognome.toUpperCase()}</b> ${m.nome}</span></div>`).join('');
+        box.style.display = 'block';
+    } else box.style.display = 'none';
+}
+
+function selezionaSuggerimento(cog, nom) {
+    document.getElementById('cognome').value = cog;
+    document.getElementById('nome').value = nom;
+    document.getElementById('suggestionsBox').style.display = 'none';
+}
 
 function resetInattivita() {
     clearTimeout(timeoutInattivita);
@@ -467,13 +498,7 @@ function copiaTracking(testo) {
     });
 }
 
-function getPos(e) { 
-    const rect = canvas.getBoundingClientRect(); 
-    return {
-        x: (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left, 
-        y: (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top
-    }; 
-}
+function getPos(e) { const rect = canvas.getBoundingClientRect(); return {x: (e.clientX || e.touches[0].clientX) - rect.left, y: (e.clientY || e.touches[0].clientY) - rect.top}; }
 canvas.addEventListener('mousedown', (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
 canvas.addEventListener('mousemove', (e) => { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
 window.addEventListener('mouseup', () => drawing = false);
@@ -489,6 +514,7 @@ function login(){
         aggiornaVista();
     } else alert("Credenziali errate");
 }
+
 function logout() { localStorage.removeItem('loggedIn'); location.reload(); }
 
 function aggiungiPacco(){
@@ -546,7 +572,7 @@ function generateHtml(p) {
     if (!p.ritirato) {
         const oggi = new Date().getTime();
         const diffGiorni = (oggi - p.dataInserimento) / (1000 * 60 * 60 * 24);
-        if (diffGiorni >= 8) alertScadenza = `<span class="scadenza-alert" onclick="handleRitira(${p.id}, true)">⚠️</span>`;
+        if (diffGiorni >= 5) alertScadenza = `<span class="scadenza-alert" onclick="handleRitira(${p.id}, true)">⚠️</span>`;
     }
     
     let statoTesto = '';
@@ -598,8 +624,7 @@ function apriModifica(id) {
         p.codiceTracciabilita = document.getElementById('editTrk').value.trim();
         p.corriere = document.getElementById('editCorriere').value;
         p.scaffale = document.getElementById('editScaffale').value;
-        salva();
-        closeEditModal();
+        salva(); closeEditModal();
     };
 }
 function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
@@ -611,7 +636,7 @@ function handleRitira(id, forzaScaduto = false) {
     document.getElementById('customModal').style.display = 'flex';
     document.getElementById('tipoUscita').value = forzaScaduto ? 'scaduto' : 'cliente';
     
-    let htmlLista = `<p><b>Seleziona i pacchi da ritirare:</b></p>`;
+    let htmlLista = `<p style="margin-top:0;"><b>Seleziona i pacchi da ritirare:</b></p>`;
     stessiPacchi.forEach(sp => {
         htmlLista += `<label class="item-selezione"><input type="checkbox" class="chk-multi-ritiro" data-id="${sp.id}" data-corriere="${sp.corriere}" ${sp.id === id ? 'checked' : ''}><div><strong>#${sp.riconoscimento}</strong> - ${sp.corriere}<br><small>TRK: ${sp.codiceTracciabilita}</small></div></label>`;
     });
@@ -623,8 +648,7 @@ function handleRitira(id, forzaScaduto = false) {
     };
     document.querySelectorAll('.chk-multi-ritiro').forEach(cb => cb.addEventListener('change', updatePudoBox));
     
-    toggleCampiUscita();
-    updatePudoBox();
+    toggleCampiUscita(); updatePudoBox();
     document.getElementById('modalInput').value = p.cognome;
     document.getElementById('dataScadenzaRimozione').valueAsDate = new Date();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -639,10 +663,10 @@ function handleRitira(id, forzaScaduto = false) {
         selectedIds.forEach(sid => {
             const px = pacchi.find(x => x.id === sid);
             px.ritirato = true;
-            px.dataRitiro = tipo === 'cliente' ? new Date().toLocaleString() : document.getElementById('dataScadenzaRimozione').value.split("-").reverse().join("/");
-            px.ritiratoDa = tipo === 'cliente' ? document.getElementById('modalInput').value : "SISTEMA (SCADUTO)";
+            px.dataRitiro = (tipo === 'cliente') ? new Date().toLocaleString() : document.getElementById('dataScadenzaRimozione').value.split("-").reverse().join("/");
+            px.ritiratoDa = (tipo === 'cliente') ? document.getElementById('modalInput').value : "SISTEMA (SCADUTO)";
             px.isScaduto = (tipo === 'scaduto');
-            px.firma = tipo === 'cliente' ? firmaData : null;
+            px.firma = (tipo === 'cliente') ? firmaData : null;
             if(px.corriere === 'Corrieri No Pudo') px.pudoStatus = document.getElementById('checkPagamento').checked ? 'pagato' : 'non_pagato';
             if(selectedIds.length > 1) px.sessioneRitiro = sessId;
         });
@@ -650,47 +674,45 @@ function handleRitira(id, forzaScaduto = false) {
     };
 }
 
-function gestisciAutocomplete(val) {
-    const box = document.getElementById('suggestionsBox');
-    if (!val) { box.style.display = 'none'; return; }
-    const matches = Array.from(new Set(pacchi.map(p => `${p.cognome}|${p.nome}`)))
-        .filter(k => k.toLowerCase().includes(val.toLowerCase()))
-        .map(k => k.split('|'));
-    if (matches.length > 0) {
-        box.innerHTML = matches.map(m => `<div class="suggestion-item" onclick="selezionaSuggerimento('${m[0]}','${m[1]}')"><span><b>${m[0]}</b> ${m[1]}</span></div>`).join('');
-        box.style.display = 'block';
-    } else box.style.display = 'none';
-}
-function selezionaSuggerimento(c, n) { document.getElementById('cognome').value = c; document.getElementById('nome').value = n; document.getElementById('suggestionsBox').style.display = 'none'; }
-function closeModal() { document.getElementById('customModal').style.display = 'none'; }
-function toggleCampiUscita() {
-    const t = document.getElementById('tipoUscita').value;
-    document.getElementById('boxRitiroDettagli').style.display = t === 'cliente' ? 'block' : 'none';
-    document.getElementById('boxScadutoDettagli').style.display = t === 'scaduto' ? 'block' : 'none';
-    document.getElementById('firmaSide').style.display = t === 'cliente' ? 'block' : 'none';
-}
-function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
-function setTab(t){ tabAttiva = t; aggiornaVista(); }
-function ripristinaPacco(id) { if(confirm("Ripristinare?")) { const p = pacchi.find(x => x.id === id); p.ritirato = false; salva(); } }
-function toggleSezioneRitirati() { const s = document.getElementById('sezioneRitirati'); s.style.display = s.style.display === 'none' ? 'block' : 'none'; }
-function cancellaRitirati(){ if(confirm("Svuotare archivio?")) { pacchi = pacchi.filter(p => !p.ritirato); salva(); } }
-function showFeedback(t) { 
-    document.getElementById('successOverlay').style.display = 'flex'; 
-    document.getElementById('successCard').innerHTML = `<h2>${t === 'cliente' ? '✅ RITIRO OK' : '📦 RESO OK'}</h2>`;
-    setTimeout(() => document.getElementById('successOverlay').style.display = 'none', 1500); 
+function ripristinaPacco(id) {
+    if(confirm("Ripristinare?")) {
+        const p = pacchi.find(x => x.id === id);
+        p.ritirato = false; salva();
+    }
 }
 
 function mostraFirma(id) {
     const p = pacchi.find(x => x.id == id);
-    const pS = p.sessioneRitiro ? pacchi.filter(x => x.sessioneRitiro === p.sessioneRitiro) : [p];
-    const w = window.open("", "_blank");
-    w.document.write(`<html><body style="font-family:sans-serif;text-align:center;"><h1>Ricevuta</h1><p>Cliente: ${p.cognome} ${p.nome}</p><ul>${pS.map(x=>`<li>#${x.riconoscimento} - ${x.corriere}</li>`).join('')}</ul><img src="${p.firma}" style="border:1px solid #000;"><br><button onclick="window.print()">STAMPA</button></body></html>`);
+    const pacchiSessione = p.sessioneRitiro ? pacchi.filter(px => px.sessioneRitiro === p.sessioneRitiro) : [p];
+    const win = window.open("", "Firma", "width=700,height=900");
+    let righe = pacchiSessione.map(px => `<tr><td>#${px.riconoscimento}</td><td>${px.corriere}</td><td>${px.codiceTracciabilita}</td></tr>`).join('');
+    win.document.write(`<html><body style="font-family:sans-serif;text-align:center;"><h2>Ricevuta di Consegna</h2><p>Destinatario: ${p.cognome} ${p.nome}</p><table border="1" style="width:100%;border-collapse:collapse;"><tr><th>ID</th><th>Corriere</th><th>TRK</th></tr>${righe}</table><br><p>Firma:</p><img src="${p.firma}" style="border:1px solid #000;max-width:400px;"><br><br><button onclick="window.print()">STAMPA</button></body></html>`);
 }
+
+function showFeedback(tipo) {
+    const card = document.getElementById('successCard');
+    card.innerHTML = `<h2>${tipo === 'cliente' ? '✅ RITIRO OK' : '📦 RESO OK'}</h2>`;
+    document.getElementById('successOverlay').style.display = 'flex';
+    setTimeout(() => { document.getElementById('successOverlay').style.display = 'none'; }, 2000);
+}
+
+function toggleCampiUscita() {
+    const tipo = document.getElementById('tipoUscita').value;
+    document.getElementById('boxRitiroDettagli').style.display = tipo === 'cliente' ? 'block' : 'none';
+    document.getElementById('boxScadutoDettagli').style.display = tipo === 'scaduto' ? 'block' : 'none';
+    document.getElementById('firmaSide').style.display = tipo === 'cliente' ? 'block' : 'none';
+}
+
+function closeModal() { document.getElementById('customModal').style.display = 'none'; }
+function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+function toggleSezioneRitirati() { const s = document.getElementById('sezioneRitirati'); s.style.display = s.style.display === 'none' ? 'block' : 'none'; }
+function setTab(t){ tabAttiva = t; aggiornaVista(); }
+function cancellaRitirati(){ if(confirm("Svuotare archivio?")) { pacchi = pacchi.filter(p => !p.ritirato); salva(); } }
 
 if(localStorage.getItem('loggedIn') === 'true') {
     document.getElementById('loginPage').style.display='none';
     document.getElementById('mainPage').style.display='block';
-    updateClock();
+    resetInattivita();
 }
 </script>
 </body>
