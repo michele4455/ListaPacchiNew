@@ -7,6 +7,8 @@
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <!-- Libreria per Scansione QR e Codici a Barre -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
         :root { 
@@ -37,7 +39,6 @@
             position: relative;
         }
         
-        /* ORA E DATA */
         .live-clock {
             color: var(--white);
             font-weight: bold;
@@ -114,6 +115,23 @@
 
         .form-group button { background-color: var(--primary); color: var(--accent); border: none; cursor: pointer; font-weight: bold; text-transform: uppercase; }
 
+        /* Integrazione Camera Icon Layout */
+        .tracking-wrapper { position: relative; display: flex; align-items: center; }
+        .tracking-wrapper input { padding-right: 45px; }
+        .cam-trigger { 
+            position: absolute; right: 8px; background: var(--primary); color: white; 
+            border: none; border-radius: 6px; width: 32px; height: 32px; 
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+
+        /* Overlay Scanner */
+        #scanner-container { 
+            display: none; position: fixed; top:0; left:0; width:100%; height:100%; 
+            background: rgba(0,0,0,0.85); z-index: 5000; flex-direction: column; 
+            align-items: center; justify-content: center; 
+        }
+        #interactive { width: 90%; max-width: 500px; background: #000; border-radius: 10px; overflow: hidden; }
+
         .suggestions-list {
             position: absolute;
             top: 100%; left: 0; right: 0;
@@ -153,7 +171,6 @@
         .ritira-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .ritira-btn:hover { background: var(--primary-dark); }
         
-        /* PULSANTE EDIT */
         .edit-dots {
             background: #eee;
             color: #333;
@@ -226,12 +243,17 @@
         .item-selezione { display: flex; align-items: center; background: white; margin-bottom: 5px; padding: 8px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer; }
         .item-selezione input { width: auto; margin-right: 10px; transform: scale(1.3); }
 
-        /* Stile Form Modifica */
         .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; }
         .edit-grid label { font-size: 0.8rem; font-weight: bold; color: var(--primary); margin-top: 5px; display: block; }
     </style>
 </head>
 <body onmousedown="resetInattivita()" onkeypress="resetInattivita()" ontouchstart="resetInattivita()">
+
+<!-- Scanner Overlay UI -->
+<div id="scanner-container">
+    <div id="interactive"></div>
+    <button onclick="stopScan()" style="margin-top:20px; padding:15px 30px; background:white; border:none; border-radius:50px; font-weight:bold;">CHIUDI CAMERA</button>
+</div>
 
 <div id="successOverlay">
     <div id="successCard" style="text-align:center;"></div>
@@ -312,7 +334,12 @@
 
     <div class="container">
         <div class="form-group">
-            <input type="text" id="codiceTracciabilita" placeholder="Tracking (TRK)">
+            <!-- CAMPO TRK CON ICONA CAMERA -->
+            <div class="tracking-wrapper">
+                <input type="text" id="codiceTracciabilita" placeholder="Tracking (TRK)">
+                <button class="cam-trigger" onclick="startScan()">📷</button>
+            </div>
+            
             <input type="text" id="codiceRiconoscimento" placeholder="ID Pacco">
             <div class="autocomplete-container" style="position:relative;">
                 <input type="text" id="cognome" placeholder="Cognome" oninput="gestisciAutocomplete(this.value)" autocomplete="off">
@@ -364,10 +391,36 @@ let pacchi = [];
 const corrieri = ["InPost", "UPS", "Punto Poste", "DHL", "BRT", "GLS", "Amazon", "Corrieri No Pudo"];
 let tabAttiva = 'Tutti';
 let timeoutInattivita;
+let scanner = null;
 
 const canvas = document.getElementById('signature-pad');
 const ctx = canvas.getContext('2d');
 let drawing = false;
+
+// FUNZIONI SCANNER FOTOCAMERA
+function startScan() {
+    document.getElementById('scanner-container').style.display = 'flex';
+    scanner = new Html5Qrcode("interactive");
+    const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+    
+    scanner.start({ facingMode: "environment" }, config, (decodedText) => {
+        document.getElementById('codiceTracciabilita').value = decodedText;
+        stopScan();
+    }).catch(err => {
+        console.error("Errore Camera", err);
+        stopScan();
+    });
+}
+
+function stopScan() {
+    if (scanner) {
+        scanner.stop().then(() => {
+            document.getElementById('scanner-container').style.display = 'none';
+        }).catch(() => {
+            document.getElementById('scanner-container').style.display = 'none';
+        });
+    }
+}
 
 // FUNZIONE ORA E DATA LIVE
 function updateClock() {
@@ -501,7 +554,8 @@ function generateHtml(p) {
     if (!p.ritirato) {
         const oggi = new Date().getTime();
         const diffGiorni = (oggi - p.dataInserimento) / (1000 * 60 * 60 * 24);
-        if (diffGiorni >= 5) alertScadenza = `<span class="scadenza-alert" onclick="handleRitira(${p.id}, true)">⚠️</span>`;
+        // MODIFICATO: Scadenza dopo 8 giorni
+        if (diffGiorni >= 8) alertScadenza = `<span class="scadenza-alert" onclick="handleRitira(${p.id}, true)">⚠️</span>`;
     }
     
     let statoTesto = '';
@@ -538,7 +592,7 @@ function generateHtml(p) {
     </div>`;
 }
 
-// FUNZIONE MODIFICA PACCO
+// FUNZIONE MODIFICA PACCO[cite: 1]
 function apriModifica(id) {
     const p = pacchi.find(x => x.id === id);
     const container = document.getElementById('editFields');
@@ -586,6 +640,7 @@ function apriModifica(id) {
 }
 function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
 
+// LOGICA RITIRO MULTIPLO E PUDO[cite: 1]
 function handleRitira(id, forzaScaduto = false) {
     const p = pacchi.find(x => x.id === id);
     const stessiPacchi = pacchi.filter(px => 
@@ -655,7 +710,6 @@ function handleRitira(id, forzaScaduto = false) {
         closeModal();
         showFeedback(tipo);
         
-        // RESET PAGINA PRINCIPALE
         document.getElementById('search').value = "";
         ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
         aggiornaVista();
@@ -670,6 +724,7 @@ function ripristinaPacco(id) {
     }
 }
 
+// LOGICA STAMPA RICEVUTA[cite: 1]
 function mostraFirma(id) {
     const p = pacchi.find(x => x.id == id);
     const pacchiSessione = p.sessioneRitiro ? pacchi.filter(px => px.sessioneRitiro === p.sessioneRitiro) : [p];
