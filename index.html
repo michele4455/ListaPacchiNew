@@ -556,7 +556,8 @@ function generateHtml(p) {
     if (!p.ritirato) {
         const oggi = new Date().getTime();
         const diffGiorni = (oggi - p.dataInserimento) / (1000 * 60 * 60 * 24);
-        if (diffGiorni >= 5) alertScadenza = `<span class="scadenza-alert" onclick="handleRitira(${p.id}, true)">⚠️</span>`;
+        // MODIFICA: Avviso ⚠️ dopo 8 giorni invece di 5[cite: 1]
+        if (diffGiorni >= 8) alertScadenza = `<span class="scadenza-alert" onclick="handleRitira(${p.id}, true)">⚠️</span>`;
     }
     
     let statoTesto = '';
