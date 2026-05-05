@@ -36,6 +36,19 @@
             margin-bottom: 30px;
             position: relative;
         }
+        
+        /* ORA E DATA */
+        .live-clock {
+            color: var(--white);
+            font-weight: bold;
+            margin-top: 10px;
+            font-size: 1.1rem;
+            background: rgba(0,0,0,0.2);
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 50px;
+        }
+
         .logout-btn {
             position: absolute;
             top: 15px;
@@ -139,6 +152,22 @@
         
         .ritira-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .ritira-btn:hover { background: var(--primary-dark); }
+        
+        /* PULSANTE EDIT */
+        .edit-dots {
+            background: #eee;
+            color: #333;
+            border: none;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 8px;
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+        .edit-dots:hover { background: #ddd; }
+
         .btn-ripristina { background: #666; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.7rem; }
 
         .view-firma-link { color: var(--primary); text-decoration: none; cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-left: 10px; padding: 4px 8px; border: 1px solid var(--primary); border-radius: 5px; }
@@ -156,7 +185,7 @@
             line-height: 1;
         }
 
-        #customModal { 
+        #customModal, #editModal { 
             display: none; 
             position: fixed; 
             z-index: 1000; 
@@ -196,12 +225,30 @@
         
         .item-selezione { display: flex; align-items: center; background: white; margin-bottom: 5px; padding: 8px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer; }
         .item-selezione input { width: auto; margin-right: 10px; transform: scale(1.3); }
+
+        /* Stile Form Modifica */
+        .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; }
+        .edit-grid label { font-size: 0.8rem; font-weight: bold; color: var(--primary); margin-top: 5px; display: block; }
     </style>
 </head>
 <body onmousedown="resetInattivita()" onkeypress="resetInattivita()" ontouchstart="resetInattivita()">
 
 <div id="successOverlay">
     <div id="successCard" style="text-align:center;"></div>
+</div>
+
+<!-- MODAL MODIFICA -->
+<div id="editModal">
+    <div class="modal-content">
+        <h3 style="color:var(--primary); margin:0 0 20px 0;">Modifica Pacco</h3>
+        <div class="edit-grid" id="editFields">
+            <!-- Popolato via JS -->
+        </div>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button onclick="closeEditModal()" class="modal-btn" style="background:#e0e0e0; color:#333;">ANNULLA</button>
+            <button id="saveEditBtn" class="modal-btn" style="background:var(--success); color:white;">SALVA MODIFICHE</button>
+        </div>
+    </div>
 </div>
 
 <div id="customModal">
@@ -259,6 +306,7 @@
         <div class="header-content">
             <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp">
             <h1>Centro Post@ Anaclerio</h1>
+            <div id="liveDateTime" class="live-clock">Caricamento data...</div>
         </div>
     </div>
 
@@ -320,6 +368,15 @@ let timeoutInattivita;
 const canvas = document.getElementById('signature-pad');
 const ctx = canvas.getContext('2d');
 let drawing = false;
+
+// FUNZIONE ORA E DATA LIVE
+function updateClock() {
+    const ora = new Date();
+    const opzioni = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+    document.getElementById('liveDateTime').innerText = ora.toLocaleDateString('it-IT', opzioni).toUpperCase();
+}
+setInterval(updateClock, 1000);
+updateClock();
 
 db.ref('pacchi').on('value', (snapshot) => {
     pacchi = snapshot.val() ? snapshot.val() : [];
@@ -463,7 +520,10 @@ function generateHtml(p) {
 
     const azione = p.ritirato 
         ? `<button class="btn-ripristina" onclick="ripristinaPacco(${p.id})">RIPRISTINA</button>` 
-        : `<button class="ritira-btn" onclick="handleRitira(${p.id})">RITIRA</button>`;
+        : `
+          <button class="ritira-btn" onclick="handleRitira(${p.id})">RITIRA</button>
+          <button class="edit-dots" onclick="apriModifica(${p.id})">. . .</button>
+        `;
 
     return `<div class="pacco ${p.ritirato ? (p.isScaduto ? 'scaduto' : 'ritirato') : ''}">
         <div style="flex-grow:1; display: flex; align-items: center;">
@@ -477,6 +537,54 @@ function generateHtml(p) {
         <div style="display:flex; align-items:center;">${alertScadenza} ${azione}</div>
     </div>`;
 }
+
+// FUNZIONE MODIFICA PACCO
+function apriModifica(id) {
+    const p = pacchi.find(x => x.id === id);
+    const container = document.getElementById('editFields');
+    container.innerHTML = `
+        <div>
+            <label>Cognome</label>
+            <input type="text" id="editCognome" value="${p.cognome}">
+        </div>
+        <div>
+            <label>Nome</label>
+            <input type="text" id="editNome" value="${p.nome}">
+        </div>
+        <div>
+            <label>ID Pacco</label>
+            <input type="text" id="editRiconoscimento" value="${p.riconoscimento}">
+        </div>
+        <div>
+            <label>Tracking</label>
+            <input type="text" id="editTrk" value="${p.codiceTracciabilita}">
+        </div>
+        <div>
+            <label>Corriere</label>
+            <select id="editCorriere">
+                ${corrieri.map(c => `<option value="${c}" ${c === p.corriere ? 'selected' : ''}>${c}</option>`).join('')}
+            </select>
+        </div>
+        <div>
+            <label>Scaffale</label>
+            <select id="editScaffale">
+                ${Array.from({length:12}, (_,i)=>i+1).map(i => `<option value="Scaffale ${i}" ${p.scaffale === 'Scaffale '+i ? 'selected' : ''}>Scaffale ${i}</option>`).join('')}
+            </select>
+        </div>
+    `;
+    document.getElementById('editModal').style.display = 'flex';
+    document.getElementById('saveEditBtn').onclick = () => {
+        p.cognome = document.getElementById('editCognome').value.trim();
+        p.nome = document.getElementById('editNome').value.trim();
+        p.riconoscimento = document.getElementById('editRiconoscimento').value.trim();
+        p.codiceTracciabilita = document.getElementById('editTrk').value.trim();
+        p.corriere = document.getElementById('editCorriere').value;
+        p.scaffale = document.getElementById('editScaffale').value;
+        salva();
+        closeEditModal();
+    };
+}
+function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
 
 function handleRitira(id, forzaScaduto = false) {
     const p = pacchi.find(x => x.id === id);
@@ -546,6 +654,11 @@ function handleRitira(id, forzaScaduto = false) {
         salva();
         closeModal();
         showFeedback(tipo);
+        
+        // RESET PAGINA PRINCIPALE
+        document.getElementById('search').value = "";
+        ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
+        aggiornaVista();
     };
 }
 
@@ -560,9 +673,7 @@ function ripristinaPacco(id) {
 function mostraFirma(id) {
     const p = pacchi.find(x => x.id == id);
     const pacchiSessione = p.sessioneRitiro ? pacchi.filter(px => px.sessioneRitiro === p.sessioneRitiro) : [p];
-    
     const win = window.open("", "Firma", "width=700,height=900");
-    
     let righeTabella = pacchiSessione.map(px => `
         <tr>
             <td style="padding:12px; border:1px solid #ddd; font-weight:bold;">#${px.riconoscimento}</td>
@@ -603,7 +714,6 @@ function mostraFirma(id) {
                     <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp">
                     <h1>Ricevuta di Consegna</h1>
                 </div>
-                
                 <div class="info-grid">
                     <div class="info-item">
                         <label>Destinatario</label>
@@ -622,7 +732,6 @@ function mostraFirma(id) {
                         <span>${pacchiSessione.length}</span>
                     </div>
                 </div>
-
                 <table>
                     <thead>
                         <tr>
@@ -632,22 +741,15 @@ function mostraFirma(id) {
                             <th>Servizi</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        ${righeTabella}
-                    </tbody>
+                    <tbody>${righeTabella}</tbody>
                 </table>
-
                 <div class="signature-section">
                     <p style="margin:0; font-weight:bold; color:#666;">Firma per Ricevuta</p>
                     <div class="signature-box">
                         <img src="${p.firma}" style="width:100%; height:auto; display:block;">
                     </div>
                 </div>
-
-                <div class="footer">
-                    Centro Post@ Anaclerio - Grazie per averci scelto!
-                </div>
-
+                <div class="footer">Centro Post@ Anaclerio - Grazie per averci scelto!</div>
                 <button onclick="window.print()" class="btn-print">🖨️ STAMPA RICEVUTA</button>
             </div>
         </body>
