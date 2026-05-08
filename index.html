@@ -619,11 +619,7 @@ function login(){
 function logout() { localStorage.removeItem('loggedIn'); location.reload();
 }
 
-// Funzione di supporto per usare la tua grafica anche per la conferma
-// FUNZIONE PRINCIPALE DI INSERIMENTO
-// --- INIZIO NUOVO CODICE PER INSERIMENTO CON VERIFICA ---
-
-// 1. FUNZIONE PRINCIPALE
+// 1. FUNZIONE PRINCIPALE DI INSERIMENTO
 function aggiungiPacco(){
     const trk = document.getElementById('codiceTracciabilita').value.trim();
     const c = document.getElementById('cognome').value.trim();
@@ -631,6 +627,7 @@ function aggiungiPacco(){
 
     if(!c || !corr) return showAlert("Mancano dati (Cognome e Corriere sono obbligatori)!");
 
+    // Controllo duplicati
     if (trk && trk !== '-') {
         const esiste = pacchi.find(p => p.codiceTracciabilita === trk);
         if (esiste) {
@@ -641,7 +638,7 @@ function aggiungiPacco(){
     finalizzaInserimentoPacco();
 }
 
-// 2. FUNZIONE SALVATAGGIO
+// 2. FUNZIONE DI SALVATAGGIO EFFETTIVO
 function finalizzaInserimentoPacco() {
     const trk = document.getElementById('codiceTracciabilita').value.trim();
     const n = document.getElementById('nome').value.trim();
@@ -670,11 +667,12 @@ function finalizzaInserimentoPacco() {
     salva(); 
     ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
     
-    renderPacchi(); 
-    showSuccess(); 
+    // Sincronizzato con le tue funzioni originali
+    aggiornaVista(); 
+    showFeedback('cliente'); 
 }
 
-// 3. FUNZIONE ALERT (MODIFICATA PER CHIUDERE IMMEDIATAMENTE)
+// 3. GESTIONE ALERT DUPLICATO
 function mostraConfermaDuplicato(trk) {
     const modal = document.getElementById('beautifyAlert');
     const titolo = document.getElementById('alertTitle');
@@ -683,7 +681,7 @@ function mostraConfermaDuplicato(trk) {
     
     titolo.innerText = "ATTENZIONE: DUPLICATO";
     titolo.style.color = "var(--warning)";
-    msg.innerHTML = `Il tracking <b>${trk}</b> è già in archivio.<br><br>Vuoi registrarlo di nuovo?`;
+    msg.innerHTML = `Il tracking <b>${trk}</b> è già presente.<br><br>Vuoi registrarlo di nuovo?`;
     
     const btnOkStandard = modal.querySelector('.modal-btn');
     if(btnOkStandard) btnOkStandard.style.display = 'none';
@@ -700,9 +698,12 @@ function mostraConfermaDuplicato(trk) {
     btnSi.style.flex = "1";
     btnSi.innerText = "SÌ, PROCEDI";
     btnSi.onclick = function() {
-        // AZIONE: Prima chiudiamo l'alert, poi salviamo
-        chiudiAlertDuplicato(); 
-        finalizzaInserimentoPacco();
+        // SOLUZIONE: Chiudiamo prima il modal e usiamo un piccolo ritardo per il salvataggio
+        // Questo evita che il browser si "incastri" tra l'alert e il feedback verde
+        chiudiAlertDuplicato();
+        setTimeout(() => {
+            finalizzaInserimentoPacco();
+        }, 100);
     };
 
     const btnNo = document.createElement('button');
@@ -728,6 +729,7 @@ function chiudiAlertDuplicato() {
     const btnOk = document.querySelector('#beautifyAlert .modal-btn');
     if(btnOk) btnOk.style.display = 'block';
 }
+
     
 function aggiornaVista(){
     const sel = document.getElementById('corriereSelect');
