@@ -850,59 +850,77 @@ function ripristinaPacco(id) {
     }
 }
 
-// LOGICA GENERAZIONE REPORT
+// LOGICA GENERAZIONE REPORT AGGIORNATA
 function generaReport() {
     const dataScelta = document.getElementById('dataReport').value;
     if(!dataScelta) return showAlert("Seleziona una data!");
     
-    const dObj = new Date(dataScelta).toLocaleDateString();
+    const dObj = new Date(dataScelta).toLocaleDateString('it-IT');
     
-    // Filtro Arrivati
-    const arrivati = pacchi.filter(p => p.dataTestoInserimento && p.dataTestoInserimento.startsWith(dObj));
-    // Filtro Ritirati (estraggo la data dal testo "DD/MM/YYYY, HH:MM:SS" o simile)
-    const ritirati = pacchi.filter(p => p.ritirato && p.dataRitiro && p.dataRitiro.startsWith(dObj));
+    // Filtro Arrivati e ordino per ora
+    const arrivati = pacchi.filter(p => p.dataTestoInserimento && p.dataTestoInserimento.startsWith(dObj))
+                           .sort((a, b) => a.dataInserimento - b.dataInserimento);
+
+    // Filtro Ritirati e ordino per ora di ritiro (se disponibile)
+    const ritirati = pacchi.filter(p => p.ritirato && p.dataRitiro && p.dataRitiro.startsWith(dObj))
+                           .sort((a, b) => {
+                               // Ordine basato sulla stringa dell'ora nel campo dataRitiro
+                               const oraA = a.dataRitiro.split(", ")[1] || "";
+                               const oraB = b.dataRitiro.split(", ")[1] || "";
+                               return oraA.localeCompare(oraB);
+                           });
 
     const win = window.open("", "Report", "width=900,height=800");
     
-    let htmlArrivati = arrivati.map(p => `<tr><td>${p.riconoscimento}</td><td>${p.cognome} ${p.nome}</td><td>${p.corriere}</td><td>${p.codiceTracciabilita}</td><td>${p.dataTestoInserimento.split(" ")[1]}</td></tr>`).join('');
-    let htmlRitirati = ritirati.map(p => `<tr><td>${p.riconoscimento}</td><td>${p.ritiratoDa}</td><td>${p.corriere}</td><td>${p.codiceTracciabilita}</td><td>${p.dataRitiro.split(" ")[1] || ''}</td></tr>`).join('');
+    let htmlArrivati = arrivati.map(p => {
+        const ora = p.dataTestoInserimento.includes(" ") ? p.dataTestoInserimento.split(" ")[1] : "--:--";
+        return `<tr><td>${p.riconoscimento}</td><td>${p.cognome} ${p.nome}</td><td>${p.corriere}</td><td>${p.codiceTracciabilita}</td><td>${ora}</td></tr>`;
+    }).join('');
+
+    let htmlRitirati = ritirati.map(p => {
+        const ora = p.dataRitiro.includes(", ") ? p.dataRitiro.split(", ")[1] : (p.dataRitiro.includes(" ") ? p.dataRitiro.split(" ")[1] : "--:--");
+        return `<tr><td>${p.riconoscimento}</td><td>${p.ritiratoDa} ${p.isScaduto ? '(RESO)' : ''}</td><td>${p.corriere}</td><td>${p.codiceTracciabilita}</td><td>${ora}</td></tr>`;
+    }).join('');
 
     win.document.write(`
         <html>
         <head>
             <title>Report Giornaliero ${dObj}</title>
             <style>
-                body { font-family: sans-serif; padding: 20px; color: #333; }
-                h1 { color: #003399; text-align: center; }
-                h2 { border-bottom: 2px solid #003399; padding-bottom: 5px; margin-top: 30px; }
-                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-                th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px; }
-                th { background: #003399; color: white; }
-                .footer { text-align: center; font-size: 10px; margin-top: 40px; color: #999; }
+                body { font-family: 'Segoe UI', sans-serif; padding: 30px; color: #333; }
+                h1 { color: #003399; text-align: center; margin-bottom: 30px; text-transform: uppercase; border-bottom: 4px solid #ffcc00; padding-bottom: 10px; }
+                h2 { background: #f0f2f5; padding: 10px; border-left: 5px solid #003399; margin-top: 30px; font-size: 1.2rem; }
+                .count-badge { background: #003399; color: #ffcc00; padding: 2px 10px; border-radius: 20px; margin-left: 10px; font-size: 0.9rem; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; margin-top: 10px; }
+                th, td { border: 1px solid #ddd; padding: 12px; text-align: left; font-size: 13px; }
+                th { background: #003399; color: white; text-transform: uppercase; font-size: 11px; }
+                tr:nth-child(even) { background-color: #f9f9f9; }
+                .footer { text-align: center; font-size: 10px; margin-top: 40px; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
                 @media print { .btn-print { display:none; } }
-                .btn-print { display: block; width: 150px; margin: 20px auto; padding: 10px; background: #003399; color: white; text-align: center; text-decoration: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+                .btn-print { display: block; width: 200px; margin: 0 auto 20px auto; padding: 12px; background: #00b894; color: white; text-align: center; text-decoration: none; border-radius: 50px; font-weight: bold; cursor: pointer; border: none; }
             </style>
         </head>
         <body>
-            <h1>Report Centro Post@ Anaclerio - Data: ${dObj}</h1>
-            <button class="btn-print" onclick="window.print()">STAMPA REPORT</button>
+            <h1>Report Giornaliero - ${dObj}</h1>
+            <button class="btn-print" onclick="window.print()">🖨️ STAMPA REPORT</button>
 
-            <h2>1. PACCHI CARICATI (GIACENZA)</h2>
+            <h2>1. PACCHI CARICATI <span class="count-badge">${arrivati.length} pacchi</span></h2>
             <table>
                 <thead><tr><th>ID</th><th>Intestatario</th><th>Corriere</th><th>Tracking</th><th>Ora Arrivo</th></tr></thead>
                 <tbody>${htmlArrivati || '<tr><td colspan="5" style="text-align:center">Nessun pacco caricato in questa data</td></tr>'}</tbody>
             </table>
 
-            <h2>2. PACCHI USCITI (RITIRATI / SCADUTI)</h2>
+            <h2>2. PACCHI USCITI (RITIRATI / RESI) <span class="count-badge">${ritirati.length} pacchi</span></h2>
             <table>
-                <thead><tr><th>ID</th><th>Ritirato Da</th><th>Corriere</th><th>Tracking</th><th>Ora Uscita</th></tr></thead>
-                <tbody>${htmlRitirati || '<tr><td colspan="5" style="text-align:center">Nessun pacco ritirato in questa data</td></tr>'}</tbody>
+                <thead><tr><th>ID</th><th>Ritirato Da / Stato</th><th>Corriere</th><th>Tracking</th><th>Ora Uscita</th></tr></thead>
+                <tbody>${htmlRitirati || '<tr><td colspan="5" style="text-align:center">Nessun pacco uscito in questa data</td></tr>'}</tbody>
             </table>
 
-            <div class="footer">Centro Post@ Anaclerio - Gestionale Interno</div>
+            <div class="footer">Centro Post@ Anaclerio - Sistema Gestionale Interno</div>
         </body>
         </html>
     `);
+    win.document.close();
     document.getElementById('reportModal').style.display = 'none';
 }
 
