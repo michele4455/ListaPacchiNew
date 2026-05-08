@@ -623,28 +623,27 @@ function logout() { localStorage.removeItem('loggedIn'); location.reload();
 // FUNZIONE PRINCIPALE DI INSERIMENTO
 // --- INIZIO NUOVO CODICE PER INSERIMENTO CON VERIFICA ---
 
+// 1. FUNZIONE CHE AVVIA L'INSERIMENTO
 function aggiungiPacco(){
     const trk = document.getElementById('codiceTracciabilita').value.trim();
     const c = document.getElementById('cognome').value.trim();
     const corr = document.getElementById('corriereSelect').value;
 
-    // 1. Controllo dati obbligatori (già presente nel tuo codice originale)
     if(!c || !corr) return showAlert("Mancano dati (Cognome e Corriere sono obbligatori)!");
 
-    // 2. VERIFICA DUPLICATO (Cerca in tutto l'archivio pacchi)
+    // Controllo se il tracking è già stato usato (in giacenza o ritirati)
     if (trk && trk !== '-') {
         const esiste = pacchi.find(p => p.codiceTracciabilita === trk);
         if (esiste) {
-            mostraConfermaDuplicato(trk); // Se lo trova, apre l'alert personalizzato
-            return; // Blocca l'inserimento automatico
+            mostraConfermaDuplicato(trk);
+            return; 
         }
     }
 
-    // 3. Se non è duplicato, registra normalmente
     finalizzaInserimentoPacco();
 }
 
-// Questa funzione contiene la logica originale di salvataggio
+// 2. FUNZIONE DI SALVATAGGIO (Ora chiude anche l'alert se aperto)
 function finalizzaInserimentoPacco() {
     const trk = document.getElementById('codiceTracciabilita').value.trim();
     const n = document.getElementById('nome').value.trim();
@@ -673,12 +672,13 @@ function finalizzaInserimentoPacco() {
     salva(); 
     ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
     
-    // Aggiorna la tabella e mostra il successo (funzioni del tuo file)
+    // AGGIORNA VISTA E CHIUDE EVENTUALI AVVISI
     renderPacchi(); 
     showSuccess(); 
+    chiudiAlertDuplicato(); // <-- AGGIUNTO QUI PER ESSERE SICURI CHE SCOMPAIA
 }
 
-// Funzione per mostrare l'alert con la tua grafica e i tasti SI/NO
+// 3. LOGICA DELL'AVVISO GRAFICO
 function mostraConfermaDuplicato(trk) {
     const modal = document.getElementById('beautifyAlert');
     const titolo = document.getElementById('alertTitle');
@@ -687,17 +687,13 @@ function mostraConfermaDuplicato(trk) {
     
     titolo.innerText = "ATTENZIONE: DUPLICATO";
     titolo.style.color = "var(--warning)";
-    msg.innerHTML = `Il tracking <b>${trk}</b> risulta già registrato.<br><br>Vuoi inserirlo lo stesso?`;
+    msg.innerHTML = `Il tracking <b>${trk}</b> è già presente.<br><br>Vuoi registrarlo di nuovo?`;
     
-    // Nasconde il tasto OK standard
     const btnOkStandard = modal.querySelector('.modal-btn');
     if(btnOkStandard) btnOkStandard.style.display = 'none';
 
-    // Rimuove eventuali tasti di vecchi avvisi
-    const vecchioBox = document.getElementById('boxSceltaDuplicato');
-    if(vecchioBox) vecchioBox.remove();
+    if(document.getElementById('boxSceltaDuplicato')) document.getElementById('boxSceltaDuplicato').remove();
 
-    // Crea il contenitore per i tasti SI e NO
     const boxScelta = document.createElement('div');
     boxScelta.id = "boxSceltaDuplicato";
     boxScelta.style = "display:flex; gap:10px; margin-top:20px; justify-content:center;";
@@ -708,8 +704,7 @@ function mostraConfermaDuplicato(trk) {
     btnSi.style.flex = "1";
     btnSi.innerText = "SÌ, PROCEDI";
     btnSi.onclick = function() {
-        finalizzaInserimentoPacco(); // Registra il pacco
-        chiudiAlertDuplicato();      // Chiude l'avviso
+        finalizzaInserimentoPacco(); // Salva e chiude tutto
     };
 
     const btnNo = document.createElement('button');
@@ -718,9 +713,8 @@ function mostraConfermaDuplicato(trk) {
     btnNo.style.flex = "1";
     btnNo.innerText = "NO, ANNULLA";
     btnNo.onclick = function() {
-        // Pulisce i campi se l'utente annulla
         ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
-        chiudiAlertDuplicato(); 
+        chiudiAlertDuplicato();
     };
 
     boxScelta.appendChild(btnNo);
@@ -730,15 +724,13 @@ function mostraConfermaDuplicato(trk) {
 }
 
 function chiudiAlertDuplicato() {
-    document.getElementById('beautifyAlert').style.display = 'none';
+    const modal = document.getElementById('beautifyAlert');
+    modal.style.display = 'none';
     const box = document.getElementById('boxSceltaDuplicato');
     if(box) box.remove();
-    // Torna a mostrare il tasto OK normale per i prossimi avvisi (es. dati mancanti)
     const btnOk = document.querySelector('#beautifyAlert .modal-btn');
     if(btnOk) btnOk.style.display = 'block';
 }
-
-// --- FINE NUOVO CODICE ---
     
 function aggiornaVista(){
     const sel = document.getElementById('corriereSelect');
