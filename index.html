@@ -620,10 +620,26 @@ function logout() { localStorage.removeItem('loggedIn'); location.reload();
 }
 
 function aggiungiPacco(){
+    const trk = document.getElementById('codiceTracciabilita').value.trim();
     const n = document.getElementById('nome').value.trim();
     const c = document.getElementById('cognome').value.trim();
     const corr = document.getElementById('corriereSelect').value;
     const cr = document.getElementById('codiceRiconoscimento').value.trim();
+
+    // --- NUOVO CONTROLLO TRACCIAMENTO DUPLICATO ---
+    if (trk && trk !== '-') {
+        const trovato = pacchi.find(p => p.codiceTracciabilita === trk);
+        if (trovato) {
+            const procedi = confirm(`ATTENZIONE: Il codice tracking ${trk} è già stato utilizzato per un pacco di ${trovato.cognome} ${trovato.nome}.\n\nVuoi registrarlo comunque?`);
+            if (!procedi) {
+                // Se l'utente preme Annulla, puliamo i campi e interrompiamo la funzione
+                ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
+                return;
+            }
+        }
+    }
+    // --- FINE CONTROLLO ---
+
     if(!c || !corr) return showAlert("Mancano dati (Cognome e Corriere sono obbligatori)!");
     
     let num = cr;
@@ -636,7 +652,7 @@ function aggiungiPacco(){
         id: Date.now(),
         dataInserimento: new Date().getTime(),
         dataTestoInserimento: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-        codiceTracciabilita: document.getElementById('codiceTracciabilita').value || '-',
+        codiceTracciabilita: trk || '-',
         riconoscimento: num,
         nome: n, cognome: c, corriere: corr,
         scaffale: document.getElementById('scaffaleSelect').value,
@@ -646,7 +662,7 @@ function aggiungiPacco(){
     salva(); 
     ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
 }
-
+    
 function aggiornaVista(){
     const sel = document.getElementById('corriereSelect');
     if(sel && sel.innerHTML === "") sel.innerHTML = '<option value="">Corriere...</option>' + corrieri.map(c => `<option value="${c}">${c}</option>`).join('');
