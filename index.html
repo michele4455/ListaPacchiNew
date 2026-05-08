@@ -620,87 +620,35 @@ function logout() { localStorage.removeItem('loggedIn'); location.reload();
 }
 
 // Funzione di supporto per usare la tua grafica anche per la conferma
-function mostraConfermaDuplicato(trk) {
-    const modal = document.getElementById('beautifyAlert');
-    const titolo = document.getElementById('alertTitle');
-    const msg = document.getElementById('alertMsg');
-    
-    titolo.innerText = "Pacco Duplicato";
-    titolo.style.color = "var(--warning)";
-    msg.innerHTML = `Il tracking <b>${trk}</b> è già presente in archivio.<br><br>Vuoi registrarlo comunque?`;
-    
-    // Cambiamo temporaneamente il tasto OK per gestire la scelta
-    const footer = modal.querySelector('.modal-content');
-    const vecchioBtn = modal.querySelector('.modal-btn');
-    vecchioBtn.style.display = 'none'; // Nascondiamo il tasto OK standard
-
-    // Creiamo un contenitore per i due tasti SI/NO
-    const boxScelta = document.createElement('div');
-    boxScelta.id = "boxSceltaDuplicato";
-    boxScelta.style.display = "flex";
-    boxScelta.style.gap = "10px";
-    boxScelta.style.marginTop = "20px";
-
-    const btnSi = document.createElement('button');
-    btnSi.className = "modal-btn";
-    btnSi.style.background = "var(--success)";
-    btnSi.style.color = "white";
-    btnSi.innerText = "SÌ, PROCEDI";
-    btnSi.onclick = () => {
-        finalizzaInserimentoPacco();
-        chiudiCustomAlert();
-    };
-
-    const btnNo = document.createElement('button');
-    btnNo.className = "modal-btn";
-    btnNo.style.background = "#ff4757";
-    btnNo.style.color = "white";
-    btnNo.innerText = "NO, ANNULLA";
-    btnNo.onclick = () => {
-        ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
-        chiudiCustomAlert();
-    };
-
-    boxScelta.appendChild(btnNo);
-    boxScelta.appendChild(btnSi);
-    footer.appendChild(boxScelta);
-    
-    modal.style.display = 'flex';
-}
-
-function chiudiCustomAlert() {
-    document.getElementById('beautifyAlert').style.display = 'none';
-    const box = document.getElementById('boxSceltaDuplicato');
-    if(box) box.remove();
-    document.querySelector('#beautifyAlert .modal-btn').style.display = 'block'; // Ripristina tasto OK
-}
-
+// FUNZIONE PRINCIPALE DI INSERIMENTO
 function aggiungiPacco(){
     const trk = document.getElementById('codiceTracciabilita').value.trim();
     const c = document.getElementById('cognome').value.trim();
     const corr = document.getElementById('corriereSelect').value;
 
-    if(!c || !corr) return showAlert("Mancano dati (Cognome e Corriere sono obbligatori)!"); [cite: 143]
+    // Controllo dati obbligatori
+    if(!c || !corr) return showAlert("Mancano dati (Cognome e Corriere sono obbligatori)!");
 
-    // Verifica duplicato
+    // CONTROLLO DUPLICATO (sia in giacenza che ritirati)
     if (trk && trk !== '-') {
         const esiste = pacchi.find(p => p.codiceTracciabilita === trk);
         if (esiste) {
             mostraConfermaDuplicato(trk);
-            return; // Ferma l'esecuzione, riprenderà se l'utente clicca SI
+            return; // Ferma tutto e aspetta il click dell'utente sulla grafica
         }
     }
 
-    finalizzaInserimentoPacco();
+    // Se non è duplicato, procedi normalmente
+    eseguiRegistrazionePacco();
 }
 
-// Spostiamo la logica di push e salvataggio in una funzione dedicata
-function finalizzaInserimentoPacco() {
+// LOGICA DI REGISTRAZIONE (SPOSTATA QUI PER POTER ESSERE RICHIAMATA DAL TASTO "SÌ")
+function eseguiRegistrazionePacco() {
+    const trk = document.getElementById('codiceTracciabilita').value.trim();
     const n = document.getElementById('nome').value.trim();
     const c = document.getElementById('cognome').value.trim();
     const corr = document.getElementById('corriereSelect').value;
     const cr = document.getElementById('codiceRiconoscimento').value.trim();
-    const trk = document.getElementById('codiceTracciabilita').value.trim();
     
     let num = cr;
     if(!cr) {
@@ -718,11 +666,75 @@ function finalizzaInserimentoPacco() {
         scaffale: document.getElementById('scaffaleSelect').value,
         grandezza: document.getElementById('grandezzaSelect').value,
         ritirato: false, isScaduto: false, dataRitiro: null, ritiratoDa: '', firma: null, pudoStatus: 'nessuno'
-    }); [cite: 146, 147]
+    });
     
-    salva(); [cite: 126]
+    salva(); 
     ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
-    aggiornaVista(); [cite: 149]
+    aggiornaVista();
+    showSuccess(); // Mostra l'overlay verde di successo
+}
+
+// FUNZIONI PER L'ALERT GRAFICO CON TASTI SI/NO
+function mostraConfermaDuplicato(trk) {
+    const modal = document.getElementById('beautifyAlert');
+    const titolo = document.getElementById('alertTitle');
+    const msg = document.getElementById('alertMsg');
+    const footer = modal.querySelector('.modal-content');
+    
+    // Configura il messaggio
+    titolo.innerText = "ATTENZIONE: DUPLICATO";
+    titolo.style.color = "var(--warning)";
+    msg.innerHTML = `Il tracking <b>${trk}</b> è già in archivio.<br><br>Vuoi registrarlo come nuovo pacco?`;
+    
+    // Gestione tasti: nascondi l'OK standard e aggiungi SI/NO
+    const vecchioBtn = modal.querySelector('.modal-btn');
+    if(vecchioBtn) vecchioBtn.style.display = 'none';
+
+    // Rimuovi eventuali box vecchi se presenti
+    const vecchioBox = document.getElementById('boxSceltaDuplicato');
+    if(vecchioBox) vecchioBox.remove();
+
+    const boxScelta = document.createElement('div');
+    boxScelta.id = "boxSceltaDuplicato";
+    boxScelta.style.display = "flex";
+    boxScelta.style.gap = "10px";
+    boxScelta.style.marginTop = "20px";
+    boxScelta.style.justifyContent = "center";
+
+    const btnSi = document.createElement('button');
+    btnSi.className = "modal-btn";
+    btnSi.style.background = "var(--success)";
+    btnSi.style.flex = "1";
+    btnSi.innerText = "SÌ, PROCEDI";
+    btnSi.onclick = function() {
+        eseguiRegistrazionePacco();
+        chiudiAlertDuplicato();
+    };
+
+    const btnNo = document.createElement('button');
+    btnNo.className = "modal-btn";
+    btnNo.style.background = "var(--warning)";
+    btnNo.style.flex = "1";
+    btnNo.innerText = "NO, ANNULLA";
+    btnNo.onclick = function() {
+        ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
+        chiudiAlertDuplicato();
+    };
+
+    boxScelta.appendChild(btnNo);
+    boxScelta.appendChild(btnSi);
+    footer.appendChild(boxScelta);
+    
+    modal.style.display = 'flex';
+}
+
+function chiudiAlertDuplicato() {
+    document.getElementById('beautifyAlert').style.display = 'none';
+    const box = document.getElementById('boxSceltaDuplicato');
+    if(box) box.remove();
+    // Ripristina il tasto OK standard per i prossimi alert normali
+    const btnOk = document.querySelector('#beautifyAlert .modal-btn');
+    if(btnOk) btnOk.style.display = 'block';
 }
     
 function aggiornaVista(){
