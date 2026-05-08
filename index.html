@@ -619,28 +619,88 @@ function login(){
 function logout() { localStorage.removeItem('loggedIn'); location.reload();
 }
 
+// Funzione di supporto per usare la tua grafica anche per la conferma
+function mostraConfermaDuplicato(trk) {
+    const modal = document.getElementById('beautifyAlert');
+    const titolo = document.getElementById('alertTitle');
+    const msg = document.getElementById('alertMsg');
+    
+    titolo.innerText = "Pacco Duplicato";
+    titolo.style.color = "var(--warning)";
+    msg.innerHTML = `Il tracking <b>${trk}</b> è già presente in archivio.<br><br>Vuoi registrarlo comunque?`;
+    
+    // Cambiamo temporaneamente il tasto OK per gestire la scelta
+    const footer = modal.querySelector('.modal-content');
+    const vecchioBtn = modal.querySelector('.modal-btn');
+    vecchioBtn.style.display = 'none'; // Nascondiamo il tasto OK standard
+
+    // Creiamo un contenitore per i due tasti SI/NO
+    const boxScelta = document.createElement('div');
+    boxScelta.id = "boxSceltaDuplicato";
+    boxScelta.style.display = "flex";
+    boxScelta.style.gap = "10px";
+    boxScelta.style.marginTop = "20px";
+
+    const btnSi = document.createElement('button');
+    btnSi.className = "modal-btn";
+    btnSi.style.background = "var(--success)";
+    btnSi.style.color = "white";
+    btnSi.innerText = "SÌ, PROCEDI";
+    btnSi.onclick = () => {
+        finalizzaInserimentoPacco();
+        chiudiCustomAlert();
+    };
+
+    const btnNo = document.createElement('button');
+    btnNo.className = "modal-btn";
+    btnNo.style.background = "#ff4757";
+    btnNo.style.color = "white";
+    btnNo.innerText = "NO, ANNULLA";
+    btnNo.onclick = () => {
+        ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
+        chiudiCustomAlert();
+    };
+
+    boxScelta.appendChild(btnNo);
+    boxScelta.appendChild(btnSi);
+    footer.appendChild(boxScelta);
+    
+    modal.style.display = 'flex';
+}
+
+function chiudiCustomAlert() {
+    document.getElementById('beautifyAlert').style.display = 'none';
+    const box = document.getElementById('boxSceltaDuplicato');
+    if(box) box.remove();
+    document.querySelector('#beautifyAlert .modal-btn').style.display = 'block'; // Ripristina tasto OK
+}
+
 function aggiungiPacco(){
     const trk = document.getElementById('codiceTracciabilita').value.trim();
+    const c = document.getElementById('cognome').value.trim();
+    const corr = document.getElementById('corriereSelect').value;
+
+    if(!c || !corr) return showAlert("Mancano dati (Cognome e Corriere sono obbligatori)!"); [cite: 143]
+
+    // Verifica duplicato
+    if (trk && trk !== '-') {
+        const esiste = pacchi.find(p => p.codiceTracciabilita === trk);
+        if (esiste) {
+            mostraConfermaDuplicato(trk);
+            return; // Ferma l'esecuzione, riprenderà se l'utente clicca SI
+        }
+    }
+
+    finalizzaInserimentoPacco();
+}
+
+// Spostiamo la logica di push e salvataggio in una funzione dedicata
+function finalizzaInserimentoPacco() {
     const n = document.getElementById('nome').value.trim();
     const c = document.getElementById('cognome').value.trim();
     const corr = document.getElementById('corriereSelect').value;
     const cr = document.getElementById('codiceRiconoscimento').value.trim();
-
-    // --- NUOVO CONTROLLO TRACCIAMENTO DUPLICATO ---
-    if (trk && trk !== '-') {
-        const trovato = pacchi.find(p => p.codiceTracciabilita === trk);
-        if (trovato) {
-            const procedi = confirm(`ATTENZIONE: Il codice tracking ${trk} è già stato utilizzato per un pacco di ${trovato.cognome} ${trovato.nome}.\n\nVuoi registrarlo comunque?`);
-            if (!procedi) {
-                // Se l'utente preme Annulla, puliamo i campi e interrompiamo la funzione
-                ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
-                return;
-            }
-        }
-    }
-    // --- FINE CONTROLLO ---
-
-    if(!c || !corr) return showAlert("Mancano dati (Cognome e Corriere sono obbligatori)!");
+    const trk = document.getElementById('codiceTracciabilita').value.trim();
     
     let num = cr;
     if(!cr) {
@@ -658,9 +718,11 @@ function aggiungiPacco(){
         scaffale: document.getElementById('scaffaleSelect').value,
         grandezza: document.getElementById('grandezzaSelect').value,
         ritirato: false, isScaduto: false, dataRitiro: null, ritiratoDa: '', firma: null, pudoStatus: 'nessuno'
-    });
-    salva(); 
+    }); [cite: 146, 147]
+    
+    salva(); [cite: 126]
     ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
+    aggiornaVista(); [cite: 149]
 }
     
 function aggiornaVista(){
