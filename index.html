@@ -619,6 +619,8 @@ function login(){
     firebase.auth().signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
             resetInattivita();
+            // AGGIUNGI QUESTA RIGA QUI SOTTO:
+            location.reload(); // Forza la pagina a rinfrescarsi da sola mostrando subito i pacchi
         })
         .catch((error) => {
             console.error("Errore login:", error);
