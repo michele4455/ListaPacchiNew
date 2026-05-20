@@ -587,7 +587,7 @@ function showAlert(testo, titolo = "Attenzione") {
     document.getElementById('beautifyAlert').style.display = 'flex';
 }
 
-// LOGICA SCANNER AGGIORNATA (Più veloce, supporto torcia e suono)
+// LOGICA SCANNER AGGIORNATA (Sicura, veloce, supporto torcia e suono)
 function startScanner(targetInputId) {
     document.getElementById('scannerModal').style.display = 'flex';
     html5QrCode = new Html5Qrcode("reader");
@@ -607,6 +607,33 @@ function startScanner(targetInputId) {
             Html5QrcodeSupportedFormats.ITF 
         ]
     };
+
+    html5QrCode.start(
+        { facingMode: "environment" }, 
+        config,
+        (decodedText) => {
+            riproduciSuonoScanner(); // Emette il Bip
+            document.getElementById(targetInputId).value = decodedText;
+            stopScanner();
+        },
+        (errorMessage) => {}
+    ).then(() => {
+        // Controllo sicuro: evita l'errore se la funzione non esiste nel browser corrente
+        if (html5QrCode && typeof html5QrCode.getCameraCapabilities === "function") {
+            try {
+                const dellaFotocamera = html5QrCode.getCameraCapabilities();
+                if (dellaFotocamera && dellaFotocamera.torchFeature && dellaFotocamera.torchFeature.isSupported()) {
+                    document.getElementById('torchBtn').style.display = 'block';
+                }
+            } catch (e) {
+                console.log("Impossibile leggere le funzionalità della torcia:", e);
+            }
+        }
+    }).catch((err) => {
+        showAlert("Errore fotocamera: " + err);
+        stopScanner();
+    });
+}
 
     html5QrCode.start(
         { facingMode: "environment" }, 
