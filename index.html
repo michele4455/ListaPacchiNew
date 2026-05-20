@@ -179,6 +179,13 @@
             box-sizing: border-box;
             width: 100%;
         }
+        
+        /* Evidenzia in giallo lo sfondo e il bordo della casella selezionata */
+        input:focus, select:focus {
+            background-color: #fff9db !important;
+            border-color: #fab005 !important;
+            box-shadow: 0 0 8px rgba(250, 176, 5, 0.5);
+        }
 
         .form-group button { background-color: var(--primary); color: var(--accent); border: none; cursor: pointer;
             font-weight: bold; text-transform: uppercase; }
@@ -354,10 +361,8 @@
     <div class="modal-content" style="max-width: 500px;">
         <h3 style="color:var(--primary); margin-bottom:15px;">Inquadra Codice</h3>
         <div id="reader" style="width: 100%; border-radius: 10px; overflow: hidden;"></div>
-        <div style="display:flex; gap:10px; margin-top:15px;">
-            <button id="torchBtn" onclick="toggleTorcia()" class="modal-btn" style="background:var(--accent); color:var(--primary); display:none;">🔦 ACCENDI TORCIA</button>
-            <button onclick="stopScanner()" class="modal-btn" style="background:#ff4757; color:white;">ANNULLA</button>
-        </div>
+        <button id="torchBtn" onclick="toggleTorcia()" class="modal-btn" style="background:var(--accent); color:var(--primary); margin-top:15px; display:none; border:2px solid var(--primary);">🔦 ACCENDI TORCIA</button>
+        <button onclick="stopScanner()" class="modal-btn" style="background:#ff4757; color:white; margin-top:10px;">ANNULLA</button>
     </div>
 </div>
 
@@ -547,23 +552,30 @@ const ctx = canvas.getContext('2d');
 let drawing = false;
 
 // FUNZIONE AGGIUNTA: Genera un Bip nativo tipico dello scanner di cassa
+// Genera un suono "Bip" deciso e al massimo volume consentito ad ogni scansione riuscita
 function riproduciSuonoScanner() {
     try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctxAudio = new AudioContext();
         
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(1500, audioCtx.currentTime); // Frequenza alta e acuta (1500Hz)
-        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        const oscillator = ctxAudio.createOscillator();
+        const gainNode = ctxAudio.createGain();
         
         oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
+        gainNode.connect(ctxAudio.destination);
         
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.08); // Durata breve (80 millisecondi)
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(1200, ctxAudio.currentTime); // Frequenza del bip acuto
+        gainNode.gain.setValueAtTime(1.0, ctxAudio.currentTime);        // Volume impostato al 100%
+        
+        // Durata del bip di 150 millisecondi con un leggero fade-out finale per evitare distorsioni
+        gainNode.gain.exponentialRampToValueAtTime(0.001, ctxAudio.currentTime + 0.15);
+        
+        oscillator.start(ctxAudio.currentTime);
+        oscillator.stop(ctxAudio.currentTime + 0.15);
     } catch (e) {
-        console.log("Audio non supportato o bloccato dalle impostazioni del browser");
+        console.log("Impossibile riprodurre il suono:", e);
     }
 }
 
@@ -588,6 +600,8 @@ function showAlert(testo, titolo = "Attenzione") {
 }
 
 // LOGICA SCANNER AGGIORNATA (Previene i blocchi della pagina e gestisce la torcia in sicurezza)
+let torciaAttiva = false;
+
 function startScanner(targetInputId) {
     document.getElementById('scannerModal').style.display = 'flex';
     html5QrCode = new Html5Qrcode("reader");
@@ -611,13 +625,13 @@ function startScanner(targetInputId) {
         { facingMode: "environment" }, 
         config,
         (decodedText) => {
-            riproduciSuonoScanner(); 
+            riproduciSuonoScanner(); // Avvia il beep al volume massimo
             document.getElementById(targetInputId).value = decodedText;
             stopScanner();
         },
         (errorMessage) => {}
     ).then(() => {
-        // Controllo sicuro e alternativo per verificare se la torcia è supportata sul browser/dispositivo
+        // Controlla se il dispositivo supporta la torcia e mostra il pulsante se disponibile
         setTimeout(() => {
             try {
                 if (html5QrCode && typeof html5QrCode.getCameraCapabilities === "function") {
@@ -627,7 +641,6 @@ function startScanner(targetInputId) {
                         return;
                     }
                 }
-                // Alternativa standard basata sul flusso video corrente se la funzione nativa della libreria fallisce
                 const videoTrack = html5QrCode._localMediaStream && html5QrCode._localMediaStream.getVideoTracks()[0];
                 if (videoTrack && typeof videoTrack.getCapabilities === "function") {
                     const capabilities = videoTrack.getCapabilities();
@@ -636,7 +649,7 @@ function startScanner(targetInputId) {
                     }
                 }
             } catch (e) {
-                console.log("Controllo torcia ignorato per evitare errori di sistema:", e);
+                console.log("Controllo torcia ignorato:", e);
             }
         }, 500);
     }).catch((err) => {
@@ -645,11 +658,24 @@ function startScanner(targetInputId) {
     });
 }
 
+function stopScanner() {
+    if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+            document.getElementById('scannerModal').style.display = 'none';
+            html5QrCode = null;
+        }).catch(() => {
+            document.getElementById('scannerModal').style.display = 'none';
+            html5QrCode = null;
+        });
+    } else {
+        document.getElementById('scannerModal').style.display = 'none';
+    }
+}
+
 function toggleTorcia() {
     if (!html5QrCode) return;
     torciaAttiva = !torciaAttiva;
     try {
-        // Prova ad applicare la torcia tramite il track video nativo del browser (più stabile)
         const videoTrack = html5QrCode._localMediaStream && html5QrCode._localMediaStream.getVideoTracks()[0];
         if (videoTrack && typeof videoTrack.getCapabilities === "function") {
             const capabilities = videoTrack.getCapabilities();
@@ -662,45 +688,16 @@ function toggleTorcia() {
                 return;
             }
         }
-        // Se non riesce, prova con il metodo classico della libreria
         html5QrCode.applyVideoConstraints({
             advanced: [{ torch: torciaAttiva }]
         }).then(() => {
             document.getElementById('torchBtn').innerText = torciaAttiva ? "🛑 SPEGNI TORCIA" : "🔦 ACCENDI TORCIA";
         }).catch(err => console.log(err));
     } catch (e) {
-        console.error("Impossibile attivare la torcia su questo dispositivo:", e);
+        console.error("Impossibile attivare la torcia:", e);
     }
 }
-// FUNZIONE AGGIUNTA: Gestione accensione/spegnimento flash LED
-function toggleTorcia() {
-    if (!html5QrCode) return;
-    const dellaFotocamera = html5QrCode.getCameraCapabilities();
-    if (dellaFotocamera && dellaFotocamera.torchFeature && dellaFotocamera.torchFeature.isSupported()) {
-        torciaAttiva = !torciaAttiva;
-        html5QrCode.applyVideoConstraints({
-            advanced: [{ torch: torciaAttiva }]
-        }).then(() => {
-            document.getElementById('torchBtn').innerText = torciaAttiva ? "🛑 SPEGNI TORCIA" : "🔦 ACCENDI TORCIA";
-        }).catch(err => {
-            console.error("Impossibile applicare torcia: ", err);
-        });
-    }
-}
-
-function stopScanner() {
-    torciaAttiva = false;
-    if (html5QrCode) {
-        html5QrCode.stop().then(() => {
-            document.getElementById('scannerModal').style.display = 'none';
-        }).catch(() => {
-            document.getElementById('scannerModal').style.display = 'none';
-        });
-    } else {
-        document.getElementById('scannerModal').style.display = 'none';
-    }
-}
-
+    
 function updateClock() {
     const ora = new Date();
     const opzioni = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
