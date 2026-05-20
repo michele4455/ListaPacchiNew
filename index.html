@@ -112,16 +112,46 @@
         .container { max-width: 1000px; margin: 0 auto;
             padding: 0 20px 40px 20px; }
 
+        /* Stili per la sezione Inserimento Pacchi collassabile */
+        .header-sezione-inserimento {
+            cursor: pointer;
+            background: var(--primary);
+            color: var(--accent);
+            padding: 15px;
+            border-radius: 12px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .form-group-wrapper {
+            transition: max-height 0.3s ease-out, margin-bottom 0.3s ease-out;
+            overflow: hidden;
+            max-height: 1000px; /* Aperto di default */
+            margin-bottom: 25px;
+        }
+        
+        .form-group-wrapper.chiuso {
+            max-height: 0 !important;
+            margin-bottom: 0 !important;
+        }
+
         .form-group { 
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
             gap: 12px; 
             background: var(--white); 
             padding: 25px; 
-            border-radius: 15px; 
+            border-radius: 0 0 15px 15px; 
             box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
-            margin-bottom: 25px;
             align-items: start;
+            border: 2px solid var(--primary);
+            border-top: none;
         }
 
         .input-with-icon {
@@ -231,6 +261,7 @@
             cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-left: 10px; padding: 4px 8px; border: 1px solid var(--primary); border-radius: 5px;
         }
         
+        @media print { .btn-print { display:none; } }
         @keyframes alertBlink { 0% { opacity: 1;
             transform: scale(1); } 50% { opacity: 0.3; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1);
         } }
@@ -323,7 +354,10 @@
     <div class="modal-content" style="max-width: 500px;">
         <h3 style="color:var(--primary); margin-bottom:15px;">Inquadra Codice</h3>
         <div id="reader" style="width: 100%; border-radius: 10px; overflow: hidden;"></div>
-        <button onclick="stopScanner()" class="modal-btn" style="background:#ff4757; color:white; margin-top:15px;">ANNULLA</button>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button id="torchBtn" onclick="toggleTorcia()" class="modal-btn" style="background:var(--accent); color:var(--primary); display:none;">🔦 ACCENDI TORCIA</button>
+            <button onclick="stopScanner()" class="modal-btn" style="background:#ff4757; color:white;">ANNULLA</button>
+        </div>
     </div>
 </div>
 
@@ -437,29 +471,35 @@
     </div>
 
     <div class="container">
-        <div class="form-group">
-            <div class="input-with-icon">
-                <input type="text" id="codiceTracciabilita" placeholder="Tracking (TRK)">
-                <span class="scanner-trigger" onclick="startScanner('codiceTracciabilita')">📸</span>
+        <div class="header-sezione-inserimento" onclick="togglePannelloInserimento()">
+            <span>➕ Registrazione Nuovo Pacco</span>
+            <span id="frecciaInserimento">▲</span>
+        </div>
+        <div class="form-group-wrapper" id="pannelloInserimento">
+            <div class="form-group">
+                <div class="input-with-icon">
+                    <input type="text" id="codiceTracciabilita" placeholder="Tracking (TRK)">
+                    <span class="scanner-trigger" onclick="startScanner('codiceTracciabilita')">📸</span>
+                </div>
+                <input type="text" id="codiceRiconoscimento" placeholder="ID Pacco" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                
+                <div class="autocomplete-container" style="position:relative;">
+                    <input type="text" id="cognome" placeholder="Cognome" oninput="gestisciAutocomplete(this.value)" autocomplete="off">
+                    <div id="suggestionsBox" class="suggestions-list"></div>
+                </div>
+                <input type="text" id="nome" placeholder="Nome">
+                <select id="corriereSelect"></select>
+                <select id="scaffaleSelect">
+          
+                    <option value="">Scaffale...</option>
+                    <script>for(let i=1;i<=12;i++) document.write(`<option value="Scaffale ${i}">Scaffale ${i}</option>`);</script>
+                </select>
+                <select id="grandezzaSelect">
+                    <option value="P">P</option><option value="M">M</option><option value="G">G</option>
+                </select>
+                
+                <button onclick="aggiungiPacco()">AGGIUNGI</button>
             </div>
-            <input type="text" id="codiceRiconoscimento" placeholder="ID Pacco" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-            
-            <div class="autocomplete-container" style="position:relative;">
-                <input type="text" id="cognome" placeholder="Cognome" oninput="gestisciAutocomplete(this.value)" autocomplete="off">
-                <div id="suggestionsBox" class="suggestions-list"></div>
-            </div>
-            <input type="text" id="nome" placeholder="Nome">
-            <select id="corriereSelect"></select>
-            <select id="scaffaleSelect">
-      
-                <option value="">Scaffale...</option>
-                <script>for(let i=1;i<=12;i++) document.write(`<option value="Scaffale ${i}">Scaffale ${i}</option>`);</script>
-            </select>
-            <select id="grandezzaSelect">
-                <option value="P">P</option><option value="M">M</option><option value="G">G</option>
-            </select>
-            
-            <button onclick="aggiungiPacco()">AGGIUNGI</button>
         </div>
 
         <div class="status-bar" id="counter">Caricamento...</div>
@@ -500,10 +540,45 @@ const corrieri = ["InPost", "UPS", "Punto Poste", "DHL", "BRT", "GLS", "Amazon",
 let tabAttiva = 'Tutti';
 let timeoutInattivita;
 let html5QrCode;
+let torciaAttiva = false;
 
 const canvas = document.getElementById('signature-pad');
 const ctx = canvas.getContext('2d');
 let drawing = false;
+
+// FUNZIONE AGGIUNTA: Genera un Bip nativo tipico dello scanner di cassa
+function riproduciSuonoScanner() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(1500, audioCtx.currentTime); // Frequenza alta e acuta (1500Hz)
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.08); // Durata breve (80 millisecondi)
+    } catch (e) {
+        console.log("Audio non supportato o bloccato dalle impostazioni del browser");
+    }
+}
+
+// FUNZIONE AGGIUNTA: Mostra/Nasconde la sezione Inserimento Pacco
+function togglePannelloInserimento() {
+    const wrapper = document.getElementById('pannelloInserimento');
+    const freccia = document.getElementById('frecciaInserimento');
+    if (wrapper.classList.contains('chiuso')) {
+        wrapper.classList.remove('chiuso');
+        freccia.innerText = "▲";
+    } else {
+        wrapper.classList.add('chiuso');
+        freccia.innerText = "▼";
+    }
+}
 
 // FUNZIONE ALERT MIGLIORATA
 function showAlert(testo, titolo = "Attenzione") {
@@ -512,27 +587,66 @@ function showAlert(testo, titolo = "Attenzione") {
     document.getElementById('beautifyAlert').style.display = 'flex';
 }
 
-// LOGICA SCANNER
+// LOGICA SCANNER AGGIORNATA (Più veloce, supporto torcia e suono)
 function startScanner(targetInputId) {
     document.getElementById('scannerModal').style.display = 'flex';
     html5QrCode = new Html5Qrcode("reader");
-    const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+    torciaAttiva = false;
+    document.getElementById('torchBtn').style.display = 'none';
+    document.getElementById('torchBtn').innerText = "🔦 ACCENDI TORCIA";
+
+    // Configurazione ottimizzata per velocità (20 FPS e impostazione formati 1D/Barcode principali)
+    const config = { 
+        fps: 20, 
+        qrbox: { width: 280, height: 160 },
+        formatsToSupport: [ 
+            Html5QrcodeSupportedFormats.QR_CODE, 
+            Html5QrcodeSupportedFormats.CODE_128, 
+            Html5QrcodeSupportedFormats.CODE_39, 
+            Html5QrcodeSupportedFormats.EAN_13, 
+            Html5QrcodeSupportedFormats.ITF 
+        ]
+    };
+
     html5QrCode.start(
         { facingMode: "environment" }, 
         config,
         (decodedText) => {
+            riproduciSuonoScanner(); // Emette il Bip
             document.getElementById(targetInputId).value = decodedText;
             stopScanner();
         },
         (errorMessage) => {}
-    ).catch((err) => {
+    ).then(() => {
+        // Controlla se la fotocamera supporta la torcia e mostra il pulsante se disponibile
+        const dellaFotocamera = html5QrCode.getCameraCapabilities();
+        if (dellaFotocamera && dellaFotocamera.torchFeature && dellaFotocamera.torchFeature.isSupported()) {
+            document.getElementById('torchBtn').style.display = 'block';
+        }
+    }).catch((err) => {
         showAlert("Errore fotocamera: " + err);
         stopScanner();
     });
 }
 
-// RESTO DEL CODICE INVARIATO FINO AI METODI DI LOGIN/LOGOUT
+// FUNZIONE AGGIUNTA: Gestione accensione/spegnimento flash LED
+function toggleTorcia() {
+    if (!html5QrCode) return;
+    const dellaFotocamera = html5QrCode.getCameraCapabilities();
+    if (dellaFotocamera && dellaFotocamera.torchFeature && dellaFotocamera.torchFeature.isSupported()) {
+        torciaAttiva = !torciaAttiva;
+        html5QrCode.applyVideoConstraints({
+            advanced: [{ torch: torciaAttiva }]
+        }).then(() => {
+            document.getElementById('torchBtn').innerText = torciaAttiva ? "🛑 SPEGNI TORCIA" : "🔦 ACCENDI TORCIA";
+        }).catch(err => {
+            console.error("Impossibile applicare torcia: ", err);
+        });
+    }
+}
+
 function stopScanner() {
+    torciaAttiva = false;
     if (html5QrCode) {
         html5QrCode.stop().then(() => {
             document.getElementById('scannerModal').style.display = 'none';
@@ -609,7 +723,6 @@ window.addEventListener('mouseup', () => drawing = false);
 canvas.addEventListener('touchstart', (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
 canvas.addEventListener('touchmove', (e) => { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
 
-// --- AGGIORNATO: NUOVO SISTEMA DI AUTENTICAZIONE CON REALE FIREBASE AUTH ---
 function login(){
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
@@ -619,8 +732,7 @@ function login(){
     firebase.auth().signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
             resetInattivita();
-            // AGGIUNGI QUESTA RIGA QUI SOTTO:
-            location.reload(); // Forza la pagina a rinfrescarsi da sola mostrando subito i pacchi
+            location.reload(); 
         })
         .catch((error) => {
             console.error("Errore login:", error);
@@ -634,7 +746,6 @@ function logout() {
     });
 }
 
-// Questo listener gestisce la visibilità delle pagine e si attiva a ogni cambio stato
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         document.getElementById('loginPage').style.display = 'none';
@@ -646,7 +757,6 @@ firebase.auth().onAuthStateChanged((user) => {
         document.getElementById('mainPage').style.display = 'none';
     }
 });
-// --- FINE SEZIONE AUTH ---
 
 function aggiungiPacco(){
     const trk = document.getElementById('codiceTracciabilita').value.trim();
