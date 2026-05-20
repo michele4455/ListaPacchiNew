@@ -775,14 +775,11 @@ function login(){
     firebase.auth().signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
             resetInattivita();
-            // Forza il refresh per caricare i dati corretti dal database
-            document.getElementById('loginPage').style.display = 'none';
-            document.getElementById('mainPage').style.display = 'block';
-            aggiornaVista();
+            // Rimosso il reload forzato che causava il bug dello "0"
         })
         .catch((error) => {
             console.error("Errore login:", error);
-            showAlert("Errore di accesso: " + error.message, "Accesso Fallito");
+            showAlert("Credenziali errate o errore di connessione");
         });
 }
 
@@ -792,12 +789,19 @@ function logout() {
     });
 }
 
+// Questo listener gestisce la visibilità delle pagine e sincronizza i dati all'accesso
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainPage').style.display = 'block';
         resetInattivita();
-        aggiornaVista();
+        
+        // Sincronizza e mostra i pacchi istantaneamente al login senza ricaricare la pagina
+        db.ref('pacchi').off('value'); // Evita duplicazioni di ascolto
+        db.ref('pacchi').on('value', (snapshot) => {
+            pacchi = snapshot.val() ? snapshot.val() : [];
+            aggiornaVista();
+        });
     } else {
         document.getElementById('loginPage').style.display = 'flex';
         document.getElementById('mainPage').style.display = 'none';
