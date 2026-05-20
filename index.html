@@ -112,8 +112,29 @@
         .container { max-width: 1000px; margin: 0 auto;
             padding: 0 20px 40px 20px; }
 
+        /* Stile del Pulsante Apri/Chiudi registrazione pacchi */
+        .toggle-form-btn {
+            display: block;
+            width: 100%;
+            background-color: var(--primary);
+            color: var(--accent);
+            padding: 15px;
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+        }
+        .toggle-form-btn:hover {
+            background-color: var(--primary-dark);
+        }
+
         .form-group { 
-            display: grid;
+            display: none; /* Inizialmente nascosto, gestito dal pulsante Apri/Chiudi */
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
             gap: 12px; 
             background: var(--white); 
@@ -150,7 +171,7 @@
             width: 100%;
         }
 
-        /* MODIFICA: Casella attiva diventa gialla con bordo evidenziato */
+        /* MODIFICA: La casella selezionata diventa gialla con bordo arancione ben visibile */
         input:focus, select:focus {
             background-color: #fff9db !important;
             border-color: #fab005 !important;
@@ -238,7 +259,7 @@
             cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-left: 10px; padding: 4px 8px; border: 1px solid var(--primary); border-radius: 5px;
         }
         
-        @keyframes alertBlink { 0% { opacity: 1;
+        @pragma alertBlink { 0% { opacity: 1;
             transform: scale(1); } 50% { opacity: 0.3; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1);
         } }
         .scadenza-alert { font-size: 1.8rem; cursor: pointer; margin-right: 15px; vertical-align: middle;
@@ -330,7 +351,7 @@
     <div class="modal-content" style="max-width: 500px;">
         <h3 style="color:var(--primary); margin-bottom:15px;">Inquadra Codice</h3>
         <div id="reader" style="width: 100%; border-radius: 10px; overflow: hidden;"></div>
-        <button id="torchBtn" onclick="toggleTorcia()" class="modal-btn" style="background:var(--accent); color:var(--primary); margin-top:15px; display:none; border:2px solid var(--primary);">💡 ACCENDI TORCIA</button>
+        <button id="torchBtn" onclick="toggleTorcia()" class="modal-btn" style="background:var(--accent); color:var(--primary); margin-top:15px; display:none; border:2px solid var(--primary);">🔦 ACCENDI TORCIA</button>
         <button onclick="stopScanner()" class="modal-btn" style="background:#ff4757; color:white; margin-top:10px;">ANNULLA</button>
     </div>
 </div>
@@ -358,21 +379,17 @@
 <div id="editModal">
     <div class="modal-content">
         <h3 style="color:var(--primary); margin:0 0 20px 0;">Modifica Pacco</h3>
-       
         <div class="edit-grid" id="editFields"></div>
         <div style="display:flex; gap:10px; margin-top:20px;">
-            <button onclick="closeEditModal()" class="modal-btn" style="background:#e0e0e0;
-            color:#333;">ANNULLA</button>
-            <button id="saveEditBtn" class="modal-btn" style="background:var(--success);
-            color:white;">SALVA MODIFICHE</button>
+            <button onclick="closeEditModal()" class="modal-btn" style="background:#e0e0e0; color:#333;">ANNULLA</button>
+            <button id="saveEditBtn" class="modal-btn" style="background:var(--success); color:white;">SALVA MODIFICHE</button>
         </div>
     </div>
 </div>
 
 <div id="customModal">
     <div class="modal-content">
-        <h3 id="modalTitle" style="color:var(--primary);
-        margin:0 0 10px 0;">Gestione Uscita Pacco</h3>
+        <h3 id="modalTitle" style="color:var(--primary); margin:0 0 10px 0;">Gestione Uscita Pacco</h3>
         <select id="tipoUscita" onchange="toggleCampiUscita()" style="width:100%">
             <option value="cliente">Ritiro Cliente</option>
             <option value="scaduto">Pacco Scaduto (Reso)</option>
@@ -380,41 +397,31 @@
 
         <div class="modal-body-flex">
             <div class="modal-left">
-                <div id="modalText" style="margin-bottom: 15px;
-                font-size: 1rem; background: #f0f4f8; padding: 10px; border-radius: 10px; max-height: 250px; overflow-y: auto;
-                text-align: left;"></div>
+                <div id="modalText" style="margin-bottom: 15px; font-size: 1rem; background: #f0f4f8; padding: 10px; border-radius: 10px; max-height: 250px; overflow-y: auto; text-align: left;"></div>
                 <div id="boxRitiroDettagli">
                     <label><b>Chi ritira?</b></label>
-                    <input type="text" id="modalInput" style="margin-top:5px;
-                    margin-bottom:15px; width:100%" placeholder="Nome di chi ritira">
+                    <input type="text" id="modalInput" style="margin-top:5px; margin-bottom:15px; width:100%" placeholder="Nome di chi ritira">
                     <div id="boxPagamentoNoPudo" class="paga-box" style="display:none;">
-                        <input type="checkbox" id="checkPagamento" style="width: auto;
-                        transform: scale(1.5); margin: 0 10px;">
+                        <input type="checkbox" id="checkPagamento" style="width: auto; transform: scale(1.5); margin: 0 10px;">
                         <span>PAGAMENTO € 0.50 RICEVUTO</span>
                     </div>
                 </div>
                 <div id="boxScadutoDettagli" style="display:none;">
-               
-                     <label><b>Data Rimozione:</b></label>
-                    <input type="date" id="dataScadenzaRimozione" style="margin-top:5px;
-                    width:100%">
+                    <label><b>Data Rimozione:</b></label>
+                    <input type="date" id="dataScadenzaRimozione" style="margin-top:5px; width:100%">
                 </div>
             </div>
 
             <div class="modal-right" id="firmaSide">
                 <label><b>Firma qui sotto:</b></label>
                 <canvas id="signature-pad" width="360" height="180"></canvas>
-                <button onclick="clearCanvas()" style="font-size:10px;
-                background:#666; color:white; margin-top:5px; padding:5px 10px; width: auto; border:none; border-radius:5px;">PULISCI FIRMA</button>
+                <button onclick="clearCanvas()" style="font-size:10px; background:#666; color:white; margin-top:5px; padding:5px 10px; width: auto; border:none; border-radius:5px;">PULISCI FIRMA</button>
             </div>
         </div>
 
-        <div style="display:flex;
-        gap:10px; margin-top:20px;">
-            <button onclick="closeModal()" class="modal-btn" style="background:#e0e0e0;
-            color:#333;">ANNULLA</button>
-            <button id="modalConfirmBtn" class="modal-btn" style="background:var(--primary);
-            color:var(--accent);">CONFERMA E SALVA</button>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button onclick="closeModal()" class="modal-btn" style="background:#e0e0e0; color:#333;">ANNULLA</button>
+            <button id="modalConfirmBtn" class="modal-btn" style="background:var(--primary); color:var(--accent);">CONFERMA E SALVA</button>
         </div>
     </div>
 </div>
@@ -423,10 +430,8 @@
     <div class="login-box">
         <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp" width="120">
         <h2 style="color: var(--primary);">Accesso Gestione</h2>
-        <input type="email" id="loginEmail" placeholder="Email" style="margin-bottom:10px;
-        width:100%">
-        <input type="password" id="loginPassword" placeholder="Password" style="margin-bottom:20px;
-        width:100%">
+        <input type="email" id="loginEmail" placeholder="Email" style="margin-bottom:10px; width:100%">
+        <input type="password" id="loginPassword" placeholder="Password" style="margin-bottom:20px; width:100%">
         <button onclick="login()">Entra nel Sistema</button>
     </div>
 </div>
@@ -445,7 +450,9 @@
     </div>
 
     <div class="container">
-        <div class="form-group">
+        <button class="toggle-form-btn" onclick="toggleFormInserimento()">➕ REGISTRA NUOVO PACCO ▼</button>
+
+        <div class="form-group" id="sezioneNuovoPacco">
             <div class="input-with-icon">
                 <input type="text" id="codiceTracciabilita" placeholder="Tracking (TRK)">
                 <span class="scanner-trigger" onclick="startScanner('codiceTracciabilita')">📸</span>
@@ -459,7 +466,6 @@
             <input type="text" id="nome" placeholder="Nome">
             <select id="corriereSelect"></select>
             <select id="scaffaleSelect">
-      
                 <option value="">Scaffale...</option>
                 <script>for(let i=1;i<=12;i++) document.write(`<option value="Scaffale ${i}">Scaffale ${i}</option>`);</script>
             </select>
@@ -471,18 +477,15 @@
         </div>
 
         <div class="status-bar" id="counter">Caricamento...</div>
-        <input type="text" id="search" style="margin-bottom:25px;
-        padding: 16px; border-radius: 50px; width:100%" placeholder="🔍 Cerca cliente, ID o Tracking..." oninput="aggiornaVista()">
+        <input type="text" id="search" style="margin-bottom:25px; padding: 16px; border-radius: 50px; width:100%" placeholder="🔍 Cerca cliente, ID o Tracking..." oninput="aggiornaVista()">
         
         <div class="tabs" id="tabs"></div>
         <div id="contenitori"></div>
 
         <div style="margin-top:50px;">
-            <h3 onclick="toggleSezioneRitirati()" style="cursor:pointer;
-            background:white; padding:15px; border-radius:12px; color:var(--primary); box-shadow:0 3px 6px rgba(0,0,0,0.05); border: 2px solid var(--primary);">ARCHIVIO RITIRATI / SCADUTI ▼</h3>
+            <h3 onclick="toggleSezioneRitirati()" style="cursor:pointer; background:white; padding:15px; border-radius:12px; color:var(--primary); box-shadow:0 3px 6px rgba(0,0,0,0.05); border: 2px solid var(--primary);">ARCHIVIO RITIRATI / SCADUTI ▼</h3>
             <div id="sezioneRitirati" style="display:none;">
-                <button id="btnSvuota" onclick="cancellaRitirati()" style="background:#ff4757;
-                color:white; font-size:10px; margin:10px 0; padding:10px; border:none; width: auto; border-radius:5px; cursor:pointer;">SVUOTA ARCHIVIO FILTRATO</button>
+                <button id="btnSvuota" onclick="cancellaRitirati()" style="background:#ff4757; color:white; font-size:10px; margin:10px 0; padding:10px; border:none; width: auto; border-radius:5px; cursor:pointer;">SVUOTA ARCHIVIO FILTRATO</button>
                 <div id="ritiratiContainer"></div>
             </div>
         </div>
@@ -514,14 +517,13 @@ const canvas = document.getElementById('signature-pad');
 const ctx = canvas.getContext('2d');
 let drawing = false;
 
-// FUNZIONE ALERT MIGLIORATA
 function showAlert(testo, titolo = "Attenzione") {
     document.getElementById('alertTitle').innerText = titolo;
     document.getElementById('alertMsg').innerText = testo;
     document.getElementById('beautifyAlert').style.display = 'flex';
 }
 
-// MODIFICA: Logica Scanner stabile, performante, con controllo torcia e richiamo Beep
+// Logica Scanner con controllo della torcia
 function startScanner(targetInputId) {
     document.getElementById('scannerModal').style.display = 'flex';
     html5QrCode = new Html5Qrcode("reader");
@@ -545,7 +547,7 @@ function startScanner(targetInputId) {
         { facingMode: "environment" }, 
         config,
         (decodedText) => {
-            riproduciSuonoScanner(); // Riproduce il suono a pieno volume
+            riproduciSuonoScanner(); 
             document.getElementById(targetInputId).value = decodedText;
             stopScanner();
         },
@@ -591,7 +593,6 @@ function stopScanner() {
     }
 }
 
-// MODIFICA: Controllo hardware nativo del flash/torcia
 function toggleTorcia() {
     if (!html5QrCode) return;
     torciaAttiva = !torciaAttiva;
@@ -631,8 +632,7 @@ function salva(){ db.ref('pacchi').set(pacchi); }
 function gestisciAutocomplete(val) {
     const box = document.getElementById('suggestionsBox');
     const nomeInput = document.getElementById('nome');
-    if (!val || val.trim() === "") { nomeInput.value = ""; box.style.display = 'none'; return;
-    }
+    if (!val || val.trim() === "") { nomeInput.value = ""; box.style.display = 'none'; return; }
     const query = val.toLowerCase();
     const matches = [];
     const seen = new Set();
@@ -655,6 +655,19 @@ function selezionaSuggerimento(cog, nom) {
     document.getElementById('suggestionsBox').style.display = 'none';
 }
 
+// Controllo per Apri / Chiudi del pannello di registrazione nuovo pacco
+function toggleFormInserimento() {
+    const form = document.getElementById('sezioneNuovoPacco');
+    const btn = document.querySelector('.toggle-form-btn');
+    if (form.style.display === 'grid') {
+        form.style.display = 'none';
+        btn.innerText = '➕ REGISTRA NUOVO PACCO ▼';
+    } else {
+        form.style.display = 'grid';
+        btn.innerText = '➕ REGISTRA NUOVO PACCO ▲';
+    }
+}
+
 function resetInattivita() {
     clearTimeout(timeoutInattivita);
     timeoutInattivita = setTimeout(logout, 15 * 60 * 1000); 
@@ -671,15 +684,13 @@ function copiaTracking(testo) {
     });
 }
 
-function getPos(e) { const rect = canvas.getBoundingClientRect(); return {x: (e.clientX || e.touches[0].clientX) - rect.left, y: (e.clientY || e.touches[0].clientY) - rect.top};
-}
+function getPos(e) { const rect = canvas.getBoundingClientRect(); return {x: (e.clientX || e.touches[0].clientX) - rect.left, y: (e.clientY || e.touches[0].clientY) - rect.top}; }
 canvas.addEventListener('mousedown', (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
 canvas.addEventListener('mousemove', (e) => { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
 window.addEventListener('mouseup', () => drawing = false);
 canvas.addEventListener('touchstart', (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
 canvas.addEventListener('touchmove', (e) => { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
 
-// MODIFICA: Rimossa la riga location.reload() che bloccava e mandava in crash il Login
 function login(){
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
@@ -702,7 +713,6 @@ function logout() {
     });
 }
 
-// MODIFICA: l'ascolto e il recupero sincrono del database si attivano qui istantaneamente senza refresh manuali
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         document.getElementById('loginPage').style.display = 'none';
@@ -775,6 +785,11 @@ function finalizzaInserimentoPacco() {
         <p style="color: #666; font-size: 1.1rem; margin-top: 10px;">Aggiunto correttamente in giacenza</p>
     `;
     overlay.style.display = 'flex';
+    
+    // Chiude in automatico il pannello inserimento pacchi dopo il salvataggio
+    document.getElementById('sezioneNuovoPacco').style.display = 'none';
+    document.querySelector('.toggle-form-btn').innerText = '➕ REGISTRA NUOVO PACCO ▼';
+
     setTimeout(() => { overlay.style.display = 'none'; }, 2000);
 }
 
@@ -844,16 +859,14 @@ function aggiornaVista(){
     const ritirati = pacchi.filter(p => p.ritirato && filterFn(p)).reverse();
     const perUltimoID = pacchi.filter(p => !p.ritirato && (tabAttiva === 'Tutti' || p.corriere === tabAttiva));
     let ultimoID = perUltimoID.length > 0 ? perUltimoID[perUltimoID.length - 1].riconoscimento : "---";
-    document.getElementById('counter').innerHTML = `📦 Giacenza ${tabAttiva}: ${inGiacenza.length} |
-    🏷️ Ultimo ID: #${ultimoID}`;
+    document.getElementById('counter').innerHTML = `📦 Giacenza ${tabAttiva}: ${inGiacenza.length} | 🏷️ Ultimo ID: #${ultimoID}`;
     
     document.getElementById('contenitori').innerHTML = inGiacenza.map(p => generateHtml(p)).join('');
     document.getElementById('ritiratiContainer').innerHTML = ritirati.map(p => generateHtml(p)).join('');
 }
 
 function generateHtml(p) {
-    let firmaLink = (p.ritirato && p.firma && !p.isScaduto) ?
-    `<span class="view-firma-link" onclick="mostraFirma('${p.id}')">VEDI FIRMA</span>` : '';
+    let firmaLink = (p.ritirato && p.firma && !p.isScaduto) ? `<span class="view-firma-link" onclick="mostraFirma('${p.id}')">VEDI FIRMA</span>` : '';
     let alertScadenza = '';
     if (!p.ritirato) {
         const oggi = new Date().getTime();
@@ -864,8 +877,7 @@ function generateHtml(p) {
     let statoTesto = '';
     let emojiIcona = '';
     if(p.ritirato) {
-        let notaPudo = p.pudoStatus === 'pagato' ?
-        '<span class="tag-pagato">(Pagato €0.50)</span>' : (p.pudoStatus === 'non_pagato' ? '<span class="tag-non-pagato">(Non Pagato)</span>' : '');
+        let notaPudo = p.pudoStatus === 'pagato' ? '<span class="tag-pagato">(Pagato €0.50)</span>' : (p.pudoStatus === 'non_pagato' ? '<span class="tag-non-pagato">(Non Pagato)</span>' : '');
         if (p.isScaduto) {
             emojiIcona = '<span class="stato-emoji">📦❌</span>';
             statoTesto = `<div style="color:var(--warning); font-size:0.85rem; margin-top:5px; font-weight:bold;">PACCO SCADUTO (RESO) il ${p.dataRitiro}</div>`;
@@ -875,21 +887,16 @@ function generateHtml(p) {
         }
     }
 
-    const azione = p.ritirato 
-        ?
-        `<button class="btn-ripristina" onclick="ripristinaPacco(${p.id})">RIPRISTINA</button>` 
-        : `
+    const azione = p.ritirato ? `<button class="btn-ripristina" onclick="ripristinaPacco(${p.id})">RIPRISTINA</button>` : `
           <button class="ritira-btn" onclick="handleRitira(${p.id})">RITIRA</button>
-          <button class="edit-dots" onclick="apriModifica(${p.id})">.
-        . .</button>
+          <button class="edit-dots" onclick="apriModifica(${p.id})">. . .</button>
         `;
     return `<div class="pacco ${p.ritirato ? (p.isScaduto ? 'scaduto' : 'ritirato') : ''}">
         <div style="flex-grow:1; display: flex; align-items: center;">
             ${emojiIcona}
             <div>
                 <span class="tag-grandezza">${p.grandezza}</span><span class="tag-corriere">${p.corriere}</span><strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome}
-                <br><small style="display:block; margin-top:5px; color:#666;">📍 ${p.scaffale} • 🔍 TRK: <span class="highlight-trk" onclick="copiaTracking('${p.codiceTracciabilita}')">${p.codiceTracciabilita}</span><br>📅 Arrivato il: ${p.dataTestoInserimento ||
-        '-'}</small>
+                <br><small style="display:block; margin-top:5px; color:#666;">📍 ${p.scaffale} • 🔍 TRK: <span class="highlight-trk" onclick="copiaTracking('${p.codiceTracciabilita}')">${p.codiceTracciabilita}</span><br>📅 Arrivato il: ${p.dataTestoInserimento || '-'}</small>
                 ${statoTesto}
             </div>
         </div>
@@ -910,7 +917,6 @@ function apriModifica(id) {
             <input type="text" id="editNome" value="${p.nome}">
         </div>
         <div>
-    
             <label>ID Pacco (Solo Numeri)</label>
             <input type="text" id="editRiconoscimento" value="${p.riconoscimento}" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
         </div>
@@ -918,15 +924,13 @@ function apriModifica(id) {
             <label>Tracking</label>
             <div style="position:relative; width:100%;">
                 <input type="text" id="editTrk" value="${p.codiceTracciabilita}">
-            
                 <span class="scanner-trigger" onclick="startScanner('editTrk')">📸</span>
             </div>
         </div>
         <div>
             <label>Corriere</label>
             <select id="editCorriere">
-                ${corrieri.map(c => `<option value="${c}" ${c === p.corriere ?
-                'selected' : ''}>${c}</option>`).join('')}
+                ${corrieri.map(c => `<option value="${c}" ${c === p.corriere ? 'selected' : ''}>${c}</option>`).join('')}
             </select>
         </div>
         <div>
@@ -934,7 +938,6 @@ function apriModifica(id) {
             <select id="editScaffale">
                 ${Array.from({length:12}, (_,i)=>i+1).map(i => `<option value="Scaffale ${i}" ${p.scaffale === 'Scaffale '+i ? 'selected' : ''}>Scaffale ${i}</option>`).join('')}
             </select>
-   
         </div>
     `;
     document.getElementById('editModal').style.display = 'flex';
@@ -980,8 +983,7 @@ function handleRitira(id, forzaScaduto = false) {
     const updatePudoBox = () => {
         const selectedCheckboxes = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked'));
         const hasNoPudoSelected = selectedCheckboxes.some(cb => cb.dataset.corriere === 'Corrieri No Pudo');
-        document.getElementById('boxPagamentoNoPudo').style.display = (hasNoPudoSelected && document.getElementById('tipoUscita').value === 'cliente') ?
-        'flex' : 'none';
+        document.getElementById('boxPagamentoNoPudo').style.display = (hasNoPudoSelected && document.getElementById('tipoUscita').value === 'cliente') ? 'flex' : 'none';
     };
 
     document.querySelectorAll('.chk-multi-ritiro').forEach(cb => cb.addEventListener('change', updatePudoBox));
@@ -1011,7 +1013,6 @@ function handleRitira(id, forzaScaduto = false) {
             px.dataRitiro = (tipo === 'cliente') ? dataAttuale : dataScad;
             px.ritiratoDa = (tipo === 'cliente') ? ritiratoDa : "SISTEMA (SCADUTO)";
             px.isScaduto = (tipo === 'scaduto');
-    
             px.firma = (tipo === 'cliente') ? firmaData : null;
             if(px.corriere === 'Corrieri No Pudo') px.pudoStatus = pagato ? 'pagato' : 'non_pagato';
             if(selectedIds.length > 1) px.sessioneRitiro = sessioneId;
@@ -1106,8 +1107,7 @@ function generaReport() {
 
 function mostraFirma(id) {
     const p = pacchi.find(x => x.id == id);
-    const pacchiSessione = p.sessioneRitiro ?
-    pacchi.filter(px => px.sessioneRitiro === p.sessioneRitiro) : [p];
+    const pacchiSessione = p.sessioneRitiro ? pacchi.filter(px => px.sessioneRitiro === p.sessioneRitiro) : [p];
     const win = window.open("", "Firma", "width=700,height=900");
     let righeTabella = pacchiSessione.map(px => `
         <tr>
@@ -1184,7 +1184,7 @@ function mostraFirma(id) {
                         <img src="${p.firma}" style="width:100%; height:auto; display:block;">
                     </div>
                 </div>
-                <div class="footer">Centro Post@ Anaclerio - Grazie per averci scelto!</div>
+                <div class="footer">Centro Post@ Anaclerio - Grazie per haverci scelto!</div>
                 <button onclick="window.print()" class="btn-print">🖨️ STAMPA RICEVUTA</button>
             </div>
         </body>
@@ -1218,19 +1218,16 @@ function toggleCampiUscita() {
 
 function closeModal() { document.getElementById('customModal').style.display = 'none'; }
 function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
-function toggleSezioneRitirati() { const s = document.getElementById('sezioneRitirati');
-s.style.display = s.style.display === 'none' ? 'block' : 'none'; }
-function setTab(t){ tabAttiva = t; aggiornaVista();
-}
+function toggleSezioneRitirati() { const s = document.getElementById('sezioneRitirati'); s.style.display = s.style.display === 'none' ? 'block' : 'none'; }
+function setTab(t){ tabAttiva = t; aggiornaVista(); }
 function cancellaRitirati(){
     if(confirm(`Svuotare archivio di ${tabAttiva}?`)) {
-        pacchi = (tabAttiva === 'Tutti') ?
-        pacchi.filter(p => !p.ritirato) : pacchi.filter(p => !(p.ritirato && p.corriere === tabAttiva));
+        pacchi = (tabAttiva === 'Tutti') ? pacchi.filter(p => !p.ritirato) : pacchi.filter(p => !(p.ritirato && p.corriere === tabAttiva));
         salva();
     }
 }
 
-// MODIFICA: Riproduttore Beep acustico ad alta intensità e privo di errori sintattici
+// Bip acustico ad alta intensità per la fotocamera (Volume 100%)
 function riproduciSuonoScanner() {
     try {
         var ContestoAudio = window.AudioContext || window.webkitAudioContext;
