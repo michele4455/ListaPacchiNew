@@ -587,7 +587,7 @@ function showAlert(testo, titolo = "Attenzione") {
     document.getElementById('beautifyAlert').style.display = 'flex';
 }
 
-// LOGICA SCANNER AGGIORNATA (Sicura, veloce, supporto torcia e suono)
+// LOGICA SCANNER AGGIORNATA (Previene i blocchi della pagina e gestisce la torcia in sicurezza)
 function startScanner(targetInputId) {
     document.getElementById('scannerModal').style.display = 'flex';
     html5QrCode = new Html5Qrcode("reader");
@@ -595,7 +595,6 @@ function startScanner(targetInputId) {
     document.getElementById('torchBtn').style.display = 'none';
     document.getElementById('torchBtn').innerText = "🔦 ACCENDI TORCIA";
 
-    // Configurazione ottimizzata per velocità (20 FPS e impostazione formati 1D/Barcode principali)
     const config = { 
         fps: 20, 
         qrbox: { width: 280, height: 160 },
@@ -612,50 +611,67 @@ function startScanner(targetInputId) {
         { facingMode: "environment" }, 
         config,
         (decodedText) => {
-            riproduciSuonoScanner(); // Emette il Bip
+            riproduciSuonoScanner(); 
             document.getElementById(targetInputId).value = decodedText;
             stopScanner();
         },
         (errorMessage) => {}
     ).then(() => {
-        // Controllo sicuro: evita l'errore se la funzione non esiste nel browser corrente
-        if (html5QrCode && typeof html5QrCode.getCameraCapabilities === "function") {
+        // Controllo sicuro e alternativo per verificare se la torcia è supportata sul browser/dispositivo
+        setTimeout(() => {
             try {
-                const dellaFotocamera = html5QrCode.getCameraCapabilities();
-                if (dellaFotocamera && dellaFotocamera.torchFeature && dellaFotocamera.torchFeature.isSupported()) {
-                    document.getElementById('torchBtn').style.display = 'block';
+                if (html5QrCode && typeof html5QrCode.getCameraCapabilities === "function") {
+                    const caps = html5QrCode.getCameraCapabilities();
+                    if (caps && caps.torchFeature && caps.torchFeature.isSupported()) {
+                        document.getElementById('torchBtn').style.display = 'block';
+                        return;
+                    }
+                }
+                // Alternativa standard basata sul flusso video corrente se la funzione nativa della libreria fallisce
+                const videoTrack = html5QrCode._localMediaStream && html5QrCode._localMediaStream.getVideoTracks()[0];
+                if (videoTrack && typeof videoTrack.getCapabilities === "function") {
+                    const capabilities = videoTrack.getCapabilities();
+                    if (capabilities.torch) {
+                        document.getElementById('torchBtn').style.display = 'block';
+                    }
                 }
             } catch (e) {
-                console.log("Impossibile leggere le funzionalità della torcia:", e);
+                console.log("Controllo torcia ignorato per evitare errori di sistema:", e);
+            }
+        }, 500);
+    }).catch((err) => {
+        showAlert("Errore fotocamera: " + err);
+        stopScanner();
+    });
+}
+
+function toggleTorcia() {
+    if (!html5QrCode) return;
+    torciaAttiva = !torciaAttiva;
+    try {
+        // Prova ad applicare la torcia tramite il track video nativo del browser (più stabile)
+        const videoTrack = html5QrCode._localMediaStream && html5QrCode._localMediaStream.getVideoTracks()[0];
+        if (videoTrack && typeof videoTrack.getCapabilities === "function") {
+            const capabilities = videoTrack.getCapabilities();
+            if (capabilities.torch) {
+                videoTrack.applyConstraints({
+                    advanced: [{ torch: torciaAttiva }]
+                }).then(() => {
+                    document.getElementById('torchBtn').innerText = torciaAttiva ? "🛑 SPEGNI TORCIA" : "🔦 ACCENDI TORCIA";
+                }).catch(err => console.log(err));
+                return;
             }
         }
-    }).catch((err) => {
-        showAlert("Errore fotocamera: " + err);
-        stopScanner();
-    });
+        // Se non riesce, prova con il metodo classico della libreria
+        html5QrCode.applyVideoConstraints({
+            advanced: [{ torch: torciaAttiva }]
+        }).then(() => {
+            document.getElementById('torchBtn').innerText = torciaAttiva ? "🛑 SPEGNI TORCIA" : "🔦 ACCENDI TORCIA";
+        }).catch(err => console.log(err));
+    } catch (e) {
+        console.error("Impossibile attivare la torcia su questo dispositivo:", e);
+    }
 }
-
-    html5QrCode.start(
-        { facingMode: "environment" }, 
-        config,
-        (decodedText) => {
-            riproduciSuonoScanner(); // Emette il Bip
-            document.getElementById(targetInputId).value = decodedText;
-            stopScanner();
-        },
-        (errorMessage) => {}
-    ).then(() => {
-        // Controlla se la fotocamera supporta la torcia e mostra il pulsante se disponibile
-        const dellaFotocamera = html5QrCode.getCameraCapabilities();
-        if (dellaFotocamera && dellaFotocamera.torchFeature && dellaFotocamera.torchFeature.isSupported()) {
-            document.getElementById('torchBtn').style.display = 'block';
-        }
-    }).catch((err) => {
-        showAlert("Errore fotocamera: " + err);
-        stopScanner();
-    });
-}
-
 // FUNZIONE AGGIUNTA: Gestione accensione/spegnimento flash LED
 function toggleTorcia() {
     if (!html5QrCode) return;
@@ -759,11 +775,14 @@ function login(){
     firebase.auth().signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
             resetInattivita();
-            location.reload(); 
+            // Forza il refresh per caricare i dati corretti dal database
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('mainPage').style.display = 'block';
+            aggiornaVista();
         })
         .catch((error) => {
             console.error("Errore login:", error);
-            showAlert("Credenziali errate o errore di connessione");
+            showAlert("Errore di accesso: " + error.message, "Accesso Fallito");
         });
 }
 
