@@ -112,46 +112,16 @@
         .container { max-width: 1000px; margin: 0 auto;
             padding: 0 20px 40px 20px; }
 
-        /* Stili per la sezione Inserimento Pacchi collassabile */
-        .header-sezione-inserimento {
-            cursor: pointer;
-            background: var(--primary);
-            color: var(--accent);
-            padding: 15px;
-            border-radius: 12px;
-            font-weight: bold;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .form-group-wrapper {
-            transition: max-height 0.3s ease-out, margin-bottom 0.3s ease-out;
-            overflow: hidden;
-            max-height: 1000px; /* Aperto di default */
-            margin-bottom: 25px;
-        }
-        
-        .form-group-wrapper.chiuso {
-            max-height: 0 !important;
-            margin-bottom: 0 !important;
-        }
-
         .form-group { 
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
             gap: 12px; 
             background: var(--white); 
             padding: 25px; 
-            border-radius: 0 0 15px 15px; 
+            border-radius: 15px; 
             box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+            margin-bottom: 25px;
             align-items: start;
-            border: 2px solid var(--primary);
-            border-top: none;
         }
 
         .input-with-icon {
@@ -179,8 +149,8 @@
             box-sizing: border-box;
             width: 100%;
         }
-        
-        /* Evidenzia in giallo lo sfondo e il bordo della casella selezionata */
+
+        /* MODIFICA: Casella attiva diventa gialla con bordo evidenziato */
         input:focus, select:focus {
             background-color: #fff9db !important;
             border-color: #fab005 !important;
@@ -268,7 +238,6 @@
             cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-left: 10px; padding: 4px 8px; border: 1px solid var(--primary); border-radius: 5px;
         }
         
-        @media print { .btn-print { display:none; } }
         @keyframes alertBlink { 0% { opacity: 1;
             transform: scale(1); } 50% { opacity: 0.3; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1);
         } }
@@ -361,7 +330,7 @@
     <div class="modal-content" style="max-width: 500px;">
         <h3 style="color:var(--primary); margin-bottom:15px;">Inquadra Codice</h3>
         <div id="reader" style="width: 100%; border-radius: 10px; overflow: hidden;"></div>
-        <button id="torchBtn" onclick="toggleTorcia()" class="modal-btn" style="background:var(--accent); color:var(--primary); margin-top:15px; display:none; border:2px solid var(--primary);">🔦 ACCENDI TORCIA</button>
+        <button id="torchBtn" onclick="toggleTorcia()" class="modal-btn" style="background:var(--accent); color:var(--primary); margin-top:15px; display:none; border:2px solid var(--primary);">💡 ACCENDI TORCIA</button>
         <button onclick="stopScanner()" class="modal-btn" style="background:#ff4757; color:white; margin-top:10px;">ANNULLA</button>
     </div>
 </div>
@@ -476,35 +445,29 @@
     </div>
 
     <div class="container">
-        <div class="header-sezione-inserimento" onclick="togglePannelloInserimento()">
-            <span>➕ Registrazione Nuovo Pacco</span>
-            <span id="frecciaInserimento">▲</span>
-        </div>
-        <div class="form-group-wrapper" id="pannelloInserimento">
-            <div class="form-group">
-                <div class="input-with-icon">
-                    <input type="text" id="codiceTracciabilita" placeholder="Tracking (TRK)">
-                    <span class="scanner-trigger" onclick="startScanner('codiceTracciabilita')">📸</span>
-                </div>
-                <input type="text" id="codiceRiconoscimento" placeholder="ID Pacco" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-                
-                <div class="autocomplete-container" style="position:relative;">
-                    <input type="text" id="cognome" placeholder="Cognome" oninput="gestisciAutocomplete(this.value)" autocomplete="off">
-                    <div id="suggestionsBox" class="suggestions-list"></div>
-                </div>
-                <input type="text" id="nome" placeholder="Nome">
-                <select id="corriereSelect"></select>
-                <select id="scaffaleSelect">
-          
-                    <option value="">Scaffale...</option>
-                    <script>for(let i=1;i<=12;i++) document.write(`<option value="Scaffale ${i}">Scaffale ${i}</option>`);</script>
-                </select>
-                <select id="grandezzaSelect">
-                    <option value="P">P</option><option value="M">M</option><option value="G">G</option>
-                </select>
-                
-                <button onclick="aggiungiPacco()">AGGIUNGI</button>
+        <div class="form-group">
+            <div class="input-with-icon">
+                <input type="text" id="codiceTracciabilita" placeholder="Tracking (TRK)">
+                <span class="scanner-trigger" onclick="startScanner('codiceTracciabilita')">📸</span>
             </div>
+            <input type="text" id="codiceRiconoscimento" placeholder="ID Pacco" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+            
+            <div class="autocomplete-container" style="position:relative;">
+                <input type="text" id="cognome" placeholder="Cognome" oninput="gestisciAutocomplete(this.value)" autocomplete="off">
+                <div id="suggestionsBox" class="suggestions-list" style="background: white;"></div>
+            </div>
+            <input type="text" id="nome" placeholder="Nome">
+            <select id="corriereSelect"></select>
+            <select id="scaffaleSelect">
+      
+                <option value="">Scaffale...</option>
+                <script>for(let i=1;i<=12;i++) document.write(`<option value="Scaffale ${i}">Scaffale ${i}</option>`);</script>
+            </select>
+            <select id="grandezzaSelect">
+                <option value="P">P</option><option value="M">M</option><option value="G">G</option>
+            </select>
+            
+            <button onclick="aggiungiPacco()">AGGIUNGI</button>
         </div>
 
         <div class="status-bar" id="counter">Caricamento...</div>
@@ -550,18 +513,6 @@ let torciaAttiva = false;
 const canvas = document.getElementById('signature-pad');
 const ctx = canvas.getContext('2d');
 let drawing = false;
-// FUNZIONE AGGIUNTA: Mostra/Nasconde la sezione Inserimento Pacco
-function togglePannelloInserimento() {
-    const wrapper = document.getElementById('pannelloInserimento');
-    const freccia = document.getElementById('frecciaInserimento');
-    if (wrapper.classList.contains('chiuso')) {
-        wrapper.classList.remove('chiuso');
-        freccia.innerText = "▲";
-    } else {
-        wrapper.classList.add('chiuso');
-        freccia.innerText = "▼";
-    }
-}
 
 // FUNZIONE ALERT MIGLIORATA
 function showAlert(testo, titolo = "Attenzione") {
@@ -570,9 +521,7 @@ function showAlert(testo, titolo = "Attenzione") {
     document.getElementById('beautifyAlert').style.display = 'flex';
 }
 
-// LOGICA SCANNER AGGIORNATA (Previene i blocchi della pagina e gestisce la torcia in sicurezza)
-let torciaAttiva = false;
-
+// MODIFICA: Logica Scanner stabile, performante, con controllo torcia e richiamo Beep
 function startScanner(targetInputId) {
     document.getElementById('scannerModal').style.display = 'flex';
     html5QrCode = new Html5Qrcode("reader");
@@ -596,13 +545,12 @@ function startScanner(targetInputId) {
         { facingMode: "environment" }, 
         config,
         (decodedText) => {
-            riproduciSuonoScanner(); // Avvia il beep al volume massimo
+            riproduciSuonoScanner(); // Riproduce il suono a pieno volume
             document.getElementById(targetInputId).value = decodedText;
             stopScanner();
         },
         (errorMessage) => {}
     ).then(() => {
-        // Controlla se il dispositivo supporta la torcia e mostra il pulsante se disponibile
         setTimeout(() => {
             try {
                 if (html5QrCode && typeof html5QrCode.getCameraCapabilities === "function") {
@@ -620,7 +568,7 @@ function startScanner(targetInputId) {
                     }
                 }
             } catch (e) {
-                console.log("Controllo torcia ignorato:", e);
+                console.log("Controllo torcia gestito asincrono:", e);
             }
         }, 500);
     }).catch((err) => {
@@ -643,6 +591,7 @@ function stopScanner() {
     }
 }
 
+// MODIFICA: Controllo hardware nativo del flash/torcia
 function toggleTorcia() {
     if (!html5QrCode) return;
     torciaAttiva = !torciaAttiva;
@@ -665,10 +614,10 @@ function toggleTorcia() {
             document.getElementById('torchBtn').innerText = torciaAttiva ? "🛑 SPEGNI TORCIA" : "🔦 ACCENDI TORCIA";
         }).catch(err => console.log(err));
     } catch (e) {
-        console.error("Impossibile attivare la torcia:", e);
+        console.error("Impossibile comandare il flash:", e);
     }
 }
-    
+
 function updateClock() {
     const ora = new Date();
     const opzioni = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
@@ -677,10 +626,6 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-db.ref('pacchi').on('value', (snapshot) => {
-    pacchi = snapshot.val() ? snapshot.val() : [];
-    aggiornaVista();
-});
 function salva(){ db.ref('pacchi').set(pacchi); }
 
 function gestisciAutocomplete(val) {
@@ -734,6 +679,7 @@ window.addEventListener('mouseup', () => drawing = false);
 canvas.addEventListener('touchstart', (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
 canvas.addEventListener('touchmove', (e) => { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
 
+// MODIFICA: Rimossa la riga location.reload() che bloccava e mandava in crash il Login
 function login(){
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
@@ -743,7 +689,6 @@ function login(){
     firebase.auth().signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
             resetInattivita();
-            // Rimosso il reload forzato che causava il bug dello "0"
         })
         .catch((error) => {
             console.error("Errore login:", error);
@@ -757,15 +702,14 @@ function logout() {
     });
 }
 
-// Questo listener gestisce la visibilità delle pagine e sincronizza i dati all'accesso
+// MODIFICA: l'ascolto e il recupero sincrono del database si attivano qui istantaneamente senza refresh manuali
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainPage').style.display = 'block';
         resetInattivita();
         
-        // Sincronizza e mostra i pacchi istantaneamente al login senza ricaricare la pagina
-        db.ref('pacchi').off('value'); // Evita duplicazioni di ascolto
+        db.ref('pacchi').off('value');
         db.ref('pacchi').on('value', (snapshot) => {
             pacchi = snapshot.val() ? snapshot.val() : [];
             aggiornaVista();
@@ -1278,8 +1222,7 @@ function toggleSezioneRitirati() { const s = document.getElementById('sezioneRit
 s.style.display = s.style.display === 'none' ? 'block' : 'none'; }
 function setTab(t){ tabAttiva = t; aggiornaVista();
 }
-
-    function cancellaRitirati(){
+function cancellaRitirati(){
     if(confirm(`Svuotare archivio di ${tabAttiva}?`)) {
         pacchi = (tabAttiva === 'Tutti') ?
         pacchi.filter(p => !p.ritirato) : pacchi.filter(p => !(p.ritirato && p.corriere === tabAttiva));
@@ -1287,27 +1230,31 @@ function setTab(t){ tabAttiva = t; aggiornaVista();
     }
 }
 
-// LA FUNZIONE DEL SUONO VA INSERITA QUI SOTTO:
+// MODIFICA: Riproduttore Beep acustico ad alta intensità e privo di errori sintattici
 function riproduciSuonoScanner() {
     try {
         var ContestoAudio = window.AudioContext || window.webkitAudioContext;
         if (!ContestoAudio) return;
+        
         var ctxAudio = new ContestoAudio();
         var oscillator = ctxAudio.createOscillator();
         var gainNode = ctxAudio.createGain();
+        
         oscillator.connect(gainNode);
         gainNode.connect(ctxAudio.destination);
+        
         oscillator.type = 'sine';
         oscillator.frequency.setValueAtTime(1200, ctxAudio.currentTime);
-        gainNode.gain.setValueAtTime(1.0, ctxAudio.currentTime);
+        gainNode.gain.setValueAtTime(1.0, ctxAudio.currentTime); 
+        
         gainNode.gain.exponentialRampToValueAtTime(0.001, ctxAudio.currentTime + 0.15);
+        
         oscillator.start(ctxAudio.currentTime);
         oscillator.stop(ctxAudio.currentTime + 0.15);
-    } catch (e) { console.log(e); }
+    } catch (e) {
+        console.log("Audio non supportato al momento:", e);
+    }
 }
-</script>
-</body>
-</html>
 </script>
 </body>
 </html>
