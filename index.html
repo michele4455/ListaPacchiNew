@@ -112,7 +112,7 @@
         .container { max-width: 1000px; margin: 0 auto;
             padding: 0 20px 40px 20px; }
 
-        /* Stile del Pulsante Apri/Chiudi registrazione pacchi */
+        /* Pulsante Apri/Chiudi registrazione pacchi */
         .toggle-form-btn {
             display: block;
             width: 100%;
@@ -134,7 +134,7 @@
         }
 
         .form-group { 
-            display: none; /* Inizialmente nascosto, gestito dal pulsante Apri/Chiudi */
+            display: none; 
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
             gap: 12px; 
             background: var(--white); 
@@ -171,7 +171,7 @@
             width: 100%;
         }
 
-        /* MODIFICA: La casella selezionata diventa gialla con bordo arancione ben visibile */
+        /* Casella selezionata diventa gialla */
         input:focus, select:focus {
             background-color: #fff9db !important;
             border-color: #fab005 !important;
@@ -259,9 +259,12 @@
             cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-left: 10px; padding: 4px 8px; border: 1px solid var(--primary); border-radius: 5px;
         }
         
-        @pragma alertBlink { 0% { opacity: 1;
-            transform: scale(1); } 50% { opacity: 0.3; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1);
-        } }
+        /* CORREZIONE: Ripristinato il movimento dell'icona di avviso scadenza */
+        @keyframes alertBlink { 
+            0% { opacity: 1; transform: scale(1); } 
+            50% { opacity: 0.3; transform: scale(1.2); } 
+            100% { opacity: 1; transform: scale(1); } 
+        }
         .scadenza-alert { font-size: 1.8rem; cursor: pointer; margin-right: 15px; vertical-align: middle;
             animation: alertBlink 1s infinite; display: inline-block; }
 
@@ -351,7 +354,7 @@
     <div class="modal-content" style="max-width: 500px;">
         <h3 style="color:var(--primary); margin-bottom:15px;">Inquadra Codice</h3>
         <div id="reader" style="width: 100%; border-radius: 10px; overflow: hidden;"></div>
-        <button id="torchBtn" onclick="toggleTorcia()" class="modal-btn" style="background:var(--accent); color:var(--primary); margin-top:15px; display:none; border:2px solid var(--primary);">🔦 ACCENDI TORCIA</button>
+        <button id="torchBtn" onclick="toggleTorcia()" class="modal-btn" style="background:var(--accent); color:var(--primary); margin-top:15px; display:none; border:2px solid var(--primary); font-weight: bold;">⚠️ APRI FOTOCAMERA PRIMA</button>
         <button onclick="stopScanner()" class="modal-btn" style="background:#ff4757; color:white; margin-top:10px;">ANNULLA</button>
     </div>
 </div>
@@ -523,12 +526,12 @@ function showAlert(testo, titolo = "Attenzione") {
     document.getElementById('beautifyAlert').style.display = 'flex';
 }
 
-// Logica Scanner con controllo della torcia
+// Logica Scanner con controllo Torcia Flash ripristinata
 function startScanner(targetInputId) {
     document.getElementById('scannerModal').style.display = 'flex';
     html5QrCode = new Html5Qrcode("reader");
     torciaAttiva = false;
-    document.getElementById('torchBtn').style.display = 'none';
+    document.getElementById('torchBtn').style.display = 'block';
     document.getElementById('torchBtn').innerText = "🔦 ACCENDI TORCIA";
 
     const config = { 
@@ -558,7 +561,7 @@ function startScanner(targetInputId) {
                 if (html5QrCode && typeof html5QrCode.getCameraCapabilities === "function") {
                     const caps = html5QrCode.getCameraCapabilities();
                     if (caps && caps.torchFeature && caps.torchFeature.isSupported()) {
-                        document.getElementById('torchBtn').style.display = 'block';
+                        document.getElementById('torchBtn').innerText = "🔦 ACCENDI TORCIA";
                         return;
                     }
                 }
@@ -566,11 +569,11 @@ function startScanner(targetInputId) {
                 if (videoTrack && typeof videoTrack.getCapabilities === "function") {
                     const capabilities = videoTrack.getCapabilities();
                     if (capabilities.torch) {
-                        document.getElementById('torchBtn').style.display = 'block';
+                        document.getElementById('torchBtn').innerText = "🔦 ACCENDI TORCIA";
                     }
                 }
             } catch (e) {
-                console.log("Controllo torcia gestito asincrono:", e);
+                console.log("Controllo torcia inizializzato:", e);
             }
         }, 500);
     }).catch((err) => {
@@ -593,6 +596,7 @@ function stopScanner() {
     }
 }
 
+// Funzione hardware Torcia/Flash ripristinata correttamente
 function toggleTorcia() {
     if (!html5QrCode) return;
     torciaAttiva = !torciaAttiva;
@@ -615,7 +619,7 @@ function toggleTorcia() {
             document.getElementById('torchBtn').innerText = torciaAttiva ? "🛑 SPEGNI TORCIA" : "🔦 ACCENDI TORCIA";
         }).catch(err => console.log(err));
     } catch (e) {
-        console.error("Impossibile comandare il flash:", e);
+        console.error("Impossibile comandare la torcia:", e);
     }
 }
 
@@ -655,7 +659,6 @@ function selezionaSuggerimento(cog, nom) {
     document.getElementById('suggestionsBox').style.display = 'none';
 }
 
-// Controllo per Apri / Chiudi del pannello di registrazione nuovo pacco
 function toggleFormInserimento() {
     const form = document.getElementById('sezioneNuovoPacco');
     const btn = document.querySelector('.toggle-form-btn');
@@ -694,31 +697,20 @@ canvas.addEventListener('touchmove', (e) => { if(!drawing) return; e.preventDefa
 function login(){
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
-
     if (!email || !password) return showAlert("Inserisci email e password");
 
     firebase.auth().signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            resetInattivita();
-        })
-        .catch((error) => {
-            console.error("Errore login:", error);
-            showAlert("Credenziali errate o errore di connessione");
-        });
+        .then((userCredential) => { resetInattivita(); })
+        .catch((error) => { showAlert("Credenziali errate o errore di connessione"); });
 }
 
-function logout() { 
-    firebase.auth().signOut().then(() => {
-        location.reload();
-    });
-}
+function logout() { firebase.auth().signOut().then(() => { location.reload(); }); }
 
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainPage').style.display = 'block';
         resetInattivita();
-        
         db.ref('pacchi').off('value');
         db.ref('pacchi').on('value', (snapshot) => {
             pacchi = snapshot.val() ? snapshot.val() : [];
@@ -734,15 +726,11 @@ function aggiungiPacco(){
     const trk = document.getElementById('codiceTracciabilita').value.trim();
     const c = document.getElementById('cognome').value.trim();
     const corr = document.getElementById('corriereSelect').value;
-
     if(!c || !corr) return showAlert("Mancano dati (Cognome e Corriere sono obbligatori)!");
 
     if (trk && trk !== '-') {
         const esiste = pacchi.find(p => p.codiceTracciabilita === trk);
-        if (esiste) {
-            mostraConfermaDuplicato(trk);
-            return; 
-        }
+        if (esiste) { mostraConfermaDuplicato(trk); return; }
     }
     finalizzaInserimentoPacco();
 }
@@ -774,7 +762,6 @@ function finalizzaInserimentoPacco() {
     
     salva(); 
     ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
-    
     aggiornaVista(); 
 
     const overlay = document.getElementById('successOverlay');
@@ -786,7 +773,6 @@ function finalizzaInserimentoPacco() {
     `;
     overlay.style.display = 'flex';
     
-    // Chiude in automatico il pannello inserimento pacchi dopo il salvataggio
     document.getElementById('sezioneNuovoPacco').style.display = 'none';
     document.querySelector('.toggle-form-btn').innerText = '➕ REGISTRA NUOVO PACCO ▼';
 
@@ -1038,21 +1024,16 @@ function ripristinaPacco(id) {
 function generaReport() {
     const dataScelta = document.getElementById('dataReport').value;
     if(!dataScelta) return showAlert("Seleziona una data!");
-    
     const dObj = new Date(dataScelta).toLocaleDateString('it-IT');
     
-    const arrivati = pacchi.filter(p => p.dataTestoInserimento && p.dataTestoInserimento.startsWith(dObj))
-                           .sort((a, b) => a.dataInserimento - b.dataInserimento);
-
-    const ritirati = pacchi.filter(p => p.ritirato && p.dataRitiro && p.dataRitiro.startsWith(dObj))
-                           .sort((a, b) => {
-                               const oraA = a.dataRitiro.split(", ")[1] || "";
-                               const oraB = b.dataRitiro.split(", ")[1] || "";
-                               return oraA.localeCompare(oraB);
-                           });
+    const arrivati = pacchi.filter(p => p.dataTestoInserimento && p.dataTestoInserimento.startsWith(dObj)).sort((a, b) => a.dataInserimento - b.dataInserimento);
+    const ritirati = pacchi.filter(p => p.ritirato && p.dataRitiro && p.dataRitiro.startsWith(dObj)).sort((a, b) => {
+        const oraA = a.dataRitiro.split(", ")[1] || "";
+        const oraB = b.dataRitiro.split(", ")[1] || "";
+        return oraA.localeCompare(oraB);
+    });
 
     const win = window.open("", "Report", "width=900,height=800");
-    
     let htmlArrivati = arrivati.map(p => {
         const ora = p.dataTestoInserimento.includes(" ") ? p.dataTestoInserimento.split(" ")[1] : "--:--";
         return `<tr><td>${p.riconoscimento}</td><td>${p.cognome} ${p.nome}</td><td>${p.corriere}</td><td>${p.codiceTracciabilita}</td><td>${ora}</td></tr>`;
@@ -1084,19 +1065,16 @@ function generaReport() {
         <body>
             <h1>Report Giornaliero - ${dObj}</h1>
             <button class="btn-print" onclick="window.print()">🖨️ STAMPA REPORT</button>
-
             <h2>1. PACCHI CARICATI <span class="count-badge">${arrivati.length} pacchi</span></h2>
             <table>
                 <thead><tr><th>ID</th><th>Intestatario</th><th>Corriere</th><th>Tracking</th><th>Ora Arrivo</th></tr></thead>
                 <tbody>${htmlArrivati || '<tr><td colspan="5" style="text-align:center">Nessun pacco caricato in questa data</td></tr>'}</tbody>
             </table>
-
             <h2>2. PACCHI USCITI (RITIRATI / RESI) <span class="count-badge">${ritirati.length} pacchi</span></h2>
             <table>
                 <thead><tr><th>ID</th><th>Ritirato Da / Stato</th><th>Corriere</th><th>Tracking</th><th>Ora Uscita</th></tr></thead>
                 <tbody>${htmlRitirati || '<tr><td colspan="5" style="text-align:center">Nessun pacco uscito in questa data</td></tr>'}</tbody>
             </table>
-
             <div class="footer">Centro Post@ Anaclerio - Sistema Gestionale Interno</div>
         </body>
         </html>
@@ -1115,8 +1093,7 @@ function mostraFirma(id) {
             <td style="padding:12px; border:1px solid #ddd;">${px.corriere}</td>
             <td style="padding:12px; border:1px solid #ddd; font-size:0.85rem;">${px.codiceTracciabilita}</td>
             <td style="padding:12px; border:1px solid #ddd; text-align:center;">
-                ${px.pudoStatus === 'pagato' ? 
-                '<span style="background:#d4edda; color:#155724; padding:4px 8px; border-radius:5px; font-weight:bold; font-size:0.7rem;">PAGATO €0.50</span>' : '-'}
+                ${px.pudoStatus === 'pagato' ? '<span style="background:#d4edda; color:#155724; padding:4px 8px; border-radius:5px; font-weight:bold; font-size:0.7rem;">PAGATO €0.50</span>' : '-'}
             </td>
         </tr>
     `).join('');
@@ -1126,7 +1103,7 @@ function mostraFirma(id) {
         <head>
             <title>Ricevuta Consegna - ${p.cognome}</title>
             <style>
-                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.6; padding: 0; margin: 0; background: #f0f2f5; }
+                body { font-family: 'Segoe UI', sans-serif; color: #333; line-height: 1.6; padding: 0; margin: 0; background: #f0f2f5; }
                 .receipt-container { background: white; max-width: 650px; margin: 30px auto; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-radius: 15px; border-top: 10px solid #003399; }
                 .header { text-align: center; border-bottom: 2px solid #eee; padding-bottom: 25px; margin-bottom: 25px; }
                 .header img { max-width: 100px; margin-bottom: 10px; }
@@ -1150,39 +1127,18 @@ function mostraFirma(id) {
                     <h1>Ricevuta di Consegna</h1>
                 </div>
                 <div class="info-grid">
-                    <div class="info-item">
-                        <label>Destinatario</label>
-                        <span>${p.cognome.toUpperCase()} ${p.nome}</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Data e Ora Ritiro</label>
-                        <span>${p.dataRitiro}</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Ritirato da</label>
-                        <span>${p.ritiratoDa}</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Totale Pacchi</label>
-                        <span>${pacchiSessione.length}</span>
-                    </div>
+                    <div class="info-item"><label>Destinatario</label><span>${p.cognome.toUpperCase()} ${p.nome}</span></div>
+                    <div class="info-item"><label>Data e Ora Ritiro</label><span>${p.dataRitiro}</span></div>
+                    <div class="info-item"><label>Ritirato da</label><span>${p.ritiratoDa}</span></div>
+                    <div class="info-item"><label>Totale Pacchi</label><span>${pacchiSessione.length}</span></div>
                 </div>
                 <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Corriere</th>
-                            <th>Tracking Number</th>
-                            <th>Servizi</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>ID</th><th>Corriere</th><th>Tracking Number</th><th>Servizi</th></tr></thead>
                     <tbody>${righeTabella}</tbody>
                 </table>
                 <div class="signature-section">
                     <p style="margin:0; font-weight:bold; color:#666;">Firma per Ricevuta</p>
-                    <div class="signature-box">
-                        <img src="${p.firma}" style="width:100%; height:auto; display:block;">
-                    </div>
+                    <div class="signature-box"><img src="${p.firma}" style="width:100%; height:auto; display:block;"></div>
                 </div>
                 <div class="footer">Centro Post@ Anaclerio - Grazie per haverci scelto!</div>
                 <button onclick="window.print()" class="btn-print">🖨️ STAMPA RICEVUTA</button>
@@ -1203,7 +1159,6 @@ function showFeedback(tipo) {
         <h2 style="color:${colore}; font-size: 2.5rem; margin: 0; font-weight: 900;">${titolo}</h2>
         <p style="color: #666; font-size: 1.2rem; font-weight: bold; margin-top: 10px;">Operazione registrata con successo</p>
     `;
-
     document.getElementById('successOverlay').style.display = 'flex';
     setTimeout(() => { document.getElementById('successOverlay').style.display = 'none'; }, 2000);
 }
@@ -1227,29 +1182,25 @@ function cancellaRitirati(){
     }
 }
 
-// Bip acustico ad alta intensità per la fotocamera (Volume 100%)
 function riproduciSuonoScanner() {
     try {
         var ContestoAudio = window.AudioContext || window.webkitAudioContext;
         if (!ContestoAudio) return;
-        
         var ctxAudio = new ContestoAudio();
         var oscillator = ctxAudio.createOscillator();
         var gainNode = ctxAudio.createGain();
         
         oscillator.connect(gainNode);
         gainNode.connect(ctxAudio.destination);
-        
         oscillator.type = 'sine';
         oscillator.frequency.setValueAtTime(1200, ctxAudio.currentTime);
         gainNode.gain.setValueAtTime(1.0, ctxAudio.currentTime); 
-        
         gainNode.gain.exponentialRampToValueAtTime(0.001, ctxAudio.currentTime + 0.15);
         
         oscillator.start(ctxAudio.currentTime);
         oscillator.stop(ctxAudio.currentTime + 0.15);
     } catch (e) {
-        console.log("Audio non supportato al momento:", e);
+        console.log("Audio non supportato:", e);
     }
 }
 </script>
