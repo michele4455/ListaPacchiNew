@@ -550,35 +550,6 @@ let torciaAttiva = false;
 const canvas = document.getElementById('signature-pad');
 const ctx = canvas.getContext('2d');
 let drawing = false;
-
-// FUNZIONE AGGIUNTA: Genera un Bip nativo tipico dello scanner di cassa
-// Genera un suono "Bip" deciso e al massimo volume consentito ad ogni scansione riuscita
-function riproduciSuonoScanner() {
-    try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return;
-        const ctxAudio = new AudioContext();
-        
-        const oscillator = ctxAudio.createOscillator();
-        const gainNode = ctxAudio.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(ctxAudio.destination);
-        
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(1200, ctxAudio.currentTime); // Frequenza del bip acuto
-        gainNode.gain.setValueAtTime(1.0, ctxAudio.currentTime);        // Volume impostato al 100%
-        
-        // Durata del bip di 150 millisecondi con un leggero fade-out finale per evitare distorsioni
-        gainNode.gain.exponentialRampToValueAtTime(0.001, ctxAudio.currentTime + 0.15);
-        
-        oscillator.start(ctxAudio.currentTime);
-        oscillator.stop(ctxAudio.currentTime + 0.15);
-    } catch (e) {
-        console.log("Impossibile riprodurre il suono:", e);
-    }
-}
-
 // FUNZIONE AGGIUNTA: Mostra/Nasconde la sezione Inserimento Pacco
 function togglePannelloInserimento() {
     const wrapper = document.getElementById('pannelloInserimento');
@@ -1307,13 +1278,36 @@ function toggleSezioneRitirati() { const s = document.getElementById('sezioneRit
 s.style.display = s.style.display === 'none' ? 'block' : 'none'; }
 function setTab(t){ tabAttiva = t; aggiornaVista();
 }
-function cancellaRitirati(){
+
+    function cancellaRitirati(){
     if(confirm(`Svuotare archivio di ${tabAttiva}?`)) {
         pacchi = (tabAttiva === 'Tutti') ?
         pacchi.filter(p => !p.ritirato) : pacchi.filter(p => !(p.ritirato && p.corriere === tabAttiva));
         salva();
     }
 }
+
+// LA FUNZIONE DEL SUONO VA INSERITA QUI SOTTO:
+function riproduciSuonoScanner() {
+    try {
+        var ContestoAudio = window.AudioContext || window.webkitAudioContext;
+        if (!ContestoAudio) return;
+        var ctxAudio = new ContestoAudio();
+        var oscillator = ctxAudio.createOscillator();
+        var gainNode = ctxAudio.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(ctxAudio.destination);
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(1200, ctxAudio.currentTime);
+        gainNode.gain.setValueAtTime(1.0, ctxAudio.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, ctxAudio.currentTime + 0.15);
+        oscillator.start(ctxAudio.currentTime);
+        oscillator.stop(ctxAudio.currentTime + 0.15);
+    } catch (e) { console.log(e); }
+}
+</script>
+</body>
+</html>
 </script>
 </body>
 </html>
