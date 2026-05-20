@@ -259,7 +259,7 @@
             cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-left: 10px; padding: 4px 8px; border: 1px solid var(--primary); border-radius: 5px;
         }
         
-        /* CORREZIONE: Ripristinato il movimento dell'icona di avviso scadenza */
+        /* Animazione icone di avviso scadenza */
         @keyframes alertBlink { 
             0% { opacity: 1; transform: scale(1); } 
             50% { opacity: 0.3; transform: scale(1.2); } 
@@ -476,7 +476,7 @@
                 <option value="P">P</option><option value="M">M</option><option value="G">G</option>
             </select>
             
-            <button onclick="aggiungiPacco()">AGGIUNGI</button>
+            <button id="btnAggiungiPacco" onclick="aggiungiPacco()">AGGIUNGI</button>
         </div>
 
         <div class="status-bar" id="counter">Caricamento...</div>
@@ -526,7 +526,6 @@ function showAlert(testo, titolo = "Attenzione") {
     document.getElementById('beautifyAlert').style.display = 'flex';
 }
 
-// Logica Scanner con controllo Torcia Flash ripristinata
 function startScanner(targetInputId) {
     document.getElementById('scannerModal').style.display = 'flex';
     html5QrCode = new Html5Qrcode("reader");
@@ -596,7 +595,6 @@ function stopScanner() {
     }
 }
 
-// Funzione hardware Torcia/Flash ripristinata correttamente
 function toggleTorcia() {
     if (!html5QrCode) return;
     torciaAttiva = !torciaAttiva;
@@ -735,6 +733,7 @@ function aggiungiPacco(){
     finalizzaInserimentoPacco();
 }
 
+/* MODIFICA: Il pannello rimane aperto per consentire registrazioni multiple consecutive rapide */
 function finalizzaInserimentoPacco() {
     const trk = document.getElementById('codiceTracciabilita').value.trim();
     const n = document.getElementById('nome').value.trim();
@@ -761,22 +760,26 @@ function finalizzaInserimentoPacco() {
     });
     
     salva(); 
-    ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
-    aggiornaVista(); 
-
-    const overlay = document.getElementById('successOverlay');
-    const card = document.getElementById('successCard');
-    card.innerHTML = `
-        <div style="font-size: 5rem; margin-bottom: 15px;">📦</div>
-        <h2 style="color:var(--success); font-size: 2rem; margin: 0; font-weight: 900;">PACCO REGISTRATO</h2>
-        <p style="color: #666; font-size: 1.1rem; margin-top: 10px;">Aggiunto correttamente in giacenza</p>
-    `;
-    overlay.style.display = 'flex';
     
-    document.getElementById('sezioneNuovoPacco').style.display = 'none';
-    document.querySelector('.toggle-form-btn').innerText = '➕ REGISTRA NUOVO PACCO ▼';
+    // Feedback visivo immediato sul tasto "Aggiungi" senza chiudere o bloccare lo schermo
+    const btnAggiungi = document.getElementById('btnAggiungiPacco');
+    const backgroundOriginale = btnAggiungi.style.backgroundColor;
+    const testoOriginale = btnAggiungi.innerText;
+    btnAggiungi.style.backgroundColor = "var(--success)";
+    btnAggiungi.innerText = "REGISTRATO! 📄";
+    
+    setTimeout(() => {
+        btnAggiungi.style.backgroundColor = backgroundOriginale;
+        btnAggiungi.innerText = testoOriginale;
+    }, 1000);
 
-    setTimeout(() => { overlay.style.display = 'none'; }, 2000);
+    // Svuota i campi pronti per il pacco successivo dello stesso o di un altro cliente
+    ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
+    
+    // Ripristina il focus sul tracking per velocizzare lo scanner del pacco successivo
+    document.getElementById('codiceTracciabilita').focus();
+    
+    aggiornaVista(); 
 }
 
 function mostraConfermaDuplicato(trk) {
