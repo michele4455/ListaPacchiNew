@@ -149,15 +149,17 @@
             position: relative;
             display: flex;
             align-items: center;
+            width: 100%;
         }
         .input-with-icon input { padding-right: 45px;
         }
         .scanner-trigger {
             position: absolute;
-            right: 10px;
+            right: 15px;
             cursor: pointer;
             font-size: 1.5rem;
             user-select: none;
+            z-index: 10;
         }
 
         input, select, .form-group button { 
@@ -171,9 +173,9 @@
             width: 100%;
         }
 
-        /* Casella selezionata diventa gialla */
+        /* MODIFICA: Casella selezionata mantiene sfondo bianco e fa solo il bordo giallo */
         input:focus, select:focus {
-            background-color: #fff9db !important;
+            background-color: var(--white) !important;
             border-color: #fab005 !important;
             box-shadow: 0 0 8px rgba(250, 176, 5, 0.5);
         }
@@ -480,7 +482,11 @@
         </div>
 
         <div class="status-bar" id="counter">Caricamento...</div>
-        <input type="text" id="search" style="margin-bottom:25px; padding: 16px; border-radius: 50px; width:100%" placeholder="🔍 Cerca cliente, ID o Tracking..." oninput="aggiornaVista()">
+        
+        <div class="input-with-icon" style="margin-bottom:25px;">
+            <input type="text" id="search" style="padding: 16px 55px 16px 20px; border-radius: 50px; width:100%" placeholder="🔍 Cerca cliente (Cognome e Nome), ID o Tracking..." oninput="aggiornaVista()">
+            <span class="scanner-trigger" onclick="startScanner('search')" style="right: 20px;">📸</span>
+        </div>
         
         <div class="tabs" id="tabs"></div>
         <div id="contenitori"></div>
@@ -551,6 +557,8 @@ function startScanner(targetInputId) {
         (decodedText) => {
             riproduciSuonoScanner(); 
             document.getElementById(targetInputId).value = decodedText;
+            // Se lo scanner viene attivato dalla barra di ricerca, avvia subito l'aggiornamento dei filtri
+            if(targetInputId === 'search') { aggiornaVista(); }
             stopScanner();
         },
         (errorMessage) => {}
@@ -733,7 +741,6 @@ function aggiungiPacco(){
     finalizzaInserimentoPacco();
 }
 
-/* MODIFICA: Il pannello rimane aperto per consentire registrazioni multiple consecutive rapide */
 function finalizzaInserimentoPacco() {
     const trk = document.getElementById('codiceTracciabilita').value.trim();
     const n = document.getElementById('nome').value.trim();
@@ -761,7 +768,6 @@ function finalizzaInserimentoPacco() {
     
     salva(); 
     
-    // Feedback visivo immediato sul tasto "Aggiungi" senza chiudere o bloccare lo schermo
     const btnAggiungi = document.getElementById('btnAggiungiPacco');
     const backgroundOriginale = btnAggiungi.style.backgroundColor;
     const testoOriginale = btnAggiungi.innerText;
@@ -773,10 +779,7 @@ function finalizzaInserimentoPacco() {
         btnAggiungi.innerText = testoOriginale;
     }, 1000);
 
-    // Svuota i campi pronti per il pacco successivo dello stesso o di un altro cliente
     ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
-    
-    // Ripristina il focus sul tracking per velocizzare lo scanner del pacco successivo
     document.getElementById('codiceTracciabilita').focus();
     
     aggiornaVista(); 
@@ -842,8 +845,30 @@ function aggiornaVista(){
     const tabsBox = document.getElementById('tabs');
     if(tabsBox) tabsBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">Tutti</button>` + corrieri.map(c => `<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}">${c}</button>`).join('');
     
-    const search = document.getElementById('search').value.toLowerCase();
-    const filterFn = p => (tabAttiva === 'Tutti' || p.corriere === tabAttiva) && (p.cognome.toLowerCase().includes(search) || String(p.riconoscimento).includes(search) || p.codiceTracciabilita.toLowerCase().includes(search));
+    const search = document.getElementById('search').value.toLowerCase().trim();
+    
+    // MODIFICA: Ricerca Intelligente che trova il pacco combinando Nome e Cognome o viceversa
+    const filterFn = p => {
+        const corrispondeTab = (tabAttiva === 'Tutti' || p.corriere === tabAttiva);
+        if (!corrispondeTab) return false;
+        
+        if (!search) return true;
+
+        const cognomePacco = (p.cognome || "").toLowerCase();
+        const nomePacco = (p.nome || "").toLowerCase();
+        const trkPacco = (p.codiceTracciabilita || "").toLowerCase();
+        const idPacco = String(p.riconoscimento || "");
+        
+        // Stringhe combinate per cercare "Cognome Nome" o "Nome Cognome" indifferente
+        const cognomeNome = cognomePacco + " " + nomePacco;
+        const nomeCognome = nomePacco + " " + cognomePacco;
+
+        return cognomeNome.includes(search) || 
+               nomeCognome.includes(search) || 
+               idPacco.includes(search) || 
+               trkPacco.includes(search);
+    };
+
     const inGiacenza = pacchi.filter(p => !p.ritirato && filterFn(p));
     const ritirati = pacchi.filter(p => p.ritirato && filterFn(p)).reverse();
     const perUltimoID = pacchi.filter(p => !p.ritirato && (tabAttiva === 'Tutti' || p.corriere === tabAttiva));
