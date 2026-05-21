@@ -112,7 +112,6 @@
         .container { max-width: 1000px; margin: 0 auto;
             padding: 0 20px 40px 20px; }
 
-        /* Pulsante Apri/Chiudi registrazione pacchi */
         .toggle-form-btn {
             display: block;
             width: 100%;
@@ -173,7 +172,6 @@
             width: 100%;
         }
 
-        /* MODIFICA: Casella selezionata mantiene sfondo bianco e fa solo il bordo giallo */
         input:focus, select:focus {
             background-color: var(--white) !important;
             border-color: #fab005 !important;
@@ -197,9 +195,8 @@
             display: none;
         }
         .suggestion-item { padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #eee;
-            font-size: 14px; display: flex; justify-content: space-between; }
-        .suggestion-item:hover { background-color: #fff9db;
-        }
+            font-size: 14px; display: flex; justify-content: space-between; outline: none; }
+        .suggestion-item:hover, .suggestion-item:focus { background-color: #fff9db; }
 
         .status-bar { background: var(--white); border: 2px solid var(--primary); color: var(--primary); padding: 15px;
             border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.1rem;
@@ -261,7 +258,6 @@
             cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-left: 10px; padding: 4px 8px; border: 1px solid var(--primary); border-radius: 5px;
         }
         
-        /* Animazione icone di avviso scadenza */
         @keyframes alertBlink { 
             0% { opacity: 1; transform: scale(1); } 
             50% { opacity: 0.3; transform: scale(1.2); } 
@@ -488,7 +484,7 @@
     <div class="container">
         <button class="toggle-form-btn" onclick="toggleFormInserimento()">➕ REGISTRA NUOVO PACCO ▼</button>
 
-        <div class="form-group" id="sezioneNuovoPacco">
+        <div class="form-group" id="sezioneNuovoPacco" onkeydown="gestisciInvioNuovoPacco(event)">
             <div class="input-with-icon">
                 <input type="text" id="codiceTracciabilita" placeholder="Tracking (TRK)">
                 <span class="scanner-trigger" onclick="startScanner('codiceTracciabilita')">📸</span>
@@ -496,7 +492,7 @@
             <input type="text" id="codiceRiconoscimento" placeholder="ID Pacco" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
             
             <div class="autocomplete-container" style="position:relative;">
-                <input type="text" id="cognome" placeholder="Cognome" oninput="gestisciAutocomplete(this.value)" autocomplete="off">
+                <input type="text" id="cognome" placeholder="Cognome" oninput="gestisciAutocomplete(this.value)" onkeydown="navigaSuggerimenti(event)" autocomplete="off">
                 <div id="suggestionsBox" class="suggestions-list" style="background: white;"></div>
             </div>
             <input type="text" id="nome" placeholder="Nome">
@@ -684,15 +680,70 @@ function gestisciAutocomplete(val) {
         }
     });
     if (matches.length > 0) {
-        box.innerHTML = matches.map(m => `<div class="suggestion-item" onclick="selezionaSuggerimento('${m.cognome.replace(/'/g, "\\'")}', '${m.nome.replace(/'/g, "\\'")}')"><span><b>${m.cognome.toUpperCase()}</b> ${m.nome}</span></div>`).join('');
+        box.innerHTML = matches.map((m, index) => 
+            `<div class="suggestion-item" tabindex="0" data-index="${index}" onclick="selezionaSuggerimento('${m.cognome.replace(/'/g, "\\'")}', '${m.nome.replace(/'/g, "\\'")}')" onkeydown="gestisciTastoSuggerimento(event, '${m.cognome.replace(/'/g, "\\'")}', '${m.nome.replace(/'/g, "\\'")}')"><span><b>${m.cognome.toUpperCase()}</b> ${m.nome}</span></div>`
+        ).join('');
         box.style.display = 'block';
     } else box.style.display = 'none';
+}
+
+function navigaSuggerimenti(e) {
+    if (e.key === 'Tab') {
+        const box = document.getElementById('suggestionsBox');
+        if (box.style.display === 'block') {
+            const items = box.getElementsByClassName('suggestion-item');
+            if (items.length > 0) {
+                e.preventDefault();
+                items[0].focus();
+            }
+        }
+    }
+}
+
+function gestisciTastoSuggerimento(e, cog, nom) {
+    const box = document.getElementById('suggestionsBox');
+    const items = Array.from(box.getElementsByClassName('suggestion-item'));
+    const currentIndex = items.indexOf(document.activeElement);
+
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        if (e.shiftKey) {
+            if (currentIndex === 0) {
+                document.getElementById('cognome').focus();
+            } else {
+                items[currentIndex - 1].focus();
+            }
+        } else {
+            if (currentIndex === items.length - 1) {
+                items[0].focus();
+            } else {
+                items[currentIndex + 1].focus();
+            }
+        }
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        selezionaSuggerimento(cog, nom);
+    }
 }
 
 function selezionaSuggerimento(cog, nom) {
     document.getElementById('cognome').value = cog;
     document.getElementById('nome').value = nom;
     document.getElementById('suggestionsBox').style.display = 'none';
+    document.getElementById('corriereSelect').focus();
+}
+
+function gestisciInvioNuovoPacco(e) {
+    if (e.key === 'Enter') {
+        const target = e.target;
+        if (target.tagName === 'INPUT' || target.tagName === 'SELECT') {
+            if (document.getElementById('suggestionsBox').style.display === 'block') {
+                return;
+            }
+            e.preventDefault();
+            aggiungiPacco();
+        }
+    }
 }
 
 function toggleFormInserimento() {
@@ -935,7 +986,7 @@ function generateHtml(p) {
 
     const azione = p.ritirato ? `<button class="btn-ripristina" onclick="ripristinaPacco(${p.id})">RIPRISTINA</button>` : `
           <button class="ritira-btn" onclick="handleRitira(${p.id})">RITIRA</button>
-          <button class="edit-dots" onclick="apriModifica(${p.id})">ℹ️</button>
+          <button class="edit-dots" onclick="apriModifica(${p.id})">✏️</button>
         `;
     return `<div class="pacco ${p.ritirato ? (p.isScaduto ? 'scaduto' : 'ritirato') : ''}">
         <div style="flex-grow:1; display: flex; align-items: center;">
@@ -1093,9 +1144,10 @@ function handleRitira(id, forzaScaduto = false) {
                 }
             });
             if (totaleContrassegno > 0) {
-                if (!confirm(`Hai riscosso il contrassegno di € ${totaleContrassegno.toFixed(2)}?`)) {
-                    return; 
-                }
+                mostraConfermaContrassegnoGrafica(totaleContrassegno, () => {
+                    eseguiRitiroPacchi(selectedIds, tipo, ritiratoDa, pagato, dataScad, firmaData, dataAttuale);
+                });
+                return;
             }
         }
 
@@ -1104,26 +1156,78 @@ function handleRitira(id, forzaScaduto = false) {
         const ritiratoDa = document.getElementById('modalInput').value;
         const pagato = document.getElementById('checkPagamento').checked;
         const dataScad = document.getElementById('dataScadenzaRimozione').value.split("-").reverse().join("/");
-        const sessioneId = Date.now();
-
-        selectedIds.forEach(sid => {
-            const px = pacchi.find(x => x.id === sid);
-            px.ritirato = true;
-            px.dataRitiro = (tipo === 'cliente') ? dataAttuale : dataScad;
-            px.ritiratoDa = (tipo === 'cliente') ? ritiratoDa : "SISTEMA (SCADUTO)";
-            px.isScaduto = (tipo === 'scaduto');
-            px.firma = (tipo === 'cliente') ? firmaData : null;
-            if(px.corriere === 'Corrieri No Pudo') px.pudoStatus = pagato ? 'pagato' : 'non_pagato';
-            if(selectedIds.length > 1) px.sessioneRitiro = sessioneId;
-        });
-        salva();
-        closeModal();
-        showFeedback(tipo);
         
-        document.getElementById('search').value = "";
-        ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
-        aggiornaVista();
+        eseguiRitiroPacchi(selectedIds, tipo, ritiratoDa, pagato, dataScad, firmaData, dataAttuale);
     };
+}
+
+function mostraConfermaContrassegnoGrafica(totale, callbackSuccesso) {
+    const modal = document.getElementById('beautifyAlert');
+    const titolo = document.getElementById('alertTitle');
+    const msg = document.getElementById('alertMsg');
+    const footer = modal.querySelector('.modal-content');
+    
+    titolo.innerText = "RISCOSSIONE CONTRASSEGNO";
+    titolo.style.color = "var(--warning)";
+    msg.innerHTML = `Hai riscosso l'importo di <b style="font-size:1.4rem; color:#c92a2a;">€ ${totale.toFixed(2)}</b> per il contrassegno?`;
+    
+    const btnOkStandard = modal.querySelector('.modal-btn');
+    if(btnOkStandard) btnOkStandard.style.display = 'none';
+
+    if(document.getElementById('boxSceltaContrassegno')) document.getElementById('boxSceltaContrassegno').remove();
+
+    const boxScelta = document.createElement('div');
+    boxScelta.id = "boxSceltaContrassegno";
+    boxScelta.style = "display:flex; gap:10px; margin-top:20px; justify-content:center;";
+
+    const btnSi = document.createElement('button');
+    btnSi.className = "modal-btn";
+    btnSi.style.background = "var(--success)";
+    btnSi.style.flex = "1";
+    btnSi.innerText = "SÌ, RISCOSSO";
+    btnSi.onclick = function() {
+        modal.style.display = 'none';
+        boxScelta.remove();
+        if(btnOkStandard) btnOkStandard.style.display = 'block';
+        callbackSuccesso();
+    };
+
+    const btnNo = document.createElement('button');
+    btnNo.className = "modal-btn";
+    btnNo.style.background = "var(--warning)";
+    btnNo.style.flex = "1";
+    btnNo.innerText = "NO, ANNULLA";
+    btnNo.onclick = function() {
+        modal.style.display = 'none';
+        boxScelta.remove();
+        if(btnOkStandard) btnOkStandard.style.display = 'block';
+    };
+
+    boxScelta.appendChild(btnNo);
+    boxScelta.appendChild(btnSi);
+    footer.appendChild(boxScelta);
+    modal.style.display = 'flex';
+}
+
+function eseguiRitiroPacchi(selectedIds, tipo, ritiratoDa, pagato, dataScad, firmaData, dataAttuale) {
+    const sessioneId = Date.now();
+    selectedIds.forEach(sid => {
+        const px = pacchi.find(x => x.id === sid);
+        px.ritirato = true;
+        px.dataRitiro = (tipo === 'cliente') ? dataAttuale : dataScad;
+        px.ritiratoDa = (tipo === 'cliente') ? ritiratoDa : "SISTEMA (SCADUTO)";
+        px.isScaduto = (tipo === 'scaduto');
+        px.firma = (tipo === 'cliente') ? firmaData : null;
+        if(px.corriere === 'Corrieri No Pudo') px.pudoStatus = pagato ? 'pagato' : 'non_pagato';
+        if(selectedIds.length > 1) px.sessioneRitiro = sessioneId;
+    });
+    salva();
+    closeModal();
+    showFeedback(tipo);
+    
+    document.getElementById('search').value = "";
+    ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
+    aggiornaVista();
 }
 
 function ripristinaPacco(id) {
