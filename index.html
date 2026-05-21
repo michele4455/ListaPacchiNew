@@ -172,6 +172,11 @@
             width: 100%;
         }
 
+        /* Trasforma visivamente in maiuscolo durante la digitazione */
+        #codiceTracciabilita, #cognome, #nome, #search, #editCognome, #editNome, #editTrk, #modalInput {
+            text-transform: uppercase;
+        }
+
         input:focus, select:focus {
             background-color: var(--white) !important;
             border-color: #fab005 !important;
@@ -276,7 +281,7 @@
             line-height: 1;
         }
 
-        #customModal, #editModal, #scannerModal, #reportModal, #beautifyAlert { 
+        #customModal, #editModal, #scannerModal, #reportModal { 
             display: none;
             position: fixed; 
             z-index: 1000; 
@@ -288,6 +293,21 @@
             overflow-y: auto;
             padding: 20px 0;
         }
+
+        /* Spostato l'alert generale sopra a qualunque finestra modale (z-index 3000) */
+        #beautifyAlert {
+            display: none;
+            position: fixed; 
+            z-index: 3000; 
+            left: 0; top: 0; 
+            width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.8); 
+            align-items: center; 
+            justify-content: center; 
+            overflow-y: auto;
+            padding: 20px 0;
+        }
+
         .modal-content { 
             background: white;
             padding: 25px; 
@@ -486,7 +506,7 @@
     <div class="container">
         <button class="toggle-form-btn" onclick="toggleFormInserimento()">➕ REGISTRA NUOVO PACCO ▼</button>
 
-        <div class="form-group" id="sezioneNuovoPacco" onkeydown="gestisciInvioNuovoPacco(event)">
+        <div class="form-group" id="sezioneNuovoPacco" onkeydown="gestisciInvioNuacco(event)">
             <div class="input-with-icon">
                 <input type="text" id="codiceTracciabilita" placeholder="Tracking (TRK)">
                 <span class="scanner-trigger" onclick="startScanner('codiceTracciabilita')">📸</span>
@@ -585,7 +605,7 @@ function startScanner(targetInputId) {
         config,
         (decodedText) => {
             riproduciSuonoScanner(); 
-            document.getElementById(targetInputId).value = decodedText;
+            document.getElementById(targetInputId).value = decodedText.toUpperCase();
             if(targetInputId === 'search') { aggiornaVista(); }
             stopScanner();
         },
@@ -683,7 +703,7 @@ function gestisciAutocomplete(val) {
     });
     if (matches.length > 0) {
         box.innerHTML = matches.map((m, index) => 
-            `<div class="suggestion-item" tabindex="0" data-index="${index}" onclick="selezionaSuggerimento('${m.cognome.replace(/'/g, "\\'")}', '${m.nome.replace(/'/g, "\\'")}')" onkeydown="gestisciTastoSuggerimento(event, '${m.cognome.replace(/'/g, "\\'")}', '${m.nome.replace(/'/g, "\\'")}')"><span><b>${m.cognome.toUpperCase()}</b> ${m.nome}</span></div>`
+            `<div class="suggestion-item" tabindex="0" data-index="${index}" onclick="selezionaSuggerimento('${m.cognome.replace(/'/g, "\\'")}', '${m.nome.replace(/'/g, "\\'")}')" onkeydown="gestisciTastoSuggerimento(event, '${m.cognome.replace(/'/g, "\\'")}', '${m.nome.replace(/'/g, "\\'")}')"><span><b>${m.cognome.toUpperCase()}</b> ${m.nome.toUpperCase()}</span></div>`
         ).join('');
         box.style.display = 'block';
     } else box.style.display = 'none';
@@ -729,13 +749,13 @@ function gestisciTastoSuggerimento(e, cog, nom) {
 }
 
 function selezionaSuggerimento(cog, nom) {
-    document.getElementById('cognome').value = cog;
-    document.getElementById('nome').value = nom;
+    document.getElementById('cognome').value = cog.toUpperCase();
+    document.getElementById('nome').value = nom.toUpperCase();
     document.getElementById('suggestionsBox').style.display = 'none';
     document.getElementById('corriereSelect').focus();
 }
 
-function gestisciInvioNuovoPacco(e) {
+function gestisciInvioNuacco(e) {
     if (e.key === 'Enter') {
         const target = e.target;
         if (target.tagName === 'INPUT' || target.tagName === 'SELECT') {
@@ -812,8 +832,8 @@ firebase.auth().onAuthStateChanged((user) => {
 });
 
 function aggiungiPacco(){
-    const trk = document.getElementById('codiceTracciabilita').value.trim();
-    const c = document.getElementById('cognome').value.trim();
+    const trk = document.getElementById('codiceTracciabilita').value.trim().toUpperCase();
+    const c = document.getElementById('cognome').value.trim().toUpperCase();
     const corr = document.getElementById('corriereSelect').value;
     if(!c || !corr) return showAlert("Mancano dati (Cognome e Corriere sono obbligatori)!");
 
@@ -825,9 +845,9 @@ function aggiungiPacco(){
 }
 
 function finalizzaInserimentoPacco() {
-    const trk = document.getElementById('codiceTracciabilita').value.trim();
-    const n = document.getElementById('nome').value.trim();
-    const c = document.getElementById('cognome').value.trim();
+    const trk = document.getElementById('codiceTracciabilita').value.trim().toUpperCase();
+    const n = document.getElementById('nome').value.trim().toUpperCase();
+    const c = document.getElementById('cognome').value.trim().toUpperCase();
     const corr = document.getElementById('corriereSelect').value;
     const cr = document.getElementById('codiceRiconoscimento').value.trim();
     
@@ -980,7 +1000,7 @@ function generateHtml(p) {
             statoTesto = `<div style="color:var(--warning); font-size:0.85rem; margin-top:5px; font-weight:bold;">PACCO SCADUTO (RESO) il ${p.dataRitiro}</div>`;
         } else {
             emojiIcona = '<span class="stato-emoji">✅</span>';
-            statoTesto = `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">RITIRATO DA ${p.ritiratoDa} IL ${p.dataRitiro} ${notaPudo}${notaContrassegno} ${firmaLink}</div>`;
+            statoTesto = `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">RITIRATO DA ${p.ritiratoDa.toUpperCase()} IL ${p.dataRitiro} ${notaPudo}${notaContrassegno} ${firmaLink}</div>`;
         }
     }
 
@@ -994,7 +1014,7 @@ function generateHtml(p) {
         <div style="flex-grow:1; display: flex; align-items: center;">
             ${emojiIcona}
             <div>
-                <span class="tag-grandezza">${p.grandezza}</span><span class="tag-corriere">${p.corriere}</span>${badgeContrassegno}<strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome}
+                <span class="tag-grandezza">${p.grandezza}</span><span class="tag-corriere">${p.corriere}</span>${badgeContrassegno}<strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome.toUpperCase()}
                 <br><small style="display:block; margin-top:5px; color:#666;">📍 ${p.scaffale} • 🔍 TRK: <span class="highlight-trk" onclick="copiaTracking('${p.codiceTracciabilita}')">${p.codiceTracciabilita}</span><br>📅 Arrivato il: ${p.dataTestoInserimento || '-'}</small>
                 ${statoTesto}
             </div>
@@ -1009,11 +1029,11 @@ function apriModifica(id) {
     container.innerHTML = `
         <div>
             <label>Cognome</label>
-            <input type="text" id="editCognome" value="${p.cognome}">
+            <input type="text" id="editCognome" value="${p.cognome.toUpperCase()}">
         </div>
         <div>
             <label>Nome</label>
-            <input type="text" id="editNome" value="${p.nome}">
+            <input type="text" id="editNome" value="${p.nome.toUpperCase()}">
         </div>
         <div>
             <label>ID Pacco (Solo Numeri)</label>
@@ -1022,7 +1042,7 @@ function apriModifica(id) {
         <div class="input-with-icon" style="flex-direction:column; align-items:start;">
             <label>Tracking</label>
             <div style="position:relative; width:100%;">
-                <input type="text" id="editTrk" value="${p.codiceTracciabilita}">
+                <input type="text" id="editTrk" value="${p.codiceTracciabilita.toUpperCase()}">
                 <span class="scanner-trigger" onclick="startScanner('editTrk')">📸</span>
             </div>
         </div>
@@ -1051,10 +1071,10 @@ function apriModifica(id) {
     `;
     document.getElementById('editModal').style.display = 'flex';
     document.getElementById('saveEditBtn').onclick = () => {
-        p.cognome = document.getElementById('editCognome').value.trim();
-        p.nome = document.getElementById('editNome').value.trim();
+        p.cognome = document.getElementById('editCognome').value.trim().toUpperCase();
+        p.nome = document.getElementById('editNome').value.trim().toUpperCase();
         p.riconoscimento = document.getElementById('editRiconoscimento').value.trim();
-        p.codiceTracciabilita = document.getElementById('editTrk').value.trim();
+        p.codiceTracciabilita = document.getElementById('editTrk').value.trim().toUpperCase();
         p.corriere = document.getElementById('editCorriere').value;
         p.scaffale = document.getElementById('editScaffale').value;
         p.isContrassegno = document.getElementById('editIsContrassegno').checked;
@@ -1127,7 +1147,7 @@ function handleRitira(id, forzaScaduto = false) {
     toggleCampiUscita();
     updatePudoBox();
     
-    document.getElementById('modalInput').value = p.cognome;
+    document.getElementById('modalInput').value = p.cognome.toUpperCase();
     document.getElementById('dataScadenzaRimozione').valueAsDate = new Date();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -1138,7 +1158,7 @@ function handleRitira(id, forzaScaduto = false) {
         const tipo = document.getElementById('tipoUscita').value;
         const firmaData = canvas.toDataURL();
         const dataAttuale = new Date().toLocaleString();
-        const ritiratoDa = document.getElementById('modalInput').value;
+        const ritiratoDa = document.getElementById('modalInput').value.toUpperCase();
         const pagato = document.getElementById('checkPagamento').checked;
         const dataScad = document.getElementById('dataScadenzaRimozione').value.split("-").reverse().join("/");
 
@@ -1216,7 +1236,7 @@ function eseguiRitiroPacchi(selectedIds, tipo, ritiratoDa, pagato, dataScad, fir
         const px = pacchi.find(x => x.id === sid);
         px.ritirato = true;
         px.dataRitiro = (tipo === 'cliente') ? dataAttuale : dataScad;
-        px.ritiratoDa = (tipo === 'cliente') ? ritiratoDa : "SISTEMA (SCADUTO)";
+        px.ritiratoDa = (tipo === 'cliente') ? ritiratoDa.toUpperCase() : "SISTEMA (SCADUTO)";
         px.isScaduto = (tipo === 'scaduto');
         px.firma = (tipo === 'cliente') ? firmaData : null;
         if(px.corriere === 'Corrieri No Pudo') px.pudoStatus = pagato ? 'pagato' : 'non_pagato';
@@ -1254,13 +1274,13 @@ function generaReport() {
     const win = window.open("", "Report", "width=900,height=800");
     let htmlArrivati = arrivati.map(p => {
         const ora = p.dataTestoInserimento.includes(" ") ? p.dataTestoInserimento.split(" ")[1] : "--:--";
-        return `<tr><td>${p.riconoscimento}</td><td>${p.cognome} ${p.nome}</td><td>${p.corriere}</td><td>${p.codiceTracciabilita}</td><td>${ora}</td></tr>`;
+        return `<tr><td>${p.riconoscimento}</td><td>${p.cognome.toUpperCase()} ${p.nome.toUpperCase()}</td><td>${p.corriere}</td><td>${p.codiceTracciabilita.toUpperCase()}</td><td>${ora}</td></tr>`;
     }).join('');
 
     let htmlRitirati = ritirati.map(p => {
         const ora = p.dataRitiro.includes(", ") ? p.dataRitiro.split(", ")[1] : (p.dataRitiro.includes(" ") ? p.dataRitiro.split(" ")[1] : "--:--");
         let extraContr = (p.isContrassegno && p.importoContrassegno) ? ` [CONTR. € ${p.importoContrassegno}]` : '';
-        return `<tr><td>${p.riconoscimento}</td><td>${p.ritiratoDa} ${p.isScaduto ? '(RESO)' : ''}${extraContr}</td><td>${p.corriere}</td><td>${p.codiceTracciabilita}</td><td>${ora}</td></tr>`;
+        return `<tr><td>${p.riconoscimento}</td><td>${p.ritiratoDa.toUpperCase()} ${p.isScaduto ? '(RESO)' : ''}${extraContr}</td><td>${p.corriere}</td><td>${p.codiceTracciabilita.toUpperCase()}</td><td>${ora}</td></tr>`;
     }).join('');
 
     win.document.write(`
@@ -1312,7 +1332,7 @@ function mostraFirma(id) {
             <tr>
                 <td style="padding:12px; border:1px solid #ddd; font-weight:bold;">#${px.riconoscimento}</td>
                 <td style="padding:12px; border:1px solid #ddd;">${px.corriere}</td>
-                <td style="padding:12px; border:1px solid #ddd; font-size:0.85rem;">${px.codiceTracciabilita}</td>
+                <td style="padding:12px; border:1px solid #ddd; font-size:0.85rem;">${px.codiceTracciabilita.toUpperCase()}</td>
                 <td style="padding:12px; border:1px solid #ddd; text-align:center;">
                     ${px.pudoStatus === 'pagato' ? '<span style="background:#d4edda; color:#155724; padding:4px 8px; border-radius:5px; font-weight:bold; font-size:0.7rem;">PAGATO €0.50</span>' : '-'}${detContr}
                 </td>
@@ -1323,7 +1343,7 @@ function mostraFirma(id) {
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Ricevuta Consegna - ${p.cognome}</title>
+            <title>Ricevuta Consegna - ${p.cognome.toUpperCase()}</title>
             <style>
                 body { font-family: 'Segoe UI', sans-serif; color: #333; line-height: 1.6; padding: 0; margin: 0; background: #f0f2f5; }
                 .receipt-container { background: white; max-width: 650px; margin: 30px auto; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-radius: 15px; border-top: 10px solid #003399; }
@@ -1349,9 +1369,9 @@ function mostraFirma(id) {
                     <h1>Ricevuta di Consegna</h1>
                 </div>
                 <div class="info-grid">
-                    <div class="info-item"><label>Destinatario</label><span>${p.cognome.toUpperCase()} ${p.nome}</span></div>
+                    <div class="info-item"><label>Destinatario</label><span>${p.cognome.toUpperCase()} ${p.nome.toUpperCase()}</span></div>
                     <div class="info-item"><label>Data e Ora Ritiro</label><span>${p.dataRitiro}</span></div>
-                    <div class="info-item"><label>Ritirato da</label><span>${p.ritiratoDa}</span></div>
+                    <div class="info-item"><label>Ritirato da</label><span>${p.ritiratoDa.toUpperCase()}</span></div>
                     <div class="info-item"><label>Totale Pacchi</label><span>${pacchiSessione.length}</span></div>
                 </div>
                 <table>
