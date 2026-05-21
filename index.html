@@ -763,7 +763,14 @@ function gestisciInvioNuacco(e) {
                 return;
             }
             e.preventDefault();
-            aggiungiPacco();
+            
+            // Se l'invio arriva dal campo del tracking, sposta il focus all'ID pacco senza salvare
+            if (target.id === 'codiceTracciabilita') {
+                document.getElementById('codiceRiconoscimento').focus();
+            } else {
+                // Per tutti gli altri campi, mantiene il comportamento originale di aggiunta pacco
+                aggiungiPacco();
+            }
         }
     }
 }
