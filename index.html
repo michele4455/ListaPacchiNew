@@ -344,6 +344,36 @@
         }
         .edit-grid label { font-size: 0.8rem; font-weight: bold; color: var(--primary); margin-top: 5px;
             display: block; }
+            
+        .contrassegno-box {
+            grid-column: span 2;
+            background: #ffe3e3;
+            padding: 12px;
+            border-radius: 10px;
+            border: 2px dashed #ff4757;
+            margin-top: 10px;
+        }
+        .tag-contrassegno {
+            background: #ff4757;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.75rem;
+            margin-right: 8px;
+            display: inline-block;
+        }
+        .alert-contrassegno-modal {
+            background: #ffe3e3;
+            border: 2px solid #ff4757;
+            color: #c92a2a;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-align: center;
+        }
     </style>
 </head>
 <body onmousedown="resetInattivita()" onkeypress="resetInattivita()" ontouchstart="resetInattivita()">
@@ -383,7 +413,7 @@
 
 <div id="editModal">
     <div class="modal-content">
-        <h3 style="color:var(--primary); margin:0 0 20px 0;">Modifica Pacco</h3>
+        <h3 style="color:var(--primary); margin:0 0 20px 0;">Dettagli e Modifica Pacco</h3>
         <div class="edit-grid" id="editFields"></div>
         <div style="display:flex; gap:10px; margin-top:20px;">
             <button onclick="closeEditModal()" class="modal-btn" style="background:#e0e0e0; color:#333;">ANNULLA</button>
@@ -402,6 +432,7 @@
 
         <div class="modal-body-flex">
             <div class="modal-left">
+                <div id="boxAlertContrassegno" class="alert-contrassegno-modal" style="display:none;"></div>
                 <div id="modalText" style="margin-bottom: 15px; font-size: 1rem; background: #f0f4f8; padding: 10px; border-radius: 10px; max-height: 250px; overflow-y: auto; text-align: left;"></div>
                 <div id="boxRitiroDettagli">
                     <label><b>Chi ritira?</b></label>
@@ -557,7 +588,6 @@ function startScanner(targetInputId) {
         (decodedText) => {
             riproduciSuonoScanner(); 
             document.getElementById(targetInputId).value = decodedText;
-            // Se lo scanner viene attivato dalla barra di ricerca, avvia subito l'aggiornamento dei filtri
             if(targetInputId === 'search') { aggiornaVista(); }
             stopScanner();
         },
@@ -763,7 +793,8 @@ function finalizzaInserimentoPacco() {
         nome: n, cognome: c, corriere: corr,
         scaffale: document.getElementById('scaffaleSelect').value,
         grandezza: document.getElementById('grandezzaSelect').value,
-        ritirato: false, isScaduto: false, dataRitiro: null, ritiratoDa: '', firma: null, pudoStatus: 'nessuno'
+        ritirato: false, isScaduto: false, dataRitiro: null, ritiratoDa: '', firma: null, pudoStatus: 'nessuno',
+        isContrassegno: false, importoContrassegno: ''
     });
     
     salva(); 
@@ -847,7 +878,6 @@ function aggiornaVista(){
     
     const search = document.getElementById('search').value.toLowerCase().trim();
     
-    // MODIFICA: Ricerca Intelligente che trova il pacco combinando Nome e Cognome o viceversa
     const filterFn = p => {
         const corrispondeTab = (tabAttiva === 'Tutti' || p.corriere === tabAttiva);
         if (!corrispondeTab) return false;
@@ -859,7 +889,6 @@ function aggiornaVista(){
         const trkPacco = (p.codiceTracciabilita || "").toLowerCase();
         const idPacco = String(p.riconoscimento || "");
         
-        // Stringhe combinate per cercare "Cognome Nome" o "Nome Cognome" indifferente
         const cognomeNome = cognomePacco + " " + nomePacco;
         const nomeCognome = nomePacco + " " + cognomePacco;
 
@@ -892,24 +921,27 @@ function generateHtml(p) {
     let emojiIcona = '';
     if(p.ritirato) {
         let notaPudo = p.pudoStatus === 'pagato' ? '<span class="tag-pagato">(Pagato €0.50)</span>' : (p.pudoStatus === 'non_pagato' ? '<span class="tag-non-pagato">(Non Pagato)</span>' : '');
+        let notaContrassegno = (p.importoContrassegno && p.isContrassegno) ? `<span style="color:#ff4757; font-weight:bold;"> [Contrassegno Riscosso: € ${p.importoContrassegno}]</span>` : '';
         if (p.isScaduto) {
             emojiIcona = '<span class="stato-emoji">📦❌</span>';
             statoTesto = `<div style="color:var(--warning); font-size:0.85rem; margin-top:5px; font-weight:bold;">PACCO SCADUTO (RESO) il ${p.dataRitiro}</div>`;
         } else {
             emojiIcona = '<span class="stato-emoji">✅</span>';
-            statoTesto = `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">RITIRATO DA ${p.ritiratoDa} IL ${p.dataRitiro} ${notaPudo} ${firmaLink}</div>`;
+            statoTesto = `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">RITIRATO DA ${p.ritiratoDa} IL ${p.dataRitiro} ${notaPudo}${notaContrassegno} ${firmaLink}</div>`;
         }
     }
 
+    let badgeContrassegno = (!p.ritirato && p.isContrassegno) ? `<span class="tag-contrassegno">CONTRASSEGNO € ${p.importoContrassegno}</span>` : '';
+
     const azione = p.ritirato ? `<button class="btn-ripristina" onclick="ripristinaPacco(${p.id})">RIPRISTINA</button>` : `
           <button class="ritira-btn" onclick="handleRitira(${p.id})">RITIRA</button>
-          <button class="edit-dots" onclick="apriModifica(${p.id})">. . .</button>
+          <button class="edit-dots" onclick="apriModifica(${p.id})">ℹ️</button>
         `;
     return `<div class="pacco ${p.ritirato ? (p.isScaduto ? 'scaduto' : 'ritirato') : ''}">
         <div style="flex-grow:1; display: flex; align-items: center;">
             ${emojiIcona}
             <div>
-                <span class="tag-grandezza">${p.grandezza}</span><span class="tag-corriere">${p.corriere}</span><strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome}
+                <span class="tag-grandezza">${p.grandezza}</span><span class="tag-corriere">${p.corriere}</span>${badgeContrassegno}<strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome}
                 <br><small style="display:block; margin-top:5px; color:#666;">📍 ${p.scaffale} • 🔍 TRK: <span class="highlight-trk" onclick="copiaTracking('${p.codiceTracciabilita}')">${p.codiceTracciabilita}</span><br>📅 Arrivato il: ${p.dataTestoInserimento || '-'}</small>
                 ${statoTesto}
             </div>
@@ -953,6 +985,16 @@ function apriModifica(id) {
                 ${Array.from({length:12}, (_,i)=>i+1).map(i => `<option value="Scaffale ${i}" ${p.scaffale === 'Scaffale '+i ? 'selected' : ''}>Scaffale ${i}</option>`).join('')}
             </select>
         </div>
+        <div class="contrassegno-box">
+            <label style="display:flex; align-items:center; gap:10px; font-size:1rem; cursor:pointer;">
+                <input type="checkbox" id="editIsContrassegno" ${p.isContrassegno ? 'checked' : ''} onchange="toggleInputContrassegno(this.checked)" style="width:auto; transform:scale(1.2);">
+                <span>Il pacco è in Contrassegno</span>
+            </label>
+            <div id="subBoxContrassegno" style="margin-top:10px; display:${p.isContrassegno ? 'block' : 'none'};">
+                <label>Importo Contrassegno (€)</label>
+                <input type="number" step="0.01" id="editImportoContrassegno" value="${p.importoContrassegno || ''}" placeholder="0.00" style="border-color:#ff4757;">
+            </div>
+        </div>
     `;
     document.getElementById('editModal').style.display = 'flex';
     document.getElementById('saveEditBtn').onclick = () => {
@@ -962,10 +1004,17 @@ function apriModifica(id) {
         p.codiceTracciabilita = document.getElementById('editTrk').value.trim();
         p.corriere = document.getElementById('editCorriere').value;
         p.scaffale = document.getElementById('editScaffale').value;
+        p.isContrassegno = document.getElementById('editIsContrassegno').checked;
+        p.importoContrassegno = p.isContrassegno ? document.getElementById('editImportoContrassegno').value.trim() : '';
         salva();
         closeEditModal();
     };
 }
+
+function toggleInputContrassegno(checked) {
+    document.getElementById('subBoxContrassegno').style.display = checked ? 'block' : 'none';
+}
+
 function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
 
 function handleRitira(id, forzaScaduto = false) {
@@ -981,12 +1030,13 @@ function handleRitira(id, forzaScaduto = false) {
     let htmlLista = `<p style="margin-top:0;"><b>Seleziona i pacchi da ritirare:</b></p>`;
     stessiPacchi.forEach(sp => {
         const isTarget = sp.id === id;
+        let infoContr = sp.isContrassegno ? `<b style="color:#ff4757;"> [CONTRASSEGNO € ${sp.importoContrassegno}]</b>` : '';
         htmlLista += `
             <label class="item-selezione">
                 <input type="checkbox" class="chk-multi-ritiro" data-id="${sp.id}" data-corriere="${sp.corriere}" ${isTarget ? 'checked' : ''}>
                 <div>
                     <strong>#${sp.riconoscimento}</strong> 
-                    - ${sp.corriere}<br>
+                    - ${sp.corriere}${infoContr}<br>
                     <small>TRK: ${sp.codiceTracciabilita} | Arrivato: ${sp.dataTestoInserimento || '-'}</small>
                 </div>
             </label>
@@ -995,9 +1045,28 @@ function handleRitira(id, forzaScaduto = false) {
     document.getElementById('modalText').innerHTML = htmlLista;
 
     const updatePudoBox = () => {
+        const selectedIds = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked')).map(cb => parseInt(cb.dataset.id));
         const selectedCheckboxes = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked'));
         const hasNoPudoSelected = selectedCheckboxes.some(cb => cb.dataset.corriere === 'Corrieri No Pudo');
-        document.getElementById('boxPagamentoNoPudo').style.display = (hasNoPudoSelected && document.getElementById('tipoUscita').value === 'cliente') ? 'flex' : 'none';
+        
+        let isCliente = document.getElementById('tipoUscita').value === 'cliente';
+        document.getElementById('boxPagamentoNoPudo').style.display = (hasNoPudoSelected && isCliente) ? 'flex' : 'none';
+        
+        let totaleContrassegno = 0;
+        selectedIds.forEach(sid => {
+            let px = pacchi.find(x => x.id === sid);
+            if(px && px.isContrassegno && px.importoContrassegno) {
+                totaleContrassegno += parseFloat(px.importoContrassegno);
+            }
+        });
+
+        const boxAlert = document.getElementById('boxAlertContrassegno');
+        if (totaleContrassegno > 0 && isCliente) {
+            boxAlert.innerHTML = `⚠️ ATTENZIONE: DA RISCUOTERE € ${totaleContrassegno.toFixed(2)} IN CONTRASSEGNO!`;
+            boxAlert.style.display = 'block';
+        } else {
+            boxAlert.style.display = 'none';
+        }
     };
 
     document.querySelectorAll('.chk-multi-ritiro').forEach(cb => cb.addEventListener('change', updatePudoBox));
@@ -1014,6 +1083,22 @@ function handleRitira(id, forzaScaduto = false) {
         if (selectedIds.length === 0) return showAlert("Seleziona almeno un pacco!");
 
         const tipo = document.getElementById('tipoUscita').value;
+
+        if (tipo === 'cliente') {
+            let totaleContrassegno = 0;
+            selectedIds.forEach(sid => {
+                let px = pacchi.find(x => x.id === sid);
+                if(px && px.isContrassegno && px.importoContrassegno) {
+                    totaleContrassegno += parseFloat(px.importoContrassegno);
+                }
+            });
+            if (totaleContrassegno > 0) {
+                if (!confirm(`Hai riscosso il contrassegno di € ${totaleContrassegno.toFixed(2)}?`)) {
+                    return; 
+                }
+            }
+        }
+
         const firmaData = canvas.toDataURL();
         const dataAttuale = new Date().toLocaleString();
         const ritiratoDa = document.getElementById('modalInput').value;
@@ -1069,7 +1154,8 @@ function generaReport() {
 
     let htmlRitirati = ritirati.map(p => {
         const ora = p.dataRitiro.includes(", ") ? p.dataRitiro.split(", ")[1] : (p.dataRitiro.includes(" ") ? p.dataRitiro.split(" ")[1] : "--:--");
-        return `<tr><td>${p.riconoscimento}</td><td>${p.ritiratoDa} ${p.isScaduto ? '(RESO)' : ''}</td><td>${p.corriere}</td><td>${p.codiceTracciabilita}</td><td>${ora}</td></tr>`;
+        let extraContr = (p.isContrassegno && p.importoContrassegno) ? ` [CONTR. € ${p.importoContrassegno}]` : '';
+        return `<tr><td>${p.riconoscimento}</td><td>${p.ritiratoDa} ${p.isScaduto ? '(RESO)' : ''}${extraContr}</td><td>${p.corriere}</td><td>${p.codiceTracciabilita}</td><td>${ora}</td></tr>`;
     }).join('');
 
     win.document.write(`
@@ -1115,16 +1201,19 @@ function mostraFirma(id) {
     const p = pacchi.find(x => x.id == id);
     const pacchiSessione = p.sessioneRitiro ? pacchi.filter(px => px.sessioneRitiro === p.sessioneRitiro) : [p];
     const win = window.open("", "Firma", "width=700,height=900");
-    let righeTabella = pacchiSessione.map(px => `
-        <tr>
-            <td style="padding:12px; border:1px solid #ddd; font-weight:bold;">#${px.riconoscimento}</td>
-            <td style="padding:12px; border:1px solid #ddd;">${px.corriere}</td>
-            <td style="padding:12px; border:1px solid #ddd; font-size:0.85rem;">${px.codiceTracciabilita}</td>
-            <td style="padding:12px; border:1px solid #ddd; text-align:center;">
-                ${px.pudoStatus === 'pagato' ? '<span style="background:#d4edda; color:#155724; padding:4px 8px; border-radius:5px; font-weight:bold; font-size:0.7rem;">PAGATO €0.50</span>' : '-'}
-            </td>
-        </tr>
-    `).join('');
+    let righeTabella = pacchiSessione.map(px => {
+        let detContr = (px.isContrassegno && px.importoContrassegno) ? `<span style="background:#ffe3e3; color:#c92a2a; padding:4px 8px; border-radius:5px; font-weight:bold; font-size:0.7rem; margin-left:5px;">CONTR. € ${px.importoContrassegno}</span>` : '';
+        return `
+            <tr>
+                <td style="padding:12px; border:1px solid #ddd; font-weight:bold;">#${px.riconoscimento}</td>
+                <td style="padding:12px; border:1px solid #ddd;">${px.corriere}</td>
+                <td style="padding:12px; border:1px solid #ddd; font-size:0.85rem;">${px.codiceTracciabilita}</td>
+                <td style="padding:12px; border:1px solid #ddd; text-align:center;">
+                    ${px.pudoStatus === 'pagato' ? '<span style="background:#d4edda; color:#155724; padding:4px 8px; border-radius:5px; font-weight:bold; font-size:0.7rem;">PAGATO €0.50</span>' : '-'}${detContr}
+                </td>
+            </tr>
+        `;
+    }).join('');
     win.document.write(`
         <!DOCTYPE html>
         <html>
@@ -1196,7 +1285,22 @@ function toggleCampiUscita() {
     document.getElementById('boxRitiroDettagli').style.display = tipo === 'cliente' ? 'block' : 'none';
     document.getElementById('boxScadutoDettagli').style.display = tipo === 'scaduto' ? 'block' : 'none';
     document.getElementById('firmaSide').style.display = tipo === 'cliente' ? 'block' : 'none';
-    if (tipo === 'scaduto') document.getElementById('boxPagamentoNoPudo').style.display = 'none';
+    
+    const boxAlert = document.getElementById('boxAlertContrassegno');
+    if (tipo === 'scaduto') {
+        document.getElementById('boxPagamentoNoPudo').style.display = 'none';
+        boxAlert.style.display = 'none';
+    } else {
+        const selectedIds = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked')).map(cb => parseInt(cb.dataset.id));
+        let totaleContrassegno = 0;
+        selectedIds.forEach(sid => {
+            let px = pacchi.find(x => x.id === sid);
+            if(px && px.isContrassegno && px.importoContrassegno) {
+                totaleContrassegno += parseFloat(px.importoContrassegno);
+            }
+        });
+        if (totaleContrassegno > 0) boxAlert.style.display = 'block';
+    }
 }
 
 function closeModal() { document.getElementById('customModal').style.display = 'none'; }
