@@ -363,7 +363,7 @@
             background: #ffe3e3;
             border: 2px solid #ff4757;
             color: #c92a2a;
-            padding: 10px;
+            padding: 12px;
             border-radius: 10px;
             margin-bottom: 15px;
             font-weight: bold;
@@ -421,14 +421,16 @@
 <div id="customModal">
     <div class="modal-content">
         <h3 id="modalTitle" style="color:var(--primary); margin:0 0 10px 0;">Gestione Uscita Pacco</h3>
-        <select id="tipoUscita" onchange="toggleCampiUscita()" style="width:100%">
+        
+        <div id="boxAlertContrassegno" class="alert-contrassegno-modal" style="display:none; position: relative; z-index: 1010; width: 100%; box-sizing: border-box;"></div>
+
+        <select id="tipoUscita" onchange="toggleCampiUscita()" style="width:100%; margin-bottom: 15px;">
             <option value="cliente">Ritiro Cliente</option>
             <option value="scaduto">Pacco Scaduto (Reso)</option>
         </select>
 
         <div class="modal-body-flex">
             <div class="modal-left">
-                <div id="boxAlertContrassegno" class="alert-contrassegno-modal" style="display:none;"></div>
                 <div id="modalText" style="margin-bottom: 15px; font-size: 1rem; background: #f0f4f8; padding: 10px; border-radius: 10px; max-height: 250px; overflow-y: auto; text-align: left;"></div>
                 <div id="boxRitiroDettagli">
                     <label><b>Chi ritira?</b></label>
@@ -444,9 +446,9 @@
                 </div>
             </div>
 
-            <div class="modal-right" id="firmaSide">
+            <div class="modal-right" id="firmaSide" style="position: relative; z-index: 1005;">
                 <label><b>Firma qui sotto:</b></label>
-                <canvas id="signature-pad" width="360" height="180"></canvas>
+                <canvas id="signature-pad" width="360" height="180" style="display: block; margin: 0 auto;"></canvas>
                 <button onclick="clearCanvas()" style="font-size:10px; background:#666; color:white; margin-top:5px; padding:5px 10px; width: auto; border:none; border-radius:5px;">PULISCI FIRMA</button>
             </div>
         </div>
@@ -1039,7 +1041,7 @@ function apriModifica(id) {
         <div class="contrassegno-box">
             <label style="display:flex; align-items:center; gap:10px; font-size:1rem; cursor:pointer;">
                 <input type="checkbox" id="editIsContrassegno" ${p.isContrassegno ? 'checked' : ''} onchange="toggleInputContrassegno(this.checked)" style="width:auto; transform:scale(1.2);">
-                <span>Il pacco è in contrassegno?</span>
+                <span>Il pacco è in Contrassegno</span>
             </label>
             <div id="subBoxContrassegno" style="margin-top:10px; display:${p.isContrassegno ? 'block' : 'none'};">
                 <label>Importo Contrassegno (€)</label>
@@ -1134,6 +1136,11 @@ function handleRitira(id, forzaScaduto = false) {
         if (selectedIds.length === 0) return showAlert("Seleziona almeno un pacco!");
 
         const tipo = document.getElementById('tipoUscita').value;
+        const firmaData = canvas.toDataURL();
+        const dataAttuale = new Date().toLocaleString();
+        const ritiratoDa = document.getElementById('modalInput').value;
+        const pagato = document.getElementById('checkPagamento').checked;
+        const dataScad = document.getElementById('dataScadenzaRimozione').value.split("-").reverse().join("/");
 
         if (tipo === 'cliente') {
             let totaleContrassegno = 0;
@@ -1150,12 +1157,6 @@ function handleRitira(id, forzaScaduto = false) {
                 return;
             }
         }
-
-        const firmaData = canvas.toDataURL();
-        const dataAttuale = new Date().toLocaleString();
-        const ritiratoDa = document.getElementById('modalInput').value;
-        const pagato = document.getElementById('checkPagamento').checked;
-        const dataScad = document.getElementById('dataScadenzaRimozione').value.split("-").reverse().join("/");
         
         eseguiRitiroPacchi(selectedIds, tipo, ritiratoDa, pagato, dataScad, firmaData, dataAttuale);
     };
