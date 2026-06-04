@@ -651,8 +651,7 @@ function startScanner(targetInputId) {
     document.getElementById('torchBtn').innerText = "🔦 ACCENDI TORCIA";
 
     const config = { 
-        fps: 30, // Ottimizzato da 20 a 30 per una scansione molto più rapida e reattiva
-        rememberLastUsedCamera: true, // Ricorda l'ultima fotocamera per velocizzare l'apertura
+        fps: 20, 
         qrbox: { width: 280, height: 160 },
         formatsToSupport: [ 
             Html5QrcodeSupportedFormats.QR_CODE, 
@@ -858,7 +857,7 @@ function toggleFormInserimento() {
 
 function resetInattivita() {
     clearTimeout(timeoutInattivita);
-    timeoutInattivita = setTimeout(logout, 15 * 60 * 1000);
+    timeoutInattivita = setTimeout(logout, 15 * 60 * 1000); 
 }
 
 function copiaTracking(testo) {
@@ -872,59 +871,24 @@ function copiaTracking(testo) {
     });
 }
 
-function getPos(e) {
-    const rect = canvas.getBoundingClientRect();
-    return {x: (e.clientX || e.touches[0].clientX) - rect.left, y: (e.clientY || e.touches[0].clientY) - rect.top};
-}
-
-canvas.addEventListener('mousedown', (e) => {
-    drawing = true;
-    ctx.beginPath();
-    const p = getPos(e);
-    ctx.moveTo(p.x, p.y);
-});
-canvas.addEventListener('mousemove', (e) => {
-    if(!drawing) return;
-    e.preventDefault();
-    const p = getPos(e);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
-});
+function getPos(e) { const rect = canvas.getBoundingClientRect(); return {x: (e.clientX || e.touches[0].clientX) - rect.left, y: (e.clientY || e.touches[0].clientY) - rect.top}; }
+canvas.addEventListener('mousedown', (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
+canvas.addEventListener('mousemove', (e) => { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
 window.addEventListener('mouseup', () => drawing = false);
-
-canvas.addEventListener('touchstart', (e) => {
-    drawing = true;
-    ctx.beginPath();
-    const p = getPos(e);
-    ctx.moveTo(p.x, p.y);
-});
-canvas.addEventListener('touchmove', (e) => {
-    if(!drawing) return;
-    e.preventDefault();
-    const p = getPos(e);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
-});
+canvas.addEventListener('touchstart', (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
+canvas.addEventListener('touchmove', (e) => { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
 
 function login(){
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
     if (!email || !password) return showAlert("Inserisci email e password");
-    
+
     firebase.auth().signInWithEmailAndPassword(email, password)
-    .then((userCredential) => {
-        resetInattivita();
-    })
-    .catch((error) => {
-        showAlert("Credenziali errate o errore di connessione");
-    });
+        .then((userCredential) => { resetInattivita(); })
+        .catch((error) => { showAlert("Credenziali errate o errore di connessione"); });
 }
 
-function logout() {
-    firebase.auth().signOut().then(() => {
-        location.reload();
-    });
-}
+function logout() { firebase.auth().signOut().then(() => { location.reload(); }); }
 
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
@@ -951,9 +915,7 @@ firebase.auth().onAuthStateChanged((user) => {
                         }
                     }
                 });
-                if (modificato) {
-                    salvaAnagrafica();
-                }
+                if (modificato) { salvaAnagrafica(); }
             });
         });
 
@@ -968,19 +930,28 @@ firebase.auth().onAuthStateChanged((user) => {
     }
 });
 
-function aggiungiPacco(){
+function aggiungerePacco(){
     const trk = document.getElementById('codiceTracciabilita').value.trim().toUpperCase();
     const c = document.getElementById('cognome').value.trim().toUpperCase();
     const corr = document.getElementById('corriereSelect').value;
-
     if(!c || !corr) return showAlert("Mancano dati (Cognome e Corriere sono obbligatori)!");
 
     if (trk && trk !== '-') {
         const esiste = pacchi.find(p => p.codiceTracciabilita === trk);
-        if (esiste) {
-            mostraConfermaDuplicato(trk);
-            return;
-        }
+        if (esiste) { mostraConfermaDuplicato(trk); return; }
+    }
+    finalizzaInserimentoPacco();
+}
+
+function aggiungiPacco(){
+    const trk = document.getElementById('codiceTracciabilita').value.trim().toUpperCase();
+    const c = document.getElementById('cognome').value.trim().toUpperCase();
+    const corr = document.getElementById('corriereSelect').value;
+    if(!c || !corr) return showAlert("Mancano dati (Cognome e Corriere sono obbligatori)!");
+
+    if (trk && trk !== '-') {
+        const esiste = pacchi.find(p => p.codiceTracciabilita === trk);
+        if (esiste) { mostraConfermaDuplicato(trk); return; }
     }
     finalizzaInserimentoPacco();
 }
@@ -989,642 +960,709 @@ function finalizzaInserimentoPacco() {
     const trk = document.getElementById('codiceTracciabilita').value.trim().toUpperCase();
     const n = document.getElementById('nome').value.trim().toUpperCase();
     const c = document.getElementById('cognome').value.trim().toUpperCase();
-    const idp = document.getElementById('codiceRiconoscimento').value.trim().toUpperCase();
     const corr = document.getElementById('corriereSelect').value;
-    const scaff = document.getElementById('scaffaleSelect').value;
-    const grand = document.getElementById('grandezzaSelect').value;
-
-    const dataOdierna = new Date();
-    const giorno = String(dataOdierna.getDate()).padStart(2, '0');
-    const mese = String(dataOdierna.getMonth() + 1).padStart(2, '0');
-    const anno = dataOdierna.getFullYear();
-    const dataStringa = `${giorno}/${mese}/${anno}`;
-
-    const nuovoPacco = {
-        codiceTracciabilita: trk || '-',
-        codiceRiconoscimento: idp || '-',
-        cognome: c,
-        nome: n || '-',
-        corriere: corr,
-        scaffale: scaff || '-',
-        grandezza: grand,
-        dataIngresso: dataStringa,
-        stato: 'In Giacenza',
-        dataUscita: '-',
-        firmatoDa: '-',
-        firmaBase64: '-',
-        note: '-',
-        contrassegno: '-',
-        pagato: false
-    };
-
-    pacchi.push(nuovoPacco);
-    salva();
-
-    let keyAnagrafica = `${c}_${n}`;
-    if (!anagraficaClienti[keyAnagrafica]) {
-        anagraficaClienti[keyAnagrafica] = {
-            cognome: c,
-            nome: n || '-',
-            telefono: '-'
-        };
-        salvaAnagrafica();
+    const cr = document.getElementById('codiceRiconoscimento').value.trim();
+    
+    let num = cr;
+    if(!cr) {
+        const pG = pacchi.filter(p => p.corriere === corr && !p.ritirato);
+        num = pG.length > 0 ? parseInt(pG[pG.length-1].riconoscimento) + 1 : 1;
+    }
+    
+    if (c) {
+        let keyAnagrafica = `${c}_${n}`;
+        if (!anagraficaClienti[keyAnagrafica]) {
+            anagraficaClienti[keyAnagrafica] = {
+                cognome: c,
+                nome: n,
+                telefono: '-'
+            };
+            salvaAnagrafica();
+        }
     }
 
-    document.getElementById('codiceTracciabilita').value = '';
-    document.getElementById('codiceRiconoscimento').value = '';
-    document.getElementById('cognome').value = '';
-    document.getElementById('nome').value = '';
-    document.getElementById('scaffaleSelect').value = '';
-    document.getElementById('grandezzaSelect').value = 'P';
+    pacchi.push({
+        id: Date.now(),
+        dataInserimento: new Date().getTime(),
+        dataTestoInserimento: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+        codiceTracciabilita: trk || '-',
+        riconoscimento: num,
+        nome: n, cognome: c, corriere: corr,
+        scaffale: document.getElementById('scaffaleSelect').value,
+        grandezza: document.getElementById('grandezzaSelect').value,
+        ritirato: false, isScaduto: false, dataRitiro: null, ritiratoDa: '', firma: null, pudoStatus: 'nessuno',
+        isContrassegno: false, importoContrassegno: '',
+        noteAggiuntive: ''
+    });
     
+    salva(); 
+    
+    const btnAggiungi = document.getElementById('btnAggiungiPacco');
+    const backgroundOriginale = btnAggiungi.style.backgroundColor;
+    const testoOriginale = btnAggiungi.innerText;
+    btnAggiungi.style.backgroundColor = "var(--success)";
+    btnAggiungi.innerText = "REGISTRATO! 📄";
+    
+    setTimeout(() => {
+        btnAggiungi.style.backgroundColor = backgroundOriginale;
+        btnAggiungi.innerText = testoOriginale;
+    }, 1000);
+
+    ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('codiceTracciabilita').focus();
     
-    mostraCardSuccesso(nuovoPacco);
+    aggiornaVista(); 
 }
 
 function mostraConfermaDuplicato(trk) {
-    const overlay = document.getElementById('successOverlay');
-    const card = document.getElementById('successCard');
-    overlay.style.display = 'flex';
+    const modal = document.getElementById('beautifyAlert');
+    const titolo = document.getElementById('alertTitle');
+    const msg = document.getElementById('alertMsg');
+    const footer = modal.querySelector('.modal-content');
     
-    card.innerHTML = `
-        <div style="background: white; padding: 30px; border-radius: 20px; border-top: 10px solid var(--warning); box-shadow: 0 10px 25px rgba(0,0,0,0.3); max-width: 450px; text-align: center;">
-            <span style="font-size: 4rem;">⚠️</span>
-            <h2 style="color: var(--warning); margin-top:10px;">Tracking Duplicato!</h2>
-            <p style="font-size: 1.1rem; font-weight: bold; margin: 15px 0;">Il codice <b>${trk}</b> è già presente nel sistema.</p>
-            <p style="color: #666; font-size:0.9rem;">Vuoi inserirlo comunque come un nuovo pacco?</p>
-            <div style="display:flex; gap:10px; margin-top:25px;">
-                <button id="annullaDuplicatoBtn" class="modal-btn" style="background:#e0e0e0; color:#333;">NO, ANNULLA</button>
-                <button id="confermaDuplicatoBtn" class="modal-btn" style="background:var(--warning); color:white;">SÌ, AGGIUNGI</button>
-            </div>
-        </div>
-    `;
+    titolo.innerText = "ATTENZIONE: DUPLICATO";
+    titolo.style.color = "var(--warning)";
+    msg.innerHTML = `Il tracking <b>${trk}</b> è già in archivio.<br><br>Vuoi registrarlo di nuovo?`;
     
-    document.getElementById('annullaDuplicatoBtn').onclick = () => {
-        overlay.style.display = 'none';
-        document.getElementById('codiceTracciabilita').focus();
+    const btnOkStandard = modal.querySelector('.modal-btn');
+    if(btnOkStandard) btnOkStandard.style.display = 'none';
+
+    if(document.getElementById('boxSceltaDuplicato')) document.getElementById('boxSceltaDuplicato').remove();
+
+    const boxScelta = document.createElement('div');
+    boxScelta.id = "boxSceltaDuplicato";
+    boxScelta.style = "display:flex; gap:10px; margin-top:20px; justify-content:center;";
+
+    const btnSi = document.createElement('button');
+    btnSi.className = "modal-btn";
+    btnSi.style.background = "var(--success)";
+    btnSi.style.flex = "1";
+    btnSi.innerText = "SÌ, PROCEDI";
+    btnSi.onclick = function() {
+        chiudiAlertDuplicato();
+        setTimeout(() => { finalizzaInserimentoPacco(); }, 150);
     };
-    
-    document.getElementById('confermaDuplicatoBtn').onclick = () => {
-        overlay.style.display = 'none';
-        finalizzaInserimentoPacco();
+
+    const btnNo = document.createElement('button');
+    btnNo.className = "modal-btn";
+    btnNo.style.background = "var(--warning)";
+    btnNo.style.flex = "1";
+    btnNo.innerText = "NO, ANNULLA";
+    btnNo.onclick = function() {
+        ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
+        chiudiAlertDuplicato();
     };
-}
 
-function mostraCardSuccesso(p) {
-    const overlay = document.getElementById('successOverlay');
-    const card = document.getElementById('successCard');
-    overlay.style.display = 'flex';
-    
-    card.innerHTML = `
-        <div style="background: white; padding: 35px; border-radius: 25px; border-top: 10px solid var(--success); box-shadow: 0 15px 35px rgba(0,0,0,0.3); max-width: 450px; width:90%;">
-            <span style="font-size: 5rem; color: var(--success); display:block; margin-bottom:10px;">🎉</span>
-            <h2 style="color: var(--success); margin: 0 0 15px 0; text-transform: uppercase; letter-spacing:1px;">Pacco Registrato!</h2>
-            
-            <div style="background: #f7f9fa; border: 2px dashed #ccc; padding: 15px; border-radius: 15px; text-align: left; font-size: 1.1rem; line-height: 1.6; margin-bottom: 20px;">
-                <div><b>ID PACCO:</b> <span style="font-size:1.4rem; color:var(--primary); font-weight:900;">${p.codiceRiconoscimento}</span></div>
-                <div><b>CLIENTE:</b> <span style="font-weight: bold; color:#000;">${p.cognome} ${p.nome}</span></div>
-                <div><b>POSIZIONE:</b> <span style="background: var(--accent); color: var(--primary); padding: 2px 8px; border-radius: 6px; font-weight: 900; font-size:1rem; border:1px solid var(--primary);">${p.scaffale}</span></div>
-                <div><b>CORRIERE:</b> <span style="text-transform: uppercase; font-weight: bold; color: var(--primary);">${p.corriere}</span></div>
-            </div>
-            
-            <button id="closeSuccessBtn" class="modal-btn" style="background: var(--primary); color: var(--accent); font-size: 1.1rem; text-transform: uppercase;">OK, CONTINUA</button>
-        </div>
-    `;
-    
-    document.getElementById('closeSuccessBtn').focus();
-    document.getElementById('closeSuccessBtn').onclick = () => {
-        overlay.style.display = 'none';
-        document.getElementById('codiceTracciabilita').focus();
-    };
-}
-
-function aggiornaVista() {
-    const q = document.getElementById('search').value.toUpperCase().trim();
-    const contenitori = document.getElementById('contenitori');
-    const ritiratiContainer = document.getElementById('ritiratiContainer');
-    contenitori.innerHTML = '';
-    ritiratiContainer.innerHTML = '';
-
-    const filtrati = pacchi.filter(p => {
-        const matchString = `${p.cognome} ${p.nome} ${p.codiceTracciabilita} ${p.codiceRiconoscimento}`.toUpperCase();
-        const bMatch = matchString.includes(q);
-        if (!bMatch) return false;
-        if (tabAttiva === 'Tutti') return p.stato === 'In Giacenza';
-        return p.corriere === tabAttiva && p.stato === 'In Giacenza';
-    });
-
-    const filtratiRitirati = pacchi.filter(p => {
-        if (p.stato === 'In Giacenza') return false;
-        const matchString = `${p.cognome} ${p.nome} ${p.codiceTracciabilita} ${p.codiceRiconoscimento} ${p.stato}`.toUpperCase();
-        return matchString.includes(q);
-    });
-
-    // Ordinamento Giacenza: per ID numerico crescente
-    filtrati.sort((a, b) => {
-        const idA = parseInt(a.codiceRiconoscimento) || 0;
-        const idB = parseInt(b.codiceRiconoscimento) || 0;
-        return idA - idB;
-    });
-
-    // Ordinamento Archivio Ritirati: cronologico inverso (ultimi ritiri in alto)
-    filtratiRitirati.sort((a, b) => {
-        const parseData = (dStr) => {
-            if(!dStr || dStr === '-') return 0;
-            const parti = dStr.split('/');
-            return new Date(parti[2], parti[1] - 1, parti[0]).getTime();
-        };
-        return parseData(b.dataUscita) - parseData(a.dataUscita);
-    });
-
-    document.getElementById('counter').innerText = `PACCHI IN GIACENZA FILTRATI: ${filtrati.length}`;
-
-    if(filtrati.length === 0) {
-        contenitori.innerHTML = `<p style="text-align:center; color:#666; font-weight:bold; background:white; padding:20px; border-radius:12px;">Nessun pacco in giacenza trovato per i criteri selezionati.</p>`;
-    } else {
-        filtrati.forEach(p => {
-            const indexOrig = pacchi.indexOf(p);
-            const div = document.createElement('div');
-            div.className = `pacco`;
-
-            let stringaScadenza = "";
-            let alertScadenzaHtml = "";
-            if (p.corriere !== "InPost" && p.corriere !== "UPS" && p.corriere !== "Punto Poste" && p.corriere !== "DHL" && p.corriere !== "BRT" && p.corriere !== "GLS" && p.corriere !== "Amazon") {
-                const giorni = calcolaGiorniGiacenza(p.dataIngresso);
-                stringaScadenza = `<div style="font-size:0.85rem; margin-top:5px; font-weight:bold; color:#e67e22;">Giacenza: ${giorni} giorni</div>`;
-                if (giorni >= 30) {
-                    alertScadenzaHtml = `<span class="scadenza-alert" onclick="event.stopPropagation(); showAlert('Questo pacco ha superato i 30 giorni di giacenza gratuita ed è SCADUTO! Richiedere pagamento di € 0.50 al ritiro.', '⚠️ PACCO SCADUTO')">⚠️</span>`;
-                }
-            }
-
-            let contrassegnoTagHtml = "";
-            if (p.contrassegno && p.contrassegno !== "-") {
-                contrassegnoTagHtml = `<span class="tag-contrassegno">C.O.D. € ${p.contrassegno}</span>`;
-            }
-
-            let noteIndicatoreHtml = "";
-            if (p.note && p.note !== "-") {
-                noteIndicatoreHtml = `<span class="note-indicatore" onclick="event.stopPropagation(); showAlert('Note del pacco: ${p.note.replace(/'/g, "\\'")}', '📝 Note Pacco')">📝</span>`;
-            }
-
-            let statoEmojiHtml = `<span class="stato-emoji">📦</span>`;
-
-            let telefonoStampa = "";
-            let keyAnag = `${p.cognome.trim().toUpperCase()}_${p.nome.trim().toUpperCase()}`;
-            if (anagraficaClienti[keyAnag] && anagraficaClienti[keyAnag].telefono && anagraficaClienti[keyAnag].telefono !== "-") {
-                telefonoStampa = `<span style="font-size:0.85rem; color:#555; font-weight:normal; margin-left:10px;">📞 ${anagraficaClienti[keyAnag].telefono}</span>`;
-            }
-
-            div.innerHTML = `
-                <div style="text-align:left;">
-                    <div style="display:flex; align-items:center; flex-wrap:wrap; gap:5px;">
-                        ${alertScadenzaHtml}
-                        ${noteIndicatoreHtml}
-                        ${statoEmojiHtml}
-                        <span style="font-size:1.3rem; font-weight:900; color:var(--primary); margin-right:10px;">ID: ${p.codiceRiconoscimento}</span>
-                        <span style="font-size:1.15rem; font-weight:bold;">${p.cognome} ${p.nome}</span>
-                        ${telefonoStampa}
-                    </div>
-                    <div style="margin-top:8px; font-size:0.9rem;">
-                        <span class="tag-grandezza">${p.grandezza}</span>
-                        <span class="tag-corriere">${p.corriere}</span>
-                        <span style="background:#e0e0e0; padding:4px 8px; border-radius:6px; font-weight:bold; border: 1px solid #ccc;">📍 ${p.scaffale}</span>
-                    </div>
-                    <div style="margin-top:8px; font-size:0.85rem; color:#666;">
-                        Trk: <span class="highlight-trk" onclick="copiaTracking('${p.codiceTracciabilita}')">${p.codiceTracciabilita}</span> | Ingresso: ${p.dataIngresso}
-                    </div>
-                    ${stringaScadenza}
-                    <div style="margin-top:5px;">${contrassegnoTagHtml}</div>
-                </div>
-                <div style="display:flex; align-items:center;">
-                    <button class="ritira-btn" onclick="openModal(${indexOrig})">RITIRA</button>
-                    <button class="edit-dots" onclick="openEditModal(${indexOrig})">⋮</button>
-                </div>
-            `;
-            contenitori.appendChild(div);
-        });
-    }
-
-    if(filtratiRitirati.length === 0) {
-        ritiratiContainer.innerHTML = `<p style="text-align:center; color:#666; font-size:0.9rem;">Nessun pacco nell'archivio storico corrisponde alla ricerca.</p>`;
-    } else {
-        filtratiRitirati.forEach(p => {
-            const indexOrig = pacchi.indexOf(p);
-            const div = document.createElement('div');
-            const classeStato = p.stato === 'Ritirato' ? 'ritirato' : 'scaduto';
-            div.className = `pacco ${classeStato}`;
-
-            let labelUscita = p.stato === 'Ritirato' ? `Ritirato da: ${p.firmatoDa}` : `Rimosso (Reso Scaduto)`;
-            let firmaHtml = (p.stato === 'Ritirato' && p.firmaBase64 && p.firmaBase64 !== '-') ? `<span class="view-firma-link" onclick="mostraFirmaSolo('${p.firmaBase64}')">VEDI FIRMA</span>` : '';
-            
-            let tagPagamentoHtml = "";
-            if (p.corriere !== "InPost" && p.corriere !== "UPS" && p.corriere !== "Punto Poste" && p.corriere !== "DHL" && p.corriere !== "BRT" && p.corriere !== "GLS" && p.corriere !== "Amazon" && p.stato === 'Ritirato') {
-                tagPagamentoHtml = p.pagato ? `<span class="tag-pagato">€ 0.50 PAGATO</span>` : `<span class="tag-non-pagato">€ 0.50 NON PAGATO</span>`;
-            }
-
-            let contrassegnoTagHtml = "";
-            if (p.contrassegno && p.contrassegno !== "-") {
-                contrassegnoTagHtml = `<span class="tag-contrassegno" style="margin-top:5px;">C.O.D. € ${p.contrassegno}</span>`;
-            }
-
-            let noteIndicatoreHtml = "";
-            if (p.note && p.note !== "-") {
-                noteIndicatoreHtml = `<span class="note-indicatore" onclick="event.stopPropagation(); showAlert('Note del pacco: ${p.note.replace(/'/g, "\\'")}', '📝 Note Pacco')">📝</span>`;
-            }
-
-            let statoEmojiHtml = p.stato === 'Ritirato' ? `<span class="stato-emoji">✅</span>` : `<span class="stato-emoji">↩️</span>`;
-
-            let telefonoStampa = "";
-            let keyAnag = `${p.cognome.trim().toUpperCase()}_${p.nome.trim().toUpperCase()}`;
-            if (anagraficaClienti[keyAnag] && anagraficaClienti[keyAnag].telefono && anagraficaClienti[keyAnag].telefono !== "-") {
-                telefonoStampa = `<span style="font-size:0.85rem; color:#555; font-weight:normal; margin-left:10px;">📞 ${anagraficaClienti[keyAnag].telefono}</span>`;
-            }
-
-            div.innerHTML = `
-                <div style="text-align:left; width:100%;">
-                    <div style="display:flex; align-items:center; flex-wrap:wrap; gap:5px;">
-                        ${noteIndicatoreHtml}
-                        ${statoEmojiHtml}
-                        <span style="font-size:1.1rem; font-weight:900; color:#555; margin-right:8px;">ID: ${p.codiceRiconoscimento}</span>
-                        <span style="font-size:1.05rem; font-weight:bold; color:#333;">${p.cognome} ${p.nome}</span>
-                        ${telefonoStampa}
-                        <span style="font-size:0.8rem; font-weight:bold; padding:2px 6px; border-radius:4px; margin-left:10px; background:${p.stato==='Ritirato'?'#d4edda':'#f8d7da'}; color:${p.stato==='Ritirato'?'#155724':'#721c24'};">${p.stato.toUpperCase()}</span>
-                        ${tagPagamentoHtml}
-                    </div>
-                    <div style="margin-top:5px; font-size:0.85rem; color:#666;">
-                        Corriere: <b>${p.corriere}</b> | Scaffale: ${p.scaffale} | Trk: <span class="highlight-trk" onclick="copiaTracking('${p.codiceTracciabilita}')">${p.codiceTracciabilita}</span>
-                    </div>
-                    <div style="margin-top:5px; font-size:0.85rem; color:#444; background:#f9f9f9; padding:6px; border-radius:6px; border:1px solid #eee;">
-                        Ingresso: ${p.dataIngresso} | Uscita: ${p.dataUscita} <br>
-                        <b>${labelUscita}</b> ${firmaHtml}
-                    </div>
-                    <div>${contrassegnoTagHtml}</div>
-                </div>
-                <div>
-                    <button class="btn-ripristina" onclick="ripristinaPacco(${indexOrig})">RIPRISTINA</button>
-                </div>
-            `;
-            ritiratiContainer.appendChild(div);
-        });
-    }
-
-    renderTabs();
-}
-
-function mostraFirmaSolo(b64) {
-    showAlert(`<img src="${b64}" style="max-width:100%; border:1px solid #ccc; background:white; border-radius:8px;">`, "Firma Acquisita");
-}
-
-function calcolaGiorniGiacenza(dataIngressoStr) {
-    if(!dataIngressoStr || dataIngressoStr === '-') return 0;
-    const parti = dataIngressoStr.split('/');
-    const dataIngr = new Date(parti[2], parti[1] - 1, parti[0]);
-    const oggi = new Date();
-    oggi.setHours(0,0,0,0);
-    dataIngr.setHours(0,0,0,0);
-    const diffTempo = oggi.getTime() - dataIngr.getTime();
-    if (diffTempo <= 0) return 0;
-    return Math.floor(diffTempo / (1000 * 60 * 60 * 24));
-}
-
-function renderTabs() {
-    const tabsDiv = document.getElementById('tabs');
-    tabsDiv.innerHTML = '';
-    
-    const conteggi = { 'Tutti': 0 };
-    corrieri.forEach(c => conteggi[c] = 0);
-    
-    pacchi.forEach(p => {
-        if(p.stato === 'In Giacenza') {
-            conteggi['Tutti']++;
-            if(conteggi[p.corriere] !== undefined) conteggi[p.corriere]++;
-        }
-    });
-
-    const listaTabs = ['Tutti', ...corrieri];
-    listaTabs.forEach(t => {
-        const btn = document.createElement('button');
-        btn.innerText = `${t.toUpperCase()} (${conteggi[t]})`;
-        if(tabAttiva === t) btn.className = 'active';
-        btn.onclick = () => { tabAttiva = t; aggiornaVista(); };
-        tabsDiv.appendChild(btn);
-    });
-}
-
-let paccoCorrenteIndex = null;
-function openModal(index) {
-    paccoCorrenteIndex = index;
-    const p = pacchi[index];
-    
-    const modal = document.getElementById('customModal');
-    const modalText = document.getElementById('modalText');
-    const modalInput = document.getElementById('modalInput');
-    const checkPagamento = document.getElementById('checkPagamento');
-    const boxPagamentoNoPudo = document.getElementById('boxPagamentoNoPudo');
-    const boxAlertContrassegno = document.getElementById('boxAlertContrassegno');
-
-    document.getElementById('tipoUscita').value = "cliente";
-    toggleCampiUscita();
-
-    let alertContrassegnoStr = "";
-    boxAlertContrassegno.style.display = "none";
-    if (p.contrassegno && p.contrassegno !== "-") {
-        boxAlertContrassegno.innerText = `🚨 ATTENZIONE CONTRASSEGNO: INCASSARE € ${p.contrassegno} 🚨`;
-        boxAlertContrassegno.style.display = "block";
-    }
-
-    let telefonoDettaglio = "-";
-    let keyAnag = `${p.cognome.trim().toUpperCase()}_${p.nome.trim().toUpperCase()}`;
-    if (anagraficaClienti[keyAnag] && anagraficaClienti[keyAnag].telefono && anagraficaClienti[keyAnag].telefono !== "-") {
-        telefonoDettaglio = anagraficaClienti[keyAnag].telefono;
-    }
-
-    modalText.innerHTML = `
-        <b>ID Pacco:</b> ${p.codiceRiconoscimento}<br>
-        <b>Cliente:</b> ${p.cognome} ${p.nome}<br>
-        <b>Recapito Telefonico:</b> ${telefonoDettaglio}<br>
-        <b>Corriere:</b> ${p.corriere} | <b>Posizione:</b> ${p.scaffale}<br>
-        <b>Data Ingresso:</b> ${p.dataIngresso}<br>
-        <b>Tracking:</b> ${p.codiceTracciabilita}
-    `;
-
-    modalInput.value = `${p.cognome} ${p.nome}`.toUpperCase();
-    
-    if (p.corriere !== "InPost" && p.corriere !== "UPS" && p.corriere !== "Punto Poste" && p.corriere !== "DHL" && p.corriere !== "BRT" && p.corriere !== "GLS" && p.corriere !== "Amazon") {
-        boxPagamentoNoPudo.style.display = 'flex';
-        const giorni = calcolaGiorniGiacenza(p.dataIngresso);
-        checkPagamento.checked = (giorni >= 30);
-    } else {
-        boxPagamentoNoPudo.style.display = 'none';
-        checkPagamento.checked = false;
-    }
-
+    boxScelta.appendChild(btnNo);
+    boxScelta.appendChild(btnSi);
+    footer.appendChild(boxScelta);
     modal.style.display = 'flex';
-    clearCanvas();
+}
+
+function chiudiAlertDuplicato() {
+    document.getElementById('beautifyAlert').style.display = 'none';
+    const box = document.getElementById('boxSceltaDuplicato');
+    if(box) box.remove();
+    const btnOk = document.querySelector('#beautifyAlert .modal-btn');
+    if(btnOk) btnOk.style.display = 'block';
+}
+    
+function aggiornaVista(){
+    const sel = document.getElementById('corriereSelect');
+    if(sel && sel.innerHTML === "") sel.innerHTML = '<option value="">Corriere...</option>' + corrieri.map(c => `<option value="${c}">${c}</option>`).join('');
+    
+    const tabsBox = document.getElementById('tabs');
+    if(tabsBox) tabsBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">Tutti</button>` + corrieri.map(c => `<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}">${c}</button>`).join('');
+    
+    const search = document.getElementById('search').value.toLowerCase().trim();
+    
+    const filterFn = p => {
+        const corrispondeTab = (tabAttiva === 'Tutti' || p.corriere === tabAttiva);
+        if (!corrispondeTab) return false;
+        
+        if (!search) return true;
+
+        const cognomePacco = (p.cognome || "").toLowerCase();
+        const nomePacco = (p.nome || "").toLowerCase();
+        const trkPacco = (p.codiceTracciabilita || "").toLowerCase();
+        const idPacco = String(p.riconoscimento || "");
+        
+        const cognomeNome = cognomePacco + " " + nomePacco;
+        const nomeCognome = nomePacco + " " + cognomePacco;
+
+        return cognomeNome.includes(search) || 
+               nomeCognome.includes(search) || 
+               idPacco.includes(search) || 
+               trkPacco.includes(search);
+    };
+
+    const inGiacenza = pacchi.filter(p => !p.ritirato && filterFn(p));
+    const ritirati = pacchi.filter(p => p.ritirato && filterFn(p)).reverse();
+    const perUltimoID = pacchi.filter(p => !p.ritirato && (tabAttiva === 'Tutti' || p.corriere === tabAttiva));
+    let ultimoID = perUltimoID.length > 0 ? perUltimoID[perUltimoID.length - 1].riconoscimento : "---";
+    document.getElementById('counter').innerHTML = `📦 Giacenza ${tabAttiva}: ${inGiacenza.length} | 🏷️ Ultimo ID: #${ultimoID}`;
+    
+    document.getElementById('contenitori').innerHTML = inGiacenza.map(p => generateHtml(p)).join('');
+    document.getElementById('ritiratiContainer').innerHTML = ritirati.map(p => generateHtml(p)).join('');
+}
+
+function generateHtml(p) {
+    let firmaLink = (p.ritirato && p.firma && !p.isScaduto) ? `<span class="view-firma-link" onclick="mostraFirma('${p.id}')">VEDI FIRMA</span>` : '';
+    let alertScadenza = '';
+    if (!p.ritirato) {
+        const oggi = new Date().getTime();
+        const diffGiorni = (oggi - p.dataInserimento) / (1000 * 60 * 60 * 24);
+        if (diffGiorni >= 8) alertScadenza = `<span class="scadenza-alert" onclick="handleRitira(${p.id}, true)">⚠️</span>`;
+    }
+    
+    let indicatoreNote = '';
+    if (!p.ritirato && p.noteAggiuntive && p.noteAggiuntive.trim() !== '') {
+        indicatoreNote = `<span class="note-indicatore" onclick="showAlert('${p.noteAggiuntive.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', 'Note Aggiuntive')">ℹ️</span>`;
+    }
+    
+    let statoTesto = '';
+    let emojiIcona = '';
+    if(p.ritirato) {
+        let notaPudo = p.pudoStatus === 'pagato' ? '<span class="tag-pagato">(Pagato €0.50)</span>' : (p.pudoStatus === 'non_pagato' ? '<span class="tag-non-pagato">(Non Pagato)</span>' : '');
+        let notaContrassegno = (p.importoContrassegno && p.isContrassegno) ? `<span style="color:#ff4757; font-weight:bold;"> [Contrassegno Riscosso: € ${p.importoContrassegno}]</span>` : '';
+        let testoNoteArchivio = (p.noteAggiuntive && p.noteAggiuntive.trim() !== '') ? `<br><small style="color:var(--primary); font-weight:bold;">📝 Nota: ${p.noteAggiuntive}</small>` : '';
+        if (p.isScaduto) {
+            emojiIcona = '<span class="stato-emoji">📦❌</span>';
+            statoTesto = `<div style="color:var(--warning); font-size:0.85rem; margin-top:5px; font-weight:bold;">PACCO SCADUTO (RESO) il ${p.dataRitiro}${testoNoteArchivio}</div>`;
+        } else {
+            emojiIcona = '<span class="stato-emoji">✅</span>';
+            statoTesto = `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">RITIRATO DA ${p.ritiratoDa.toUpperCase()} IL ${p.dataRitiro} ${notaPudo}${notaContrassegno} ${firmaLink}${testoNoteArchivio}</div>`;
+        }
+    }
+
+    let badgeContrassegno = (!p.ritirato && p.isContrassegno) ? `<span class="tag-contrassegno">CONTRASSEGNO € ${p.importoContrassegno}</span>` : '';
+
+    let keyAnagrafica = `${p.cognome.toUpperCase()}_${p.nome.toUpperCase()}`;
+    let telContatto = (anagraficaClienti[keyAnagrafica] && anagraficaClienti[keyAnagrafica].telefono && anagraficaClienti[keyAnagrafica].telefono !== '-') ? ` • 📞 Tel: ${anagraficaClienti[keyAnagrafica].telefono}` : '';
+
+    const azione = p.ritirato ? `<button class="btn-ripristina" onclick="ripristinaPacco(${p.id})">RIPRISTINA</button>` : `
+          <button class="ritira-btn" onclick="handleRitira(${p.id})">RITIRA</button>
+          <button class="edit-dots" onclick="apriModifica(${p.id})">✏️</button>
+        `;
+    return `<div class="pacco ${p.ritirato ? (p.isScaduto ? 'scaduto' : 'ritirato') : ''}">
+        <div style="flex-grow:1; display: flex; align-items: center;">
+            ${emojiIcona}
+            <div>
+                <span class="tag-grandezza">${p.grandezza}</span><span class="tag-corriere">${p.corriere}</span>${badgeContrassegno}<strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome.toUpperCase()}
+                <br><small style="display:block; margin-top:5px; color:#666;">📍 ${p.scaffale} • 🔍 TRK: <span class="highlight-trk" onclick="copiaTracking('${p.codiceTracciabilita}')">${p.codiceTracciabilita}</span>${telContatto}<br>📅 Arrivato il: ${p.dataTestoInserimento || '-'}</small>
+                ${statoTesto}
+            </div>
+        </div>
+        <div style="display:flex; align-items:center;">${alertScadenza} ${indicatoreNote} ${azione}</div>
+    </div>`;
+}
+
+function apriModifica(id) {
+    const p = pacchi.find(x => x.id === id);
+    const container = document.getElementById('editFields');
+    const haNote = !!(p.noteAggiuntive && p.noteAggiuntive.trim() !== '');
+    container.innerHTML = `
+        <div>
+            <label>Cognome</label>
+            <input type="text" id="editCognome" value="${p.cognome.toUpperCase()}">
+        </div>
+        <div>
+            <label>Nome</label>
+            <input type="text" id="editNome" value="${p.nome.toUpperCase()}">
+        </div>
+        <div>
+            <label>ID Pacco (Solo Numeri)</label>
+            <input type="text" id="editRiconoscimento" value="${p.riconoscimento}" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+        </div>
+        <div class="input-with-icon" style="flex-direction:column; align-items:start;">
+            <label>Tracking</label>
+            <div style="position:relative; width:100%;">
+                <input type="text" id="editTrk" value="${p.codiceTracciabilita.toUpperCase()}">
+                <span class="scanner-trigger" onclick="startScanner('editTrk')">📸</span>
+            </div>
+        </div>
+        <div>
+            <label>Corriere</label>
+            <select id="editCorriere">
+                ${corrieri.map(c => `<option value="${c}" ${c === p.corriere ? 'selected' : ''}>${c}</option>`).join('')}
+            </select>
+        </div>
+        <div>
+            <label>Scaffale</label>
+            <select id="editScaffale">
+                ${Array.from({length:12}, (_,i)=>i+1).map(i => `<option value="Scaffale ${i}" ${p.scaffale === 'Scaffale '+i ? 'selected' : ''}>Scaffale ${i}</option>`).join('')}
+            </select>
+        </div>
+        <div class="contrassegno-box">
+            <label style="display:flex; align-items:center; gap:10px; font-size:1rem; cursor:pointer;">
+                <input type="checkbox" id="editIsContrassegno" ${p.isContrassegno ? 'checked' : ''} onchange="toggleInputContrassegno(this.checked)" style="width:auto; transform:scale(1.2);">
+                <span>Il pacco è in contrassegno?</span>
+            </label>
+            <div id="subBoxContrassegno" style="margin-top:10px; display:${p.isContrassegno ? 'block' : 'none'};">
+                <label>Importo Contrassegno (€)</label>
+                <input type="number" step="0.01" id="editImportoContrassegno" value="${p.importoContrassegno || ''}" placeholder="0.00" style="border-color:#ff4757;">
+            </div>
+        </div>
+        <div class="note-box">
+            <label style="display:flex; align-items:center; gap:10px; font-size:1rem; cursor:pointer;">
+                <input type="checkbox" id="editHasNote" ${haNote ? 'checked' : ''} onchange="toggleInputNote(this.checked)" style="width:auto; transform:scale(1.2);">
+                <span>Aggiungere note al pacco?</span>
+            </label>
+            <div id="subBoxNote" style="margin-top:10px; display:${haNote ? 'block' : 'none'};">
+                <label>Note aggiuntive</label>
+                <input type="text" id="editNoteAggiuntive" value="${p.noteAggiuntive || ''}" placeholder="Inserisci qui le note..." style="border-color:var(--primary);">
+            </div>
+        </div>
+    `;
+    document.getElementById('editModal').style.display = 'flex';
+    document.getElementById('saveEditBtn').onclick = () => {
+        p.cognome = document.getElementById('editCognome').value.trim().toUpperCase();
+        p.nome = document.getElementById('editNome').value.trim().toUpperCase();
+        p.riconoscimento = document.getElementById('editRiconoscimento').value.trim();
+        p.codiceTracciabilita = document.getElementById('editTrk').value.trim().toUpperCase();
+        p.corriere = document.getElementById('editCorriere').value;
+        p.scaffale = document.getElementById('editScaffale').value;
+        p.isContrassegno = document.getElementById('editIsContrassegno').checked;
+        p.importoContrassegno = p.isContrassegno ? document.getElementById('editImportoContrassegno').value.trim() : '';
+        
+        const haNoteChecked = document.getElementById('editHasNote').checked;
+        p.noteAggiuntive = haNoteChecked ? document.getElementById('editNoteAggiuntive').value.trim() : '';
+        
+        salva();
+        closeEditModal();
+    };
+}
+
+function toggleInputContrassegno(checked) {
+    document.getElementById('subBoxContrassegno').style.display = checked ? 'block' : 'none';
+}
+
+function toggleInputNote(checked) {
+    document.getElementById('subBoxNote').style.display = checked ? 'block' : 'none';
+}
+
+function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
+
+function handleRitira(id, forzaScaduto = false) {
+    const p = pacchi.find(x => x.id === id);
+    const stessiPacchi = pacchi.filter(px => 
+        !px.ritirato && 
+        px.cognome.toLowerCase() === p.cognome.toLowerCase() &&
+        px.nome.toLowerCase() === p.nome.toLowerCase()
+    );
+    document.getElementById('customModal').style.display = 'flex';
+    document.getElementById('tipoUscita').value = forzaScaduto ? 'scaduto' : 'cliente';
+    
+    let htmlLista = `<p style="margin-top:0;"><b>Seleziona i pacchi da ritirare:</b></p>`;
+    stessiPacchi.forEach(sp => {
+        const isTarget = sp.id === id;
+        let infoContr = sp.isContrassegno ? `<b style="color:#ff4757;"> [CONTRASSEGNO € ${sp.importoContrassegno}]</b>` : '';
+        let infoNote = (sp.noteAggiuntive && sp.noteAggiuntive.trim() !== '') ? ` <span style="color:var(--primary); font-weight:bold;">[ℹ️ ${sp.noteAggiuntive}]</span>` : '';
+        htmlLista += `
+            <label class="item-selezione">
+                <input type="checkbox" class="chk-multi-ritiro" data-id="${sp.id}" data-corriere="${sp.corriere}" ${isTarget ? 'checked' : ''}>
+                <div>
+                    <strong>#${sp.riconoscimento}</strong> 
+                    - ${sp.corriere}${infoContr}${infoNote}<br>
+                    <small>TRK: ${sp.codiceTracciabilita} | Arrivato: ${sp.dataTestoInserimento || '-'}</small>
+                </div>
+            </label>
+        `;
+    });
+    document.getElementById('modalText').innerHTML = htmlLista;
+
+    const updatePudoBox = () => {
+        const selectedIds = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked')).map(cb => parseInt(cb.dataset.id));
+        const selectedCheckboxes = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked'));
+        const hasNoPudoSelected = selectedCheckboxes.some(cb => cb.dataset.corriere === 'Corrieri No Pudo');
+        
+        let isCliente = document.getElementById('tipoUscita').value === 'cliente';
+        document.getElementById('boxPagamentoNoPudo').style.display = (hasNoPudoSelected && isCliente) ? 'flex' : 'none';
+        
+        let totaleContrassegno = 0;
+        selectedIds.forEach(sid => {
+            let px = pacchi.find(x => x.id === sid);
+            if(px && px.isContrassegno && px.importoContrassegno) {
+                totaleContrassegno += parseFloat(px.importoContrassegno);
+            }
+        });
+
+        const boxAlert = document.getElementById('boxAlertContrassegno');
+        if (totaleContrassegno > 0 && isCliente) {
+            boxAlert.innerHTML = `⚠️ ATTENZIONE: DA RISCUOTERE € ${totaleContrassegno.toFixed(2)} IN CONTRASSEGNO!`;
+            boxAlert.style.display = 'block';
+        } else {
+            boxAlert.style.display = 'none';
+        }
+    };
+
+    document.querySelectorAll('.chk-multi-ritiro').forEach(cb => cb.addEventListener('change', updatePudoBox));
+    
+    toggleCampiUscita();
+    updatePudoBox();
+    
+    document.getElementById('modalInput').value = p.cognome.toUpperCase();
+    document.getElementById('dataScadenzaRimozione').valueAsDate = new Date();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     document.getElementById('modalConfirmBtn').onclick = () => {
-        const tipoUscita = document.getElementById('tipoUscita').value;
-        const dataOdierna = new Date();
-        const giorno = String(dataOdierna.getDate()).padStart(2, '0');
-        const mese = String(dataOdierna.getMonth() + 1).padStart(2, '0');
-        const anno = dataOdierna.getFullYear();
-        const dataStringa = `${giorno}/${mese}/${anno}`;
+        const selectedIds = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked')).map(cb => parseInt(cb.dataset.id));
+        if (selectedIds.length === 0) return showAlert("Seleziona almeno un pacco!");
 
-        if (tipoUscita === 'cliente') {
-            const firmatario = modalInput.value.trim().toUpperCase();
-            if(!firmatario) return showAlert("Inserisci il nome di chi sta ritirando il pacco!");
-            
-            p.stato = 'Ritirato';
-            p.dataUscita = dataStringa;
-            p.firmatoDa = firmatario;
-            p.firmaBase64 = canvas.toDataURL();
-            p.pagato = checkPagamento.checked;
-        } else {
-            const dataRimozioneInput = document.getElementById('dataScadenzaRimozione').value;
-            let dataUscitaReso = dataStringa;
-            if (dataRimozioneInput) {
-                const pData = dataRimozioneInput.split('-');
-                dataUscitaReso = `${pData[2]}/${pData[1]}/${pData[0]}`;
+        const tipo = document.getElementById('tipoUscita').value;
+        const firmaData = canvas.toDataURL();
+        const dataAttuale = new Date().toLocaleString();
+        const ritiratoDa = document.getElementById('modalInput').value.toUpperCase();
+        const pagato = document.getElementById('checkPagamento').checked;
+        const dataScad = document.getElementById('dataScadenzaRimozione').value.split("-").reverse().join("/");
+
+        if (tipo === 'cliente') {
+            let totaleContrassegno = 0;
+            selectedIds.forEach(sid => {
+                let px = pacchi.find(x => x.id === sid);
+                if(px && px.isContrassegno && px.importoContrassegno) {
+                    totaleContrassegno += parseFloat(px.importoContrassegno);
+                }
+            });
+            if (totaleContrassegno > 0) {
+                mostraConfermaContrassegnoGrafica(totaleContrassegno, () => {
+                    eseguiRitiroPacchi(selectedIds, tipo, ritiratoDa, pagato, dataScad, firmaData, dataAttuale);
+                });
+                return;
             }
-            p.stato = 'Scaduto (Reso)';
-            p.dataUscita = dataUscitaReso;
-            p.firmatoDa = 'RESO A CORRIERE';
-            p.firmaBase64 = '-';
-            p.pagato = false;
         }
-
-        salva();
-        closeModal();
+        
+        eseguiRitiroPacchi(selectedIds, tipo, ritiratoDa, pagato, dataScad, firmaData, dataAttuale);
     };
+}
+
+function mostraConfermaContrassegnoGrafica(totale, callbackSuccesso) {
+    const modal = document.getElementById('beautifyAlert');
+    const titolo = document.getElementById('alertTitle');
+    const msg = document.getElementById('alertMsg');
+    const footer = modal.querySelector('.modal-content');
+    
+    titolo.innerText = "RISCOSSIONE CONTRASSEGNO";
+    titolo.style.color = "var(--warning)";
+    msg.innerHTML = `Hai riscosso l'importo di <b style="font-size:1.4rem; color:#c92a2a;">€ ${totale.toFixed(2)}</b> per il contrassegno?`;
+    
+    const btnOkStandard = modal.querySelector('.modal-btn');
+    if(btnOkStandard) btnOkStandard.style.display = 'none';
+
+    if(document.getElementById('boxSceltaContrassegno')) document.getElementById('boxSceltaContrassegno').remove();
+
+    const boxScelta = document.createElement('div');
+    boxScelta.id = "boxSceltaContrassegno";
+    boxScelta.style = "display:flex; gap:10px; margin-top:20px; justify-content:center;";
+
+    const btnSi = document.createElement('button');
+    btnSi.className = "modal-btn";
+    btnSi.style.background = "var(--success)";
+    btnSi.style.flex = "1";
+    btnSi.innerText = "SÌ, RISCOSSO";
+    btnSi.onclick = function() {
+        modal.style.display = 'none';
+        boxScelta.remove();
+        if(btnOkStandard) btnOkStandard.style.display = 'block';
+        callbackSuccesso();
+    };
+
+    const btnNo = document.createElement('button');
+    btnNo.className = "modal-btn";
+    btnNo.style.background = "var(--warning)";
+    btnNo.style.flex = "1";
+    btnNo.innerText = "NO, ANNULLA";
+    btnNo.onclick = function() {
+        modal.style.display = 'none';
+        boxScelta.remove();
+        if(btnOkStandard) btnOkStandard.style.display = 'block';
+    };
+
+    boxScelta.appendChild(btnNo);
+    boxScelta.appendChild(btnSi);
+    footer.appendChild(boxScelta);
+    modal.style.display = 'flex';
+}
+
+function eseguiRitiroPacchi(selectedIds, tipo, ritiratoDa, pagato, dataScad, firmaData, dataAttuale) {
+    const sessioneId = Date.now();
+    selectedIds.forEach(sid => {
+        const px = pacchi.find(x => x.id === sid);
+        px.ritirato = true;
+        px.dataRitiro = (tipo === 'cliente') ? dataAttuale : dataScad;
+        px.ritiratoDa = (tipo === 'cliente') ? ritiratoDa.toUpperCase() : "SISTEMA (SCADUTO)";
+        px.isScaduto = (tipo === 'scaduto');
+        px.firma = (tipo === 'cliente') ? firmaData : null;
+        if(px.corriere === 'Corrieri No Pudo') px.pudoStatus = pagato ? 'pagato' : 'non_pagato';
+        if(selectedIds.length > 1) px.sessioneRitiro = sessioneId;
+    });
+    salva();
+    closeModal();
+    showFeedback(tipo);
+    
+    document.getElementById('search').value = "";
+    ['codiceTracciabilita','codiceRiconoscimento','nome','cognome'].forEach(id => document.getElementById(id).value = '');
+    aggiornaVista();
+}
+
+function ripristinaPacco(id) {
+    if(confirm("Ripristinare in giacenza?")) {
+        const p = pacchi.find(x => x.id === id);
+        p.ritirato = false; p.isScaduto = false; p.firma = null; p.pudoStatus = 'none'; p.sessioneRitiro = null;
+        salva();
+    }
+}
+
+function generaReport() {
+    const dataScelta = document.getElementById('dataReport').value;
+    if(!dataScelta) return showAlert("Seleziona una data!");
+    const dObj = new Date(dataScelta).toLocaleDateString('it-IT');
+    
+    const arrivati = pacchi.filter(p => p.dataTestoInserimento && p.dataTestoInserimento.startsWith(dObj)).sort((a, b) => a.dataInserimento - b.dataInserimento);
+    const ritirati = pacchi.filter(p => p.ritirato && p.dataRitiro && p.dataRitiro.startsWith(dObj)).sort((a, b) => {
+        const oraA = a.dataRitiro.split(", ")[1] || "";
+        const oraB = b.dataRitiro.split(", ")[1] || "";
+        return oraA.localeCompare(oraB);
+    });
+
+    const win = window.open("", "Report", "width=900,height=800");
+    let htmlArrivati = arrivati.map(p => {
+        const ora = p.dataTestoInserimento.includes(" ") ? p.dataTestoInserimento.split(" ")[1] : "--:--";
+        return `<tr><td>${p.riconoscimento}</td><td>${p.cognome.toUpperCase()} ${p.nome.toUpperCase()}</td><td>${p.corriere}</td><td>${p.codiceTracciabilita.toUpperCase()}</td><td>${ora}</td></tr>`;
+    }).join('');
+
+    let htmlRitirati = ritirati.map(p => {
+        const ora = p.dataRitiro.includes(", ") ? p.dataRitiro.split(", ")[1] : (p.dataRitiro.includes(" ") ? p.dataRitiro.split(" ")[1] : "--:--");
+        let extraContr = (p.isContrassegno && p.importoContrassegno) ? ` [CONTR. € ${p.importoContrassegno}]` : '';
+        return `<tr><td>${p.riconoscimento}</td><td>${p.ritiratoDa.toUpperCase()} ${p.isScaduto ? '(RESO)' : ''}${extraContr}</td><td>${p.corriere}</td><td>${p.codiceTracciabilita.toUpperCase()}</td><td>${ora}</td></tr>`;
+    }).join('');
+
+    win.document.write(`
+        <html>
+        <head>
+            <title>Report Giornaliero ${dObj}</title>
+            <style>
+                body { font-family: 'Segoe UI', sans-serif; padding: 30px; color: #333; }
+                h1 { color: #003399; text-align: center; margin-bottom: 30px; text-transform: uppercase; border-bottom: 4px solid #ffcc00; padding-bottom: 10px; }
+                h2 { background: #f0f2f5; padding: 10px; border-left: 5px solid #003399; margin-top: 30px; font-size: 1.2rem; }
+                .count-badge { background: #003399; color: #ffcc00; padding: 2px 10px; border-radius: 20px; margin-left: 10px; font-size: 0.9rem; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; margin-top: 10px; }
+                th, td { border: 1px solid #ddd; padding: 12px; text-align: left; font-size: 13px; }
+                th { background: #003399; color: white; text-transform: uppercase; font-size: 11px; }
+                tr:nth-child(even) { background-color: #f9f9f9; }
+                .footer { text-align: center; font-size: 10px; margin-top: 40px; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
+                @media print { .btn-print { display:none; } }
+                .btn-print { display: block; width: 200px; margin: 0 auto 20px auto; padding: 12px; background: #00b894; color: white; text-align: center; text-decoration: none; border-radius: 50px; font-weight: bold; cursor: pointer; border: none; }
+            </style>
+        </head>
+        <body>
+            <h1>Report Giornaliero - ${dObj}</h1>
+            <button class="btn-print" onclick="window.print()">🖨️ STAMPA REPORT</button>
+            <h2>1. PACCHI CARICATI <span class="count-badge">${arrivati.length} pacchi</span></h2>
+            <table>
+                <thead><tr><th>ID</th><th>Intestatario</th><th>Corriere</th><th>Tracking</th><th>Ora Arrivo</th></tr></thead>
+                <tbody>${htmlArrivati || '<tr><td colspan="5" style="text-align:center">Nessun pacco caricato in questa data</td></tr>'}</tbody>
+            </table>
+            <h2>2. PACCHI USCITI (RITIRATI / RESI) <span class="count-badge">${ritirati.length} pacchi</span></h2>
+            <table>
+                <thead><tr><th>ID</th><th>Ritirato Da / Stato</th><th>Corriere</th><th>Tracking</th><th>Ora Uscita</th></tr></thead>
+                <tbody>${htmlRitirati || '<tr><td colspan="5" style="text-align:center">Nessun pacco uscito in questa data</td></tr>'}</tbody>
+            </table>
+            <div class="footer">Centro Post@ Anaclerio - Sistema Gestionale Interno</div>
+        </body>
+        </html>
+    `);
+    win.document.close();
+    document.getElementById('reportModal').style.display = 'none';
+}
+
+function mostraFirma(id) {
+    const p = pacchi.find(x => x.id == id);
+    const pacchiSessione = p.sessioneRitiro ? pacchi.filter(px => px.sessioneRitiro === p.sessioneRitiro) : [p];
+    const win = window.open("", "Firma", "width=700,height=900");
+    let righeTabella = pacchiSessione.map(px => {
+        let detContr = (px.isContrassegno && px.importoContrassegno) ? `<span style="background:#ffe3e3; color:#c92a2a; padding:4px 8px; border-radius:5px; font-weight:bold; font-size:0.7rem; margin-left:5px;">CONTR. € ${px.importoContrassegno}</span>` : '';
+        return `
+            <tr>
+                <td style="padding:12px; border:1px solid #ddd; font-weight:bold;">#${px.riconoscimento}</td>
+                <td style="padding:12px; border:1px solid #ddd;">${px.corriere}</td>
+                <td style="padding:12px; border:1px solid #ddd; font-size:0.85rem;">${px.codiceTracciabilita.toUpperCase()}</td>
+                <td style="padding:12px; border:1px solid #ddd; text-align:center;">
+                    ${px.pudoStatus === 'pagato' ? '<span style="background:#d4edda; color:#155724; padding:4px 8px; border-radius:5px; font-weight:bold; font-size:0.7rem;">PAGATO €0.50</span>' : '-'}${detContr}
+                </td>
+            </tr>
+        `;
+    }).join('');
+    win.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Ricevuta Consegna - ${p.cognome.toUpperCase()}</title>
+            <style>
+                body { font-family: 'Segoe UI', sans-serif; color: #333; line-height: 1.6; padding: 0; margin: 0; background: #f0f2f5; }
+                .receipt-container { background: white; max-width: 650px; margin: 30px auto; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-radius: 15px; border-top: 10px solid #003399; }
+                .header { text-align: center; border-bottom: 2px solid #eee; padding-bottom: 25px; margin-bottom: 25px; }
+                .header img { max-width: 100px; margin-bottom: 10px; }
+                .header h1 { color: #003399; margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 1px; }
+                .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; background: #f8fafc; padding: 20px; border-radius: 10px; }
+                .info-item label { display: block; font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; }
+                .info-item span { font-size: 16px; font-weight: 600; color: #003399; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                th { background: #003399; color: white; text-align: left; padding: 12px; font-size: 13px; }
+                .signature-section { text-align: center; margin-top: 40px; border-top: 1px dashed #ccc; padding-top: 20px; }
+                .signature-box { border: 2px solid #003399; background: #fff; border-radius: 10px; padding: 10px; margin: 15px auto; width: 450px; max-width: 100%; }
+                .footer { text-align: center; font-size: 12px; color: #888; margin-top: 30px; }
+                .btn-print { display: block; width: 200px; margin: 20px auto; padding: 12px; background: #003399; color: white; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; }
+                @media print { .btn-print { display: none; } body { background: white; } .receipt-container { box-shadow: none; margin: 0; padding: 20px; } }
+            </style>
+        </head>
+        <body>
+            <div class="receipt-container">
+                <div class="header">
+                    <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp">
+                    <h1>Ricevuta di Consegna</h1>
+                </div>
+                <div class="info-grid">
+                    <div class="info-item"><label>Destinatario</label><span>${p.cognome.toUpperCase()} ${p.nome.toUpperCase()}</span></div>
+                    <div class="info-item"><label>Data e Ora Ritiro</label><span>${p.dataRitiro}</span></div>
+                    <div class="info-item"><label>Ritirato da</label><span>${p.ritiratoDa.toUpperCase()}</span></div>
+                    <div class="info-item"><label>Totale Pacchi</label><span>${pacchiSessione.length}</span></div>
+                </div>
+                <table>
+                    <thead><tr><th>ID</th><th>Corriere</th><th>Tracking Number</th><th>Servizi</th></tr></thead>
+                    <tbody>${righeTabella}</tbody>
+                </table>
+                <div class="signature-section">
+                    <p style="margin:0; font-weight:bold; color:#666;">Firma per Ricevuta</p>
+                    <div class="signature-box"><img src="${p.firma}" style="width:100%; height:auto; display:block;"></div>
+                </div>
+                <div class="footer">Centro Post@ Anaclerio - Grazie per haverci scelto!</div>
+                <button onclick="window.print()" class="btn-print">🖨️ STAMPA RICEVUTA</button>
+            </div>
+        </body>
+        </html>
+    `);
+}
+
+function showFeedback(tipo) {
+    const card = document.getElementById('successCard');
+    let icona = tipo === 'cliente' ? '✅' : '📦❌';
+    let titolo = tipo === 'cliente' ? 'RITIRO COMPLETATO' : 'PACCO RESO (SCADUTO)';
+    let colore = tipo === 'cliente' ? 'var(--success)' : 'var(--warning)';
+
+    card.innerHTML = `
+        <div style="font-size: 6rem; margin-bottom: 20px;">${icona}</div>
+        <h2 style="color:${colore}; font-size: 2.5rem; margin: 0; font-weight: 900;">${titolo}</h2>
+        <p style="color: #666; font-size: 1.2rem; font-weight: bold; margin-top: 10px;">Operazione registrata con successo</p>
+    `;
+    document.getElementById('successOverlay').style.display = 'flex';
+    setTimeout(() => { document.getElementById('successOverlay').style.display = 'none'; }, 2000);
 }
 
 function toggleCampiUscita() {
     const tipo = document.getElementById('tipoUscita').value;
-    const boxRitiro = document.getElementById('boxRitiroDettagli');
-    const boxScaduto = document.getElementById('boxScadutoDettagli');
-    const firmaSide = document.getElementById('firmaSide');
-
-    if (tipo === 'cliente') {
-        boxRitiro.style.display = 'block';
-        firmaSide.style.style = 'block';
-        firmaSide.style.visibility = 'visible';
-        boxScaduto.style.display = 'none';
-    } else {
-        boxRitiro.style.display = 'none';
-        firmaSide.style.style = 'none';
-        firmaSide.style.visibility = 'hidden';
-        boxScaduto.style.display = 'block';
-        
-        const dataOdierna = new Date();
-        const giorno = String(dataOdierna.getDate()).padStart(2, '0');
-        const mese = String(dataOdierna.getMonth() + 1).padStart(2, '0');
-        document.getElementById('dataScadenzaRimozione').value = `${dataOdierna.getFullYear()}-${mese}-${giorno}`;
-    }
-}
-
-function closeModal(){ document.getElementById('customModal').style.display = 'none'; }
-function clearCanvas(){ ctx.clearRect(0,0,canvas.width,canvas.height); ctx.lineWidth = 3; ctx.strokeStyle = "#000"; }
-
-function openEditModal(index) {
-    const p = pacchi[index];
-    const fieldsDiv = document.getElementById('editFields');
+    document.getElementById('boxRitiroDettagli').style.display = tipo === 'cliente' ? 'block' : 'none';
+    document.getElementById('boxScadutoDettagli').style.display = tipo === 'scaduto' ? 'block' : 'none';
+    document.getElementById('firmaSide').style.display = tipo === 'cliente' ? 'block' : 'none';
     
-    let keyAnag = `${p.cognome.trim().toUpperCase()}_${p.nome.trim().toUpperCase()}`;
-    let telAttuale = (anagraficaClienti[keyAnag] && anagraficaClienti[keyAnag].telefono) ? anagraficaClienti[keyAnag].telefono : '-';
-    if (telAttuale === '-') telAttuale = '';
-
-    let optionsCorrieri = corrieri.map(c => `<option value="${c}" ${p.corriere === c ? 'selected' : ''}>${c}</option>`).join('');
-    let optionsScaffali = '<option value="-">Nessuno</option>';
-    for(let i=1; i<=12; i++) {
-        optionsScaffali += `<option value="Scaffale ${i}" ${p.scaffale === `Scaffale ${i}` ? 'selected' : ''}>Scaffale ${i}</option>`;
-    }
-
-    let notePulite = p.note === '-' ? '' : p.note;
-    let contrassegnoPulito = p.contrassegno === '-' ? '' : p.contrassegno;
-
-    fieldsDiv.innerHTML = `
-        <div>
-            <label>ID Pacco</label>
-            <input type="text" id="editId" value="${p.codiceRiconoscimento || '-'}" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-        </div>
-        <div>
-            <label>Tracking (TRK)</label>
-            <input type="text" id="editTrk" value="${p.codiceTracciabilita}">
-        </div>
-        <div>
-            <label>Cognome</label>
-            <input type="text" id="editCognome" value="${p.cognome}">
-        </div>
-        <div>
-            <label>Nome</label>
-            <input type="text" id="editNome" value="${p.nome}">
-        </div>
-        <div>
-            <label>Corriere</label>
-            <select id="editCorriere">${optionsCorrieri}</select>
-        </div>
-        <div>
-            <label>Scaffale</label>
-            <select id="editScaffale">${optionsScaffali}</select>
-        </div>
-        <div>
-            <label>Grandezza</label>
-            <select id="editGrandezza">
-                <option value="P" ${p.grandezza==='P'?'selected':''}>P</option>
-                <option value="M" ${p.grandezza==='M'?'selected':''}>M</option>
-                <option value="G" ${p.grandezza==='G'?'selected':''}>G</option>
-            </select>
-        </div>
-        <div>
-            <label>Data Ingresso</label>
-            <input type="text" id="editDataIngresso" value="${p.dataIngresso}">
-        </div>
-        <div>
-            <label>Numero Telefonico Cliente</label>
-            <input type="text" id="editTelefonoCliente" value="${telAttuale}" placeholder="Nessun numero in anagrafica">
-        </div>
-        <div></div>
-        <div class="contrassegno-box">
-            <label style="color:#c92a2a; font-size:0.9rem;">💰 Importo Contrassegno (Lascia vuoto se non previsto)</label>
-            <input type="number" step="0.01" id="editContrassegno" value="${contrassegnoPulito}" placeholder="Es: 15.50" style="border-color:#ff4757;">
-        </div>
-        <div class="note-box">
-            <label style="color:var(--primary); font-size:0.9rem;">📝 Note Aggiuntive sul Pacco</label>
-            <input type="text" id="editNote" value="${notePulite}" placeholder="Inserisci anomalie, danneggiamenti o indicazioni speciali...">
-        </div>
-    `;
-
-    document.getElementById('editModal').style.display = 'flex';
-
-    document.getElementById('saveEditBtn').onclick = () => {
-        const vecchioCognome = p.cognome.trim().toUpperCase();
-        const vecchioNome = p.nome.trim().toUpperCase();
-        const vecchiaKey = `${vecchioCognome}_${vecchioNome}`;
-
-        const nCognome = document.getElementById('editCognome').value.trim().toUpperCase();
-        const nNome = document.getElementById('editNome').value.trim().toUpperCase();
-        const nTel = document.getElementById('editTelefonoCliente').value.trim() || '-';
-        
-        if(!nCognome) return showAlert("Il cognome è obbligatorio!");
-
-        p.codiceRiconoscimento = document.getElementById('editId').value.trim() || '-';
-        p.codiceTracciabilita = document.getElementById('editTrk').value.trim().toUpperCase() || '-';
-        p.cognome = nCognome;
-        p.nome = nNome || '-';
-        p.corriere = document.getElementById('editCorriere').value;
-        p.scaffale = document.getElementById('editScaffale').value;
-        p.grandezza = document.getElementById('editGrandezza').value;
-        p.dataIngresso = document.getElementById('editDataIngresso').value.trim();
-        
-        let notaInput = document.getElementById('editNote').value.trim();
-        p.note = notaInput ? notaInput : '-';
-
-        let contrInput = document.getElementById('editContrassegno').value.trim();
-        p.contrassegno = contrInput ? parseFloat(contrInput).toFixed(2) : '-';
-
-        const nuovaKey = `${nCognome}_${p.nome}`;
-        if (vecchiaKey !== nuovaKey) {
-            if (anagraficaClienti[vecchiaKey]) {
-                delete anagraficaClienti[vecchiaKey];
-            }
-        }
-        anagraficaClienti[nuovaKey] = {
-            cognome: nCognome,
-            nome: p.nome,
-            telefono: nTel
-        };
-
-        salva();
-        salvaAnagrafica();
-        closeEditModal();
-        renderAnagrafica(); 
-    };
-}
-
-function closeEditModal(){ document.getElementById('editModal').style.display = 'none'; }
-
-function ripristinaPacco(index) {
-    if(confirm("Vuoi riportare questo pacco in Giacenza?")) {
-        pacchi[index].stato = 'In Giacenza';
-        pacchi[index].dataUscita = '-';
-        pacchi[index].firmatoDa = '-';
-        pacchi[index].firmaBase64 = '-';
-        salva();
-    }
-}
-
-function cancellaRitirati() {
-    const q = document.getElementById('search').value.toUpperCase().trim();
-    if(!q) {
-        if(confirm("ATTENZIONE: Non hai inserito filtri di ricerca. Vuoi SVUOTARE l'INTERO ARCHIVIO STORICO dei pacchi consegnati/resi? L'operazione è irreversibile!")) {
-            pacchi = pacchi.filter(p => p.stato === 'In Giacenza');
-            salva();
-            showAlert("Intero archivio storico svuotato con successo.", "Archivio Svuotato");
-        }
+    const boxAlert = document.getElementById('boxAlertContrassegno');
+    if (tipo === 'scaduto') {
+        document.getElementById('boxPagamentoNoPudo').style.display = 'none';
+        boxAlert.style.display = 'none';
     } else {
-        if(confirm(`Vuoi eliminare permanentemente solo i record dell'archivio storico attualmente visualizzati tramite il filtro "${q}"?`)) {
-            pacchi = pacchi.filter(p => {
-                if (p.stato === 'In Giacenza') return true;
-                const matchString = `${p.cognome} ${p.nome} ${p.codiceTracciabilita} ${p.codiceRiconoscimento} ${p.stato}`.toUpperCase();
-                return !matchString.includes(q);
-            });
-            salva();
-            showAlert(`Record storici filtrati eliminati definitivamente.`, "Filtro Svuotato");
-        }
+        const selectedIds = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked')).map(cb => parseInt(cb.dataset.id));
+        let totaleContrassegno = 0;
+        selectedIds.forEach(sid => {
+            let px = pacchi.find(x => x.id === sid);
+            if(px && px.isContrassegno && px.importoContrassegno) {
+                totaleContrassegno += parseFloat(px.importoContrassegno);
+            }
+        });
+        if (totaleContrassegno > 0) boxAlert.style.display = 'block';
     }
 }
 
-function toggleSezioneRitirati() {
-    const div = document.getElementById('sezioneRitirati');
-    div.style.display = div.style.display === 'none' ? 'block' : 'none';
+function closeModal() { document.getElementById('customModal').style.display = 'none'; }
+function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+function toggleSezioneRitirati() { const s = document.getElementById('sezioneRitirati'); s.style.display = s.style.display === 'none' ? 'block' : 'none'; }
+function setTab(t){ tabAttiva = t; aggiornaVista(); }
+function cancellaRitirati(){
+    if(confirm(`Svuotare archivio di ${tabAttiva}?`)) {
+        pacchi = (tabAttiva === 'Tutti') ? pacchi.filter(p => !p.ritirato) : pacchi.filter(p => !(p.ritirato && p.corriere === tabAttiva));
+        salva();
+    }
+}
+
+function riproduciSuonoScanner() {
+    try {
+        var ContestoAudio = window.AudioContext || window.webkitAudioContext;
+        if (!ContestoAudio) return;
+        var ctxAudio = new ContestoAudio();
+        var oscillator = ctxAudio.createOscillator();
+        var gainNode = ctxAudio.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(ctxAudio.destination);
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(1200, ctxAudio.currentTime);
+        gainNode.gain.setValueAtTime(1.0, ctxAudio.currentTime); 
+        gainNode.gain.exponentialRampToValueAtTime(0.001, ctxAudio.currentTime + 0.15);
+        
+        oscillator.start(ctxAudio.currentTime);
+        oscillator.stop(ctxAudio.currentTime + 0.15);
+    } catch (e) {
+        console.log("Audio non supportato:", e);
+    }
 }
 
 function apriAnagraficaModal() {
-    document.getElementById('anagraficaModal').style.display = 'flex';
     document.getElementById('searchAnagrafica').value = '';
+    document.getElementById('anagraficaModal').style.display = 'flex';
     renderAnagrafica();
 }
 
 function renderAnagrafica() {
     const container = document.getElementById('anagraficaContainer');
-    const q = document.getElementById('searchAnagrafica').value.toUpperCase().trim();
+    const query = document.getElementById('searchAnagrafica').value.toLowerCase().trim();
     container.innerHTML = '';
 
-    const chiaviOrdinate = Object.keys(anagraficaClienti).sort();
+    let chiaviClienti = Object.keys(anagraficaClienti);
 
-    let contatoreVisualizzati = 0;
+    if (chiaviClienti.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#666; font-weight:bold; padding:20px;">Nessun cliente registrato in Anagrafica.</p>';
+        return;
+    }
 
-    chiaviOrdinate.forEach(key => {
+    let htmlSorgente = '';
+    
+    chiaviClienti.forEach(key => {
         const c = anagraficaClienti[key];
-        const stringaRicerca = `${c.cognome} ${c.nome} ${c.telefono}`.toUpperCase();
-        
-        if (q && !stringaRicerca.includes(q)) return;
+        const cognome = (c.cognome || '').toUpperCase();
+        const nome = (c.nome || '').toUpperCase();
+        const telefono = (c.telefono || '-');
 
-        contatoreVisualizzati++;
-        const item = document.createElement('div');
-        item.className = 'cliente-item';
-        item.style.cssText = "padding:12px 15px; margin-bottom:8px; border-left:6px solid var(--success); display:flex; justify-content:space-between; align-items:center; background:#fdfdfd;";
+        if (query && !cognome.toLowerCase().includes(query) && !nome.toLowerCase().includes(query) && !telefono.includes(query)) {
+            return;
+        }
 
-        item.innerHTML = `
-            <div>
-                <div style="font-size:1.05rem; font-weight:bold; color:#222;">${c.cognome} ${c.nome}</div>
-                <div style="font-size:0.9rem; color:#555; margin-top:3px;">📞 Telefono: <b>${c.telefono === '-' ? 'Nessuno' : c.telefono}</b></div>
-            </div>
-            <div>
-                <button class="action-btn-green" style="background:var(--primary); padding:6px 12px; font-size:0.75rem; margin-right:5px;" onclick="modificaClienteAnagrafica('${key}')">✏️ MODIFICA</button>
-                <button class="logout-btn" style="padding:6px 12px; font-size:0.75rem;" onclick="eliminaClienteAnagrafica('${key}')">🗑️ ELIMINA</button>
+        htmlSorgente += `
+            <div class="cliente-item" style="border-left-color: var(--success); padding: 15px; margin-bottom:8px;">
+                <div>
+                    <strong style="color: var(--primary); font-size:1.1rem;">${cognome} ${nome}</strong>
+                    <div style="margin-top:5px; color:#555; font-size:0.9rem;">📞 Telefono: <b>${telefono}</b></div>
+                </div>
+                <div style="display:flex; gap:5px;">
+                    <button class="edit-dots" style="margin:0; padding:8px 12px;" onclick="apriModificaCliente('${key}')">✏️</button>
+                    <button class="edit-dots" style="margin:0; padding:8px 12px; background:var(--warning); color:white;" onclick="eliminaClienteAnagrafica('${key}')">🗑️</button>
+                </div>
             </div>
         `;
-        container.appendChild(item);
     });
 
-    if (contatoreVisualizzati === 0) {
-        container.innerHTML = `<p style="text-align:center; color:#666; font-size:0.9rem; font-weight:bold; padding:20px;">Nessun cliente censito in anagrafica soddisfa i filtri.</p>`;
-    }
+    container.innerHTML = htmlSorgente || '<p style="text-align:center; color:#666; padding:20px;">Nessun cliente corrisponde ai criteri di ricerca.</p>';
 }
 
-function modificaClienteAnagrafica(key) {
+function apriModificaCliente(key) {
     const c = anagraficaClienti[key];
     document.getElementById('editAnagraficaCognome').value = c.cognome.toUpperCase();
     document.getElementById('editAnagraficaNome').value = c.nome.toUpperCase();
@@ -1666,195 +1704,6 @@ function eliminaClienteAnagrafica(key) {
         aggiornaVista();
     }
 }
-
-function generaReport() {
-    const dataSelezionataInput = document.getElementById('dataReport').value;
-    if(!dataSelezionataInput) return showAlert("Seleziona una data valida per elaborare il report!");
-
-    const parti = dataSelezionataInput.split('-');
-    const dataFiltroStr = `${parti[2]}/${parti[1]}/${parti[0]}`;
-
-    const registrati = pacchi.filter(p => p.dataIngresso === dataFiltroStr);
-    const consegnati = pacchi.filter(p => p.dataUscita === dataFiltroStr && p.stato === 'Ritirato');
-    const resi = pacchi.filter(p => p.dataUscita === dataFiltroStr && p.stato === 'Scaduto (Reso)');
-
-    let incassoGiacenzeScadute = 0;
-    consegnati.forEach(p => { if(p.pagato) incassoGiacenzeScadute += 0.50; });
-
-    let mappaCorrieriIngresso = {};
-    let mappaCorrieriUscita = {};
-    corrieri.forEach(c => { mappaCorrieriIngresso[c] = 0; mappaCorrieriUscita[c] = 0; });
-
-    registrati.forEach(p => { if(mappaCorrieriIngresso[p.corriere] !== undefined) mappaCorrieriIngresso[p.corriere]++; });
-    consegnati.forEach(p => { if(mappaCorrieriUscita[p.corriere] !== undefined) mappaCorrieriUscita[p.corriere]++; });
-
-    let htmlFinestra = `
-        <html>
-        <head>
-            <title>Report Giornaliero - ${dataFiltroStr}</title>
-            <style>
-                body { font-family: Arial, sans-serif; padding: 20px; color: #333; line-height:1.4; }
-                h1, h2, h3 { color: #003399; margin-bottom: 5px; text-transform: uppercase; }
-                .sezione { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #003399; }
-                .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top:15px; }
-                .box-stat { background: #f0f4f8; padding: 15px; border-radius: 8px; border: 1px solid #003399; }
-                table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size:13px; }
-                th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-                th { background-color: #003399; color: white; }
-                .totale-box { background: #fff9db; border: 2px solid #fab005; padding: 15px; border-radius: 8px; font-size: 1.2rem; font-weight: bold; margin-top: 15px; text-align:center; }
-            </style>
-        </head>
-        <body>
-            <div style="text-align:center; margin-bottom:20px;">
-                <h1 style="margin:0;">Centro Post@ Anaclerio</h1>
-                <h2 style="margin:5px 0; color:#555;">Riepilogo Attività Giornaliera</h2>
-                <h3 style="background:#003399; color:white; display:inline-block; padding:5px 15px; border-radius:4px;">DATA: ${dataFiltroStr}</h3>
-            </div>
-
-            <div class="sezione">
-                <h2>📊 Statistiche Generali</h2>
-                <div class="grid">
-                    <div class="box-stat">
-                        <b>Pacchi Presi in Carico (Ingresso):</b> <span style="font-size:1.3rem; color:#003399; font-weight:bold;">${registrati.length}</span>
-                    </div>
-                    <div class="box-stat">
-                        <b>Pacchi Consegnati ai Clienti:</b> <span style="font-size:1.3rem; color:#003399; font-weight:bold;">${consegnati.length}</span>
-                    </div>
-                    <div class="box-stat" style="grid-column: span 2; background:#fff5f5; border-color:#ff4757;">
-                        <b>Pacchi Scaduti (Resi a Corriere):</b> <span style="font-size:1.3rem; color:#ff4757; font-weight:bold;">${resi.length}</span>
-                    </div>
-                </div>
-                <div class="totale-box">
-                    💰 TOTALE EXTRA INCASSATO (GIACENZE > 30 GG): € ${incassoGiacenzeScadute.toFixed(2)}
-                </div>
-            </div>
-
-            <div class="sezione">
-                <h2>🚚 Dettaglio Movimentazione per Corriere</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Corriere</th>
-                            <th>Registrati (Ingresso)</th>
-                            <th>Consegnati (Uscita)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${corrieri.map(c => `
-                            <tr>
-                                <td><b>${c.toUpperCase()}</b></td>
-                                <td>${mappaCorrieriIngresso[c]} pacchi</td>
-                                <td>${mappaCorrieriUscita[c]} pacchi</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="sezione">
-                <h2>📋 Lista Pacchi Consegnati in Data Odierna</h2>
-                ${consegnati.length === 0 ? '<p>Nessun pacco ritirato in questa data.</p>' : `
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Cliente</th>
-                                <th>Corriere</th>
-                                <th>Tracking</th>
-                                <th>Ritirato Da</th>
-                                <th>Extra (€)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${consegnati.map(p => `
-                                <tr>
-                                    <td><b>${p.codiceRiconoscimento}</b></td>
-                                    <td>${p.cognome} ${p.nome}</td>
-                                    <td>${p.corriere}</td>
-                                    <td>${p.codiceTracciabilita}</td>
-                                    <td>${p.firmatoDa}</td>
-                                    <td>${p.pagato ? '€ 0.50' : '€ 0.00'}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                `}
-            </div>
-
-            <div class="sezione" style="border-bottom:none;">
-                <h2>↩️ Lista Pacchi Resi / Scaduti in Data Odierna</h2>
-                ${resi.length === 0 ? '<p>Nessun pacco rispedito al mittente in questa data.</p>' : `
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Cliente</th>
-                                <th>Corriere</th>
-                                <th>Tracking</th>
-                                <th>Posizione Orig.</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${resi.map(p => `
-                                <tr>
-                                    <td><b>${p.codiceRiconoscimento}</b></td>
-                                    <td>${p.cognome} ${p.nome}</td>
-                                    <td>${p.corriere}</td>
-                                    <td>${p.codiceTracciabilita}</td>
-                                    <td>${p.scaffale}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                `}
-            </div>
-
-            <div style="text-align:center; font-size:11px; color:#aaa; margin-top:40px; border-top:1px dashed #ccc; padding-top:10px;">
-                Gestionale Pacchi Centro Post@ Anaclerio - Report Generato Automaticamente
-            </div>
-
-            <script>
-                window.onload = function() { window.print(); }
-            <\/script>
-        </body>
-        </html>
-    `;
-
-    const finestraStampa = window.open('', '_blank');
-    finestraStampa.document.open();
-    finestraStampa.document.write(htmlFinestra);
-    finestraStampa.document.close();
-    document.getElementById('reportModal').style.display = 'none';
-}
-
-function riproduciSuonoScanner() {
-    try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-
-        // Configurazione dell'oscillatore: tipo onda sinusoidale 'sine'
-        oscillator.type = 'sine';
-        // Frequenza impostata a 1200 Hz per ottenere un tono molto più squillante, acuto e penetrante
-        oscillator.frequency.setValueAtTime(1200, audioCtx.currentTime); 
-        
-        // Impostiamo il volume hardware/software al massimo valore di guadagno consentito (1.0)
-        gainNode.gain.setValueAtTime(1.0, audioCtx.currentTime); 
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-
-        oscillator.start();
-        // Durata ottimale (0.15 secondi) per un avviso breve ma nitido nei locali rumorosi
-        oscillator.stop(audioCtx.currentTime + 0.15); 
-    } catch (e) {
-        console.error("Impossibile riprodurre l'effetto acustico", e);
-    }
-}
-
-// Inizializzazione select corrieri
-const selectIniziale = document.getElementById('corriereSelect');
-selectIniziale.innerHTML = '<option value="">Corriere...</option>' + corrieri.map(c => `<option value="${c}">${c}</option>`).join('');
 </script>
 </body>
 </html>
