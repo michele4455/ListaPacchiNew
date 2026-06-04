@@ -756,11 +756,19 @@ function gestisciAutocomplete(val) {
     if (!val || val.trim() === "") { nomeInput.value = ""; box.style.display = 'none'; return; }
     const query = val.toLowerCase().trim();
     const matches = [];
+    const chiaviViste = new Set();
     
     Object.keys(anagraficaClienti).forEach(key => {
         const c = anagraficaClienti[key];
         if (c.cognome && c.cognome.toLowerCase().includes(query)) {
-            matches.push({ cognome: c.cognome, nome: c.nome });
+            const cognomePulito = c.cognome.trim().toUpperCase();
+            const nomePulito = (c.nome || "").trim().toUpperCase();
+            const comboUnica = `${cognomePulito}_${nomePulito}`;
+            
+            if (!chiaviViste.has(comboUnica)) {
+                chiaviViste.add(comboUnica);
+                matches.push({ cognome: cognomePulito, nome: nomePulito });
+            }
         }
     });
 
@@ -921,6 +929,19 @@ firebase.auth().onAuthStateChanged((user) => {
         document.getElementById('mainPage').style.display = 'none';
     }
 });
+
+function aggiungerePacco(){
+    const trk = document.getElementById('codiceTracciabilita').value.trim().toUpperCase();
+    const c = document.getElementById('cognome').value.trim().toUpperCase();
+    const corr = document.getElementById('corriereSelect').value;
+    if(!c || !corr) return showAlert("Mancano dati (Cognome e Corriere sono obbligatori)!");
+
+    if (trk && trk !== '-') {
+        const esiste = pacchi.find(p => p.codiceTracciabilita === trk);
+        if (esiste) { mostraConfermaDuplicato(trk); return; }
+    }
+    finalizzaInserimentoPacco();
+}
 
 function aggiungiPacco(){
     const trk = document.getElementById('codiceTracciabilita').value.trim().toUpperCase();
