@@ -80,6 +80,18 @@
             font-weight: bold;
         }
 
+        /* Pulsante Anagrafica Verde Richiesto */
+        .anagrafica-btn {
+            background: var(--success);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
         .header-content img { 
             max-height: 80px;
             filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
@@ -173,7 +185,7 @@
         }
 
         /* Trasforma visivamente in maiuscolo durante la digitazione */
-        #codiceTracciabilita, #cognome, #nome, #search, #editCognome, #editNome, #editTrk, #modalInput {
+        #codiceTracciabilita, #cognome, #nome, #search, #editCognome, #editNome, #editTrk, #modalInput, #searchAnagrafica, #editAnagraficaCognome, #editAnagraficaNome {
             text-transform: uppercase;
         }
 
@@ -217,7 +229,7 @@
         .tabs button.active { background-color: var(--accent); color: var(--primary); transform: translateY(-2px);
         }
 
-        .pacco { 
+        .pacco, .cliente-item { 
             background: var(--white);
             border-left: 8px solid var(--primary); padding: 20px; 
             display: flex; justify-content: space-between; align-items: center; border-radius: 12px; 
@@ -235,10 +247,10 @@
         .tag-corriere { background: var(--primary); color: white; padding: 4px 10px; border-radius: 6px;
             font-weight: bold; font-size: 0.75rem; text-transform: uppercase; margin-right: 12px; }
         
-        .ritira-btn { background: var(--primary);
+        .ritira-btn, .action-btn-green { background: var(--primary);
             color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase;
         }
-        .ritira-btn:hover { background: var(--primary-dark);
+        .ritira-btn:hover, .action-btn-green:hover { background: var(--primary-dark);
         }
         
         .edit-dots {
@@ -289,7 +301,7 @@
             line-height: 1;
         }
 
-        #customModal, #editModal, #scannerModal, #reportModal { 
+        #customModal, #editModal, #scannerModal, #reportModal, #anagraficaModal, #editAnagraficaModal { 
             display: none;
             position: fixed; 
             z-index: 1000; 
@@ -302,7 +314,6 @@
             padding: 20px 0;
         }
 
-        /* Spostato l'alert generale sopra a qualunque finestra modale (z-index 3000) */
         #beautifyAlert {
             display: none;
             position: fixed; 
@@ -443,6 +454,41 @@
     </div>
 </div>
 
+<!-- NUOVA MODALE GESTIONE ANAGRAFICA CLIENTI -->
+<div id="anagraficaModal">
+    <div class="modal-content" style="max-width: 750px;">
+        <h3 style="color:var(--primary); margin-bottom:15px;">📋 Anagrafica Clienti Separata</h3>
+        <input type="text" id="searchAnagrafica" style="margin-bottom:15px; padding:12px; border-radius:8px;" placeholder="🔍 Cerca cliente per Cognome, Nome o Telefono..." oninput="renderAnagrafica()">
+        <div id="anagraficaContainer" style="max-height: 400px; overflow-y: auto; text-align: left; margin-bottom: 20px;"></div>
+        <button onclick="document.getElementById('anagraficaModal').style.display='none'" class="modal-btn" style="background:#e0e0e0; color:#333;">CHIUDI ANAGRAFICA</button>
+    </div>
+</div>
+
+<!-- NUOVA MODALE MODIFICA SINGOLO CLIENTE IN ANAGRAFICA -->
+<div id="editAnagraficaModal">
+    <div class="modal-content" style="max-width: 450px;">
+        <h3 style="color:var(--primary); margin-bottom:15px;">✏️ Modifica Dati Cliente</h3>
+        <div style="text-align: left; display: flex; flex-direction: column; gap: 10px;">
+            <div>
+                <label style="font-weight:bold; font-size: 0.85rem; color: var(--primary);">Cognome</label>
+                <input type="text" id="editAnagraficaCognome">
+            </div>
+            <div>
+                <label style="font-weight:bold; font-size: 0.85rem; color: var(--primary);">Nome</label>
+                <input type="text" id="editAnagraficaNome">
+            </div>
+            <div>
+                <label style="font-weight:bold; font-size: 0.85rem; color: var(--primary);">Numero di Telefono</label>
+                <input type="text" id="editAnagraficaTelefono" placeholder="Inserisci recapito telefonico">
+            </div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button onclick="document.getElementById('editAnagraficaModal').style.display='none'" class="modal-btn" style="background:#e0e0e0; color:#333;">ANNULLA</button>
+            <button id="saveAnagraficaBtn" class="modal-btn" style="background:var(--success); color:white;">SALVA CLIENTE</button>
+        </div>
+    </div>
+</div>
+
 <div id="editModal">
     <div class="modal-content">
         <h3 style="color:var(--primary); margin:0 0 20px 0;">Dettagli e Modifica Pacco</h3>
@@ -509,6 +555,8 @@
 <div id="mainPage" style="display:none;">
     <div class="app-header">
         <div class="header-actions">
+            <!-- Pulsante Verde inserito accanto a Report -->
+            <button class="anagrafica-btn" onclick="apriAnagraficaModal()">ANAGRAFICA CLIENTI</button>
             <button class="report-btn" onclick="document.getElementById('reportModal').style.display='flex'">REPORT</button>
             <button class="logout-btn" onclick="logout()">LOGOUT</button>
         </div>
@@ -581,6 +629,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 let pacchi = [];
+let anagraficaClienti = {}; // Struttura ad oggetto sincronizzata con Firebase per l'anagrafica indipendente
 const corrieri = ["InPost", "UPS", "Punto Poste", "DHL", "BRT", "GLS", "Amazon", "Corrieri No Pudo"];
 let tabAttiva = 'Tutti';
 let timeoutInattivita;
@@ -703,20 +752,24 @@ updateClock();
 
 function salva(){ db.ref('pacchi').set(pacchi); }
 
+// Sincronizzazione indipendente database dell'Anagrafica Clienti
+function salvaAnagrafica(){ db.ref('anagrafica_clienti').set(anagraficaClienti); }
+
+// I suggerimenti provengono ESCLUSIVAMENTE dall'Anagrafica Clienti indipendente
 function gestisciAutocomplete(val) {
     const box = document.getElementById('suggestionsBox');
     const nomeInput = document.getElementById('nome');
     if (!val || val.trim() === "") { nomeInput.value = ""; box.style.display = 'none'; return; }
-    const query = val.toLowerCase();
+    const query = val.toLowerCase().trim();
     const matches = [];
-    const seen = new Set();
-    pacchi.forEach(p => {
-        const fullKey = `${p.cognome}|${p.nome}`.toLowerCase();
-        if (p.cognome.toLowerCase().includes(query) && !seen.has(fullKey)) {
-            matches.push({ cognome: p.cognome, nome: p.nome });
-            seen.add(fullKey);
+    
+    Object.keys(anagraficaClienti).forEach(key => {
+        const c = anagraficaClienti[key];
+        if (c.cognome && c.cognome.toLowerCase().includes(query)) {
+            matches.push({ cognome: c.cognome, nome: c.nome });
         }
     });
+
     if (matches.length > 0) {
         box.innerHTML = matches.map((m, index) => 
             `<div class="suggestion-item" tabindex="0" data-index="${index}" onclick="selezionaSuggerimento('${m.cognome.replace(/'/g, "\\'")}', '${m.nome.replace(/'/g, "\\'")}')" onkeydown="gestisciTastoSuggerimento(event, '${m.cognome.replace(/'/g, "\\'")}', '${m.nome.replace(/'/g, "\\'")}')"><span><b>${m.cognome.toUpperCase()}</b> ${m.nome.toUpperCase()}</span></div>`
@@ -779,12 +832,9 @@ function gestisciInvioNuacco(e) {
                 return;
             }
             e.preventDefault();
-            
-            // Se l'invio arriva dal campo del tracking, sposta il focus all'ID pacco senza salvare
             if (target.id === 'codiceTracciabilita') {
                 document.getElementById('codiceRiconoscimento').focus();
             } else {
-                // Per tutti gli altri campi, mantiene il comportamento originale di aggiunta pacco
                 aggiungiPacco();
             }
         }
@@ -843,6 +893,32 @@ firebase.auth().onAuthStateChanged((user) => {
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainPage').style.display = 'block';
         resetInattivita();
+        
+        // Sincronizzazione dell'Anagrafica Clienti da Firebase
+        db.ref('anagrafica_clienti').on('value', (snapshot) => {
+            anagraficaClienti = snapshot.val() ? snapshot.val() : {};
+            
+            // Prima esecuzione o controllo retroattivo: importa i clienti dai pacchi storici se non popolata
+            db.ref('pacchi').once('value', (pSnap) => {
+                let pacchiStorici = pSnap.val() ? pSnap.val() : [];
+                let modificato = false;
+                pacchiStorici.forEach(p => {
+                    if (p.cognome && p.nome) {
+                        let key = `${p.cognome.trim().toUpperCase()}_${p.nome.trim().toUpperCase()}`;
+                        if (!anagraficaClienti[key]) {
+                            anagraficaClienti[key] = {
+                                cognome: p.cognome.trim().toUpperCase(),
+                                nome: p.nome.trim().toUpperCase(),
+                                telefono: '-'
+                            };
+                            modificato = true;
+                        }
+                    }
+                });
+                if (modificato) { salvaAnagrafica(); }
+            });
+        });
+
         db.ref('pacchi').off('value');
         db.ref('pacchi').on('value', (snapshot) => {
             pacchi = snapshot.val() ? snapshot.val() : [];
@@ -880,6 +956,19 @@ function finalizzaInserimentoPacco() {
         num = pG.length > 0 ? parseInt(pG[pG.length-1].riconoscimento) + 1 : 1;
     }
     
+    // Controllo e aggiunta automatica all'Anagrafica se il cliente non esiste
+    if (c) {
+        let keyAnagrafica = `${c}_${n}`;
+        if (!anagraficaClienti[keyAnagrafica]) {
+            anagraficaClienti[keyAnagrafica] = {
+                cognome: c,
+                nome: n,
+                telefono: '-'
+            };
+            salvaAnagrafica();
+        }
+    }
+
     pacchi.push({
         id: Date.now(),
         dataInserimento: new Date().getTime(),
@@ -971,7 +1060,7 @@ function aggiornaVista(){
     if(sel && sel.innerHTML === "") sel.innerHTML = '<option value="">Corriere...</option>' + corrieri.map(c => `<option value="${c}">${c}</option>`).join('');
     
     const tabsBox = document.getElementById('tabs');
-    if(tabsBox) tabsBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">Tutti</button>` + corrieri.map(c => `<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}">${c}</button>`).join('');
+    if(tabsBox) tabsBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">Tutti</button>` + corrieri.map(c => `<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}"></button>`).join('');
     
     const search = document.getElementById('search').value.toLowerCase().trim();
     
@@ -1036,6 +1125,10 @@ function generateHtml(p) {
 
     let badgeContrassegno = (!p.ritirato && p.isContrassegno) ? `<span class="tag-contrassegno">CONTRASSEGNO € ${p.importoContrassegno}</span>` : '';
 
+    // Recupera numero di telefono se disponibile in anagrafica per visualizzarlo come dato di contatto
+    let keyAnagrafica = `${p.cognome.toUpperCase()}_${p.nome.toUpperCase()}`;
+    let telContatto = (anagraficaClienti[keyAnagrafica] && anagraficaClienti[keyAnagrafica].telefono && anagraficaClienti[keyAnagrafica].telefono !== '-') ? ` • 📞 Tel: ${anagraficaClienti[keyAnagrafica].telefono}` : '';
+
     const azione = p.ritirato ? `<button class="btn-ripristina" onclick="ripristinaPacco(${p.id})">RIPRISTINA</button>` : `
           <button class="ritira-btn" onclick="handleRitira(${p.id})">RITIRA</button>
           <button class="edit-dots" onclick="apriModifica(${p.id})">✏️</button>
@@ -1045,7 +1138,7 @@ function generateHtml(p) {
             ${emojiIcona}
             <div>
                 <span class="tag-grandezza">${p.grandezza}</span><span class="tag-corriere">${p.corriere}</span>${badgeContrassegno}<strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome.toUpperCase()}
-                <br><small style="display:block; margin-top:5px; color:#666;">📍 ${p.scaffale} • 🔍 TRK: <span class="highlight-trk" onclick="copiaTracking('${p.codiceTracciabilita}')">${p.codiceTracciabilita}</span><br>📅 Arrivato il: ${p.dataTestoInserimento || '-'}</small>
+                <br><small style="display:block; margin-top:5px; color:#666;">📍 ${p.scaffale} • 🔍 TRK: <span class="highlight-trk" onclick="copiaTracking('${p.codiceTracciabilita}')">${p.codiceTracciabilita}</span>${telContatto}<br>📅 Arrivato il: ${p.dataTestoInserimento || '-'}</small>
                 ${statoTesto}
             </div>
         </div>
@@ -1508,6 +1601,102 @@ function riproduciSuonoScanner() {
         oscillator.stop(ctxAudio.currentTime + 0.15);
     } catch (e) {
         console.log("Audio non supportato:", e);
+    }
+}
+
+/* =========================================================================
+   FUNZIONI EX-NOVO PER LA GESTIONE COMPLETA DELL'ANAGRAFICA CLIENTI
+   ========================================================================= */
+
+function apriAnagraficaModal() {
+    document.getElementById('searchAnagrafica').value = '';
+    document.getElementById('anagraficaModal').style.display = 'flex';
+    renderAnagrafica();
+}
+
+function renderAnagrafica() {
+    const container = document.getElementById('anagraficaContainer');
+    const query = document.getElementById('searchAnagrafica').value.toLowerCase().trim();
+    container.innerHTML = '';
+
+    let chiaviClienti = Object.keys(anagraficaClienti);
+
+    if (chiaviClienti.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#666; font-weight:bold; padding:20px;">Nessun cliente registrato in Anagrafica.</p>';
+        return;
+    }
+
+    let htmlSorgente = '';
+    
+    chiaviClienti.forEach(key => {
+        const c = anagraficaClienti[key];
+        const cognome = (c.cognome || '').toUpperCase();
+        const nome = (c.nome || '').toUpperCase();
+        const telefono = (c.telefono || '-');
+
+        // Filtro di ricerca su Cognome, Nome o Recapito Telefonico
+        if (query && !cognome.toLowerCase().includes(query) && !nome.toLowerCase().includes(query) && !telefono.includes(query)) {
+            return;
+        }
+
+        htmlSorgente += `
+            <div class="cliente-item" style="border-left-color: var(--success); padding: 15px; margin-bottom:8px;">
+                <div>
+                    <strong style="color: var(--primary); font-size:1.1rem;">${cognome} ${nome}</strong>
+                    <div style="margin-top:5px; color:#555; font-size:0.9rem;">📞 Telefono: <b>${telefono}</b></div>
+                </div>
+                <div style="display:flex; gap:5px;">
+                    <button class="edit-dots" style="margin:0; padding:8px 12px;" onclick="apriModificaCliente('${key}')">✏️</button>
+                    <button class="edit-dots" style="margin:0; padding:8px 12px; background:var(--warning); color:white;" onclick="eliminaClienteAnagrafica('${key}')">🗑️</button>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = htmlSorgente || '<p style="text-align:center; color:#666; padding:20px;">Nessun cliente corrisponde ai criteri di ricerca.</p>';
+}
+
+function apriModificaCliente(key) {
+    const c = anagraficaClienti[key];
+    document.getElementById('editAnagraficaCognome').value = c.cognome.toUpperCase();
+    document.getElementById('editAnagraficaNome').value = c.nome.toUpperCase();
+    document.getElementById('editAnagraficaTelefono').value = c.telefono === '-' ? '' : c.telefono;
+    
+    document.getElementById('editAnagraficaModal').style.display = 'flex';
+    
+    document.getElementById('saveAnagraficaBtn').onclick = () => {
+        const nuovoCognome = document.getElementById('editAnagraficaCognome').value.trim().toUpperCase();
+        const nuovoNome = document.getElementById('editAnagraficaNome').value.trim().toUpperCase();
+        const nuovoTelefono = document.getElementById('editAnagraficaTelefono').value.trim() || '-';
+
+        if (!nuovoCognome) return showAlert("Il cognome è obbligatorio!");
+
+        const nuovaKey = `${nuovoCognome}_${nuovoNome}`;
+
+        // Se la chiave primaria cambia, rimuoviamo il vecchio record per evitare duplicati orfani
+        if (nuovaKey !== key) {
+            delete anagraficaClienti[key];
+        }
+
+        anagraficaClienti[nuovaKey] = {
+            cognome: nuovoCognome,
+            nome: nuovoNome,
+            telefono: nuovoTelefono
+        };
+
+        salvaAnagrafica();
+        document.getElementById('editAnagraficaModal').style.display = 'none';
+        renderAnagrafica();
+        aggiornaVista(); // Aggiorna i dati di contatto in tempo reale sulla UI principale dei pacchi
+    };
+}
+
+function eliminaClienteAnagrafica(key) {
+    if (confirm("Sei sicuro di voler eliminare permanentemente questo cliente dall'Anagrafica?\nI pacchi storici e in giacenza non verranno cancellati.")) {
+        delete anagraficaClienti[key];
+        salvaAnagrafica();
+        renderAnagrafica();
+        aggiornaVista();
     }
 }
 </script>
