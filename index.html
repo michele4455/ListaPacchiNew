@@ -651,8 +651,10 @@ function startScanner(targetInputId) {
     document.getElementById('torchBtn').innerText = "🔦 ACCENDI TORCIA";
 
     const config = { 
-        fps: 20, 
+        fps: 30, // Portato a 30 fps per la massima fluidità
         qrbox: { width: 280, height: 160 },
+        rememberLastUsedCamera: true, // Ricorda la fotocamera per aprirsi prima
+        aspectRatio: 1.777778,
         formatsToSupport: [ 
             Html5QrcodeSupportedFormats.QR_CODE, 
             Html5QrcodeSupportedFormats.CODE_128, 
@@ -1595,23 +1597,35 @@ function cancellaRitirati(){
 
 function riproduciSuonoScanner() {
     try {
-        var ContestoAudio = window.AudioContext || window.webkitAudioContext;
-        if (!ContestoAudio) return;
-        var ctxAudio = new ContestoAudio();
-        var oscillator = ctxAudio.createOscillator();
-        var gainNode = ctxAudio.createGain();
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
-        oscillator.connect(gainNode);
-        gainNode.connect(ctxAudio.destination);
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(1200, ctxAudio.currentTime);
-        gainNode.gain.setValueAtTime(1.0, ctxAudio.currentTime); 
-        gainNode.gain.exponentialRampToValueAtTime(0.001, ctxAudio.currentTime + 0.15);
+        // Primo oscillatore (Suono principale cristallino)
+        const osc1 = audioCtx.createOscillator();
+        // Secondo oscillatore (Suono secondario per raddoppiare la potenza acustica)
+        const osc2 = audioCtx.createOscillator();
         
-        oscillator.start(ctxAudio.currentTime);
-        oscillator.stop(ctxAudio.currentTime + 0.15);
+        const gainNode = audioCtx.createGain();
+
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(850, audioCtx.currentTime); // Frequenza ad alta penetrazione auricolare
+        
+        osc2.type = 'square'; // L'onda quadra taglia il rumore ambientale molto meglio
+        osc2.frequency.setValueAtTime(854, audioCtx.currentTime); 
+
+        gainNode.gain.setValueAtTime(1.0, audioCtx.currentTime); // Volume hardware impostato al massimo (100%)
+
+        osc1.connect(gainNode);
+        osc2.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        osc1.start();
+        osc2.start();
+        
+        // Durata del beep (0.12 secondi)
+        osc1.stop(audioCtx.currentTime + 0.12);
+        osc2.stop(audioCtx.currentTime + 0.12);
     } catch (e) {
-        console.log("Audio non supportato:", e);
+        console.error("Impossibile riprodurre il beep:", e);
     }
 }
 
