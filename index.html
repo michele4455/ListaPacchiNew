@@ -1393,69 +1393,85 @@ function ripristinaPacco(id) {
     }
 }
 
-function generaReport() {
-    const dataScelta = document.getElementById('dataReport').value;
-    if(!dataScelta) return showAlert("Seleziona una data!");
-    const dObj = new Date(dataScelta).toLocaleDateString('it-IT');
-    
-    const arrivati = pacchi.filter(p => p.dataTestoInserimento && p.dataTestoInserimento.startsWith(dObj)).sort((a, b) => a.dataInserimento - b.dataInserimento);
-    const ritirati = pacchi.filter(p => p.ritirato && p.dataRitiro && p.dataRitiro.startsWith(dObj)).sort((a, b) => {
-        const oraA = a.dataRitiro.split(", ")[1] || "";
-        const oraB = b.dataRitiro.split(", ")[1] || "";
-        return oraA.localeCompare(oraB);
+function generaReportRitirati() {
+    const inizio = document.getElementById('reportInizio').value;
+    const fine = document.getElementById('reportFine').value;
+    if (!inizio || !fine) return showAlert("Seleziona entrambe le date!");
+
+    const dataInizio = new Date(inizio);
+    dataInizio.setHours(0,0,0,0);
+    const dataFine = new Date(fine);
+    dataFine.setHours(23,59,59,999);
+
+    const filtrati = Object.values(storicoPacchi).filter(p => {
+        if (!p.dataRitiro) return false;
+        const d = new Date(p.dataRitiro);
+        return d >= dataInizio && d <= dataFine;
     });
 
-    const win = window.open("", "Report", "width=900,height=800");
-    let htmlArrivati = arrivati.map(p => {
-        const ora = p.dataTestoInserimento.includes(" ") ? p.dataTestoInserimento.split(" ")[1] : "--:--";
-        return `<tr><td>${p.riconoscimento}</td><td>${p.cognome.toUpperCase()} ${p.nome.toUpperCase()}</td><td>${p.corriere}</td><td>${p.codiceTracciabilita.toUpperCase()}</td><td>${ora}</td></tr>`;
-    }).join('');
+    filtrati.sort((a,b) => new Date(a.dataRitiro) - new Date(b.dataRitiro));
 
-    let htmlRitirati = ritirati.map(p => {
-        const ora = p.dataRitiro.includes(", ") ? p.dataRitiro.split(", ")[1] : (p.dataRitiro.includes(" ") ? p.dataRitiro.split(" ")[1] : "--:--");
-        let extraContr = (p.isContrassegno && p.importoContrassegno) ? ` [CONTR. € ${p.importoContrassegno}]` : '';
-        return `<tr><td>${p.riconoscimento}</td><td>${p.ritiratoDa.toUpperCase()} ${p.isScaduto ? '(RESO)' : ''}${extraContr}</td><td>${p.corriere}</td><td>${p.codiceTracciabilita.toUpperCase()}</td><td>${ora}</td></tr>`;
-    }).join('');
+    const div = document.getElementById('reportRitiratiRisultato');
+    if (filtrati.length === 0) {
+        div.innerHTML = "<p>Nessun pacco ritirato in questo periodo.</p>";
+        return;
+    }
 
-    win.document.write(`
-        <html>
-        <head>
-            <title>Report Giornaliero ${dObj}</title>
-            <style>
-                body { font-family: 'Segoe UI', sans-serif; padding: 30px; color: #333; }
-                h1 { color: #003399; text-align: center; margin-bottom: 30px; text-transform: uppercase; border-bottom: 4px solid #ffcc00; padding-bottom: 10px; }
-                h2 { background: #f0f2f5; padding: 10px; border-left: 5px solid #003399; margin-top: 30px; font-size: 1.2rem; }
-                .count-badge { background: #003399; color: #ffcc00; padding: 2px 10px; border-radius: 20px; margin-left: 10px; font-size: 0.9rem; }
-                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; margin-top: 10px; }
-                th, td { border: 1px solid #ddd; padding: 12px; text-align: left; font-size: 13px; }
-                th { background: #003399; color: white; text-transform: uppercase; font-size: 11px; }
-                tr:nth-child(even) { background-color: #f9f9f9; }
-                .footer { text-align: center; font-size: 10px; margin-top: 40px; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
-                @media print { .btn-print { display:none; } }
-                .btn-print { display: block; width: 200px; margin: 0 auto 20px auto; padding: 12px; background: #00b894; color: white; text-align: center; text-decoration: none; border-radius: 50px; font-weight: bold; cursor: pointer; border: none; }
-            </style>
-        </head>
-        <body>
-            <h1>Report Giornaliero - ${dObj}</h1>
-            <button class="btn-print" onclick="window.print()">🖨️ STAMPA REPORT</button>
-            <h2>1. PACCHI CARICATI <span class="count-badge">${arrivati.length} pacchi</span></h2>
-            <table>
-                <thead><tr><th>ID</th><th>Intestatario</th><th>Corriere</th><th>Tracking</th><th>Ora Arrivo</th></tr></thead>
-                <tbody>${htmlArrivati || '<tr><td colspan="5" style="text-align:center">Nessun pacco caricato in questa data</td></tr>'}</tbody>
-            </table>
-            <h2>2. PACCHI USCITI (RITIRATI / RESI) <span class="count-badge">${ritirati.length} pacchi</span></h2>
-            <table>
-                <thead><tr><th>ID</th><th>Ritirato Da / Stato</th><th>Corriere</th><th>Tracking</th><th>Ora Uscita</th></tr></thead>
-                <tbody>${htmlRitirati || '<tr><td colspan="5" style="text-align:center">Nessun pacco uscito in questa data</td></tr>'}</tbody>
-            </table>
-            <div class="footer">Centro Post@ Anaclerio - Sistema Gestionale Interno</div>
-        </body>
-        </html>
-    `);
-    win.document.close();
-    document.getElementById('reportModal').style.display = 'none';
+    let html = `
+        <button class="btn btn-primary" onclick="stampaReportRitirati()" style="margin-bottom:15px;"><i class="fas fa-print"></i> Stampa Report</button>
+        <div class="table-responsive">
+            <table class="table" id="tabellaReportRitirati">
+                <thead>
+                    <tr>
+                        <th>Data Ritiro</th>
+                        <th>Cliente</th>
+                        <th>Codice</th>
+                        <th>Scaffale</th>
+                        <th>Ritiro Da</th>
+                        <th>Note</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    filtrati.forEach(p => {
+        const dataFormattata = p.dataRitiro ? formattaDataOra(p.dataRitiro) : '-';
+        const note = p.note ? p.note : '-';
+        // Creiamo una chiave sicura per passare l'oggetto alla funzione proprio come nella lista pacchi ritirati
+        const pEscaped = btoa(unescape(encodeURIComponent(JSON.stringify(p))));
+        
+        html += `
+            <tr>
+                <td><b>${dataFormattata}</b></td>
+                <td>${p.cognome} ${p.nome}</td>
+                <td><span class="badge badge-primary">${p.codice}</span></td>
+                <td>${p.scaffale}</td>
+                <td><span class="badge badge-success">${p.ritiratoDa || 'Destinatario'}</span></td>
+                <td><small>${note}</small></td>
+                <td>
+                    <button class="btn btn-primary btn-sm" onclick="apriModalRicevutaReport('${pEscaped}')">
+                        <i class="fas fa-file-signature"></i> Apri Prova di Consegna
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+
+    html += `</tbody></table></div>`;
+    div.innerHTML = html;
 }
 
+function apriModalRicevutaReport(pBase64) {
+    try {
+        const p = JSON.parse(decodeURIComponent(escape(atob(pBase64))));
+        mostraRicevutaRitiro(p);
+    } catch(e) {
+        showAlert("Errore nell'apertura della prova di consegna");
+        console.error(e);
+    }
+}
+    
 function mostraFirma(id) {
     const p = pacchi.find(x => x.id == id);
     const pacchiSessione = p.sessioneRitiro ? pacchi.filter(px => px.sessioneRitiro === p.sessioneRitiro) : [p];
