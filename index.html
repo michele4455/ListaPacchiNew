@@ -454,7 +454,6 @@
     </div>
 </div>
 
-<!-- NUOVA MODALE GESTIONE ANAGRAFICA CLIENTI -->
 <div id="anagraficaModal">
     <div class="modal-content" style="max-width: 750px;">
         <h3 style="color:var(--primary); margin-bottom:15px;">📋 Anagrafica Clienti Separata</h3>
@@ -464,7 +463,6 @@
     </div>
 </div>
 
-<!-- NUOVA MODALE MODIFICA SINGOLO CLIENTE IN ANAGRAFICA -->
 <div id="editAnagraficaModal">
     <div class="modal-content" style="max-width: 450px;">
         <h3 style="color:var(--primary); margin-bottom:15px;">✏️ Modifica Dati Cliente</h3>
@@ -555,7 +553,6 @@
 <div id="mainPage" style="display:none;">
     <div class="app-header">
         <div class="header-actions">
-            <!-- Pulsante Verde inserito accanto a Report -->
             <button class="anagrafica-btn" onclick="apriAnagraficaModal()">ANAGRAFICA CLIENTI</button>
             <button class="report-btn" onclick="document.getElementById('reportModal').style.display='flex'">REPORT</button>
             <button class="logout-btn" onclick="logout()">LOGOUT</button>
@@ -629,7 +626,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 let pacchi = [];
-let anagraficaClienti = {}; // Struttura ad oggetto sincronizzata con Firebase per l'anagrafica indipendente
+let anagraficaClienti = {}; 
 const corrieri = ["InPost", "UPS", "Punto Poste", "DHL", "BRT", "GLS", "Amazon", "Corrieri No Pudo"];
 let tabAttiva = 'Tutti';
 let timeoutInattivita;
@@ -751,11 +748,8 @@ setInterval(updateClock, 1000);
 updateClock();
 
 function salva(){ db.ref('pacchi').set(pacchi); }
-
-// Sincronizzazione indipendente database dell'Anagrafica Clienti
 function salvaAnagrafica(){ db.ref('anagrafica_clienti').set(anagraficaClienti); }
 
-// I suggerimenti provengono ESCLUSIVAMENTE dall'Anagrafica Clienti indipendente
 function gestisciAutocomplete(val) {
     const box = document.getElementById('suggestionsBox');
     const nomeInput = document.getElementById('nome');
@@ -894,11 +888,9 @@ firebase.auth().onAuthStateChanged((user) => {
         document.getElementById('mainPage').style.display = 'block';
         resetInattivita();
         
-        // Sincronizzazione dell'Anagrafica Clienti da Firebase
         db.ref('anagrafica_clienti').on('value', (snapshot) => {
             anagraficaClienti = snapshot.val() ? snapshot.val() : {};
             
-            // Prima esecuzione o controllo retroattivo: importa i clienti dai pacchi storici se non popolata
             db.ref('pacchi').once('value', (pSnap) => {
                 let pacchiStorici = pSnap.val() ? pSnap.val() : [];
                 let modificato = false;
@@ -930,7 +922,7 @@ firebase.auth().onAuthStateChanged((user) => {
     }
 });
 
-function aggiungiPacco(){
+function aggiungerePacco(){
     const trk = document.getElementById('codiceTracciabilita').value.trim().toUpperCase();
     const c = document.getElementById('cognome').value.trim().toUpperCase();
     const corr = document.getElementById('corriereSelect').value;
@@ -956,7 +948,6 @@ function finalizzaInserimentoPacco() {
         num = pG.length > 0 ? parseInt(pG[pG.length-1].riconoscimento) + 1 : 1;
     }
     
-    // Controllo e aggiunta automatica all'Anagrafica se il cliente non esiste
     if (c) {
         let keyAnagrafica = `${c}_${n}`;
         if (!anagraficaClienti[keyAnagrafica]) {
@@ -1059,8 +1050,9 @@ function aggiornaVista(){
     const sel = document.getElementById('corriereSelect');
     if(sel && sel.innerHTML === "") sel.innerHTML = '<option value="">Corriere...</option>' + corrieri.map(c => `<option value="${c}">${c}</option>`).join('');
     
+    // CORRETTO: Adesso reinserisce correttamente il nome del corriere (${c}) dentro i bottoni rotondi (le tab)
     const tabsBox = document.getElementById('tabs');
-    if(tabsBox) tabsBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">Tutti</button>` + corrieri.map(c => `<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}"></button>`).join('');
+    if(tabsBox) tabsBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">Tutti</button>` + corrieri.map(c => `<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}">${c}</button>`).join('');
     
     const search = document.getElementById('search').value.toLowerCase().trim();
     
@@ -1125,7 +1117,6 @@ function generateHtml(p) {
 
     let badgeContrassegno = (!p.ritirato && p.isContrassegno) ? `<span class="tag-contrassegno">CONTRASSEGNO € ${p.importoContrassegno}</span>` : '';
 
-    // Recupera numero di telefono se disponibile in anagrafica per visualizzarlo come dato di contatto
     let keyAnagrafica = `${p.cognome.toUpperCase()}_${p.nome.toUpperCase()}`;
     let telContatto = (anagraficaClienti[keyAnagrafica] && anagraficaClienti[keyAnagrafica].telefono && anagraficaClienti[keyAnagrafica].telefono !== '-') ? ` • 📞 Tel: ${anagraficaClienti[keyAnagrafica].telefono}` : '';
 
@@ -1604,10 +1595,6 @@ function riproduciSuonoScanner() {
     }
 }
 
-/* =========================================================================
-   FUNZIONI EX-NOVO PER LA GESTIONE COMPLETA DELL'ANAGRAFICA CLIENTI
-   ========================================================================= */
-
 function apriAnagraficaModal() {
     document.getElementById('searchAnagrafica').value = '';
     document.getElementById('anagraficaModal').style.display = 'flex';
@@ -1634,7 +1621,6 @@ function renderAnagrafica() {
         const nome = (c.nome || '').toUpperCase();
         const telefono = (c.telefono || '-');
 
-        // Filtro di ricerca su Cognome, Nome o Recapito Telefonico
         if (query && !cognome.toLowerCase().includes(query) && !nome.toLowerCase().includes(query) && !telefono.includes(query)) {
             return;
         }
@@ -1673,7 +1659,6 @@ function apriModificaCliente(key) {
 
         const nuovaKey = `${nuovoCognome}_${nuovoNome}`;
 
-        // Se la chiave primaria cambia, rimuoviamo il vecchio record per evitare duplicati orfani
         if (nuovaKey !== key) {
             delete anagraficaClienti[key];
         }
@@ -1687,7 +1672,7 @@ function apriModificaCliente(key) {
         salvaAnagrafica();
         document.getElementById('editAnagraficaModal').style.display = 'none';
         renderAnagrafica();
-        aggiornaVista(); // Aggiorna i dati di contatto in tempo reale sulla UI principale dei pacchi
+        aggiornaVista(); 
     };
 }
 
