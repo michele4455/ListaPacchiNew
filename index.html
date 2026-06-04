@@ -271,6 +271,14 @@
         .scadenza-alert { font-size: 1.8rem; cursor: pointer; margin-right: 15px; vertical-align: middle;
             animation: alertBlink 1s infinite; display: inline-block; }
 
+        .note-indicatore {
+            font-size: 1.5rem;
+            cursor: pointer;
+            margin-right: 15px;
+            vertical-align: middle;
+            display: inline-block;
+        }
+
         .stato-emoji {
             display: inline-flex;
             align-items: center;
@@ -367,6 +375,14 @@
             padding: 12px;
             border-radius: 10px;
             border: 2px dashed #ff4757;
+            margin-top: 10px;
+        }
+        .note-box {
+            grid-column: span 2;
+            background: #e8f4fd;
+            padding: 12px;
+            border-radius: 10px;
+            border: 2px dashed #003399;
             margin-top: 10px;
         }
         .tag-contrassegno {
@@ -874,7 +890,8 @@ function finalizzaInserimentoPacco() {
         scaffale: document.getElementById('scaffaleSelect').value,
         grandezza: document.getElementById('grandezzaSelect').value,
         ritirato: false, isScaduto: false, dataRitiro: null, ritiratoDa: '', firma: null, pudoStatus: 'nessuno',
-        isContrassegno: false, importoContrassegno: ''
+        isContrassegno: false, importoContrassegno: '',
+        noteAggiuntive: ''
     });
     
     salva(); 
@@ -997,17 +1014,23 @@ function generateHtml(p) {
         if (diffGiorni >= 8) alertScadenza = `<span class="scadenza-alert" onclick="handleRitira(${p.id}, true)">⚠️</span>`;
     }
     
+    let indicatoreNote = '';
+    if (!p.ritirato && p.noteAggiuntive && p.noteAggiuntive.trim() !== '') {
+        indicatoreNote = `<span class="note-indicatore" onclick="showAlert('${p.noteAggiuntive.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', 'Note Aggiuntive')">ℹ️</span>`;
+    }
+    
     let statoTesto = '';
     let emojiIcona = '';
     if(p.ritirato) {
         let notaPudo = p.pudoStatus === 'pagato' ? '<span class="tag-pagato">(Pagato €0.50)</span>' : (p.pudoStatus === 'non_pagato' ? '<span class="tag-non-pagato">(Non Pagato)</span>' : '');
         let notaContrassegno = (p.importoContrassegno && p.isContrassegno) ? `<span style="color:#ff4757; font-weight:bold;"> [Contrassegno Riscosso: € ${p.importoContrassegno}]</span>` : '';
+        let testoNoteArchivio = (p.noteAggiuntive && p.noteAggiuntive.trim() !== '') ? `<br><small style="color:var(--primary); font-weight:bold;">📝 Nota: ${p.noteAggiuntive}</small>` : '';
         if (p.isScaduto) {
             emojiIcona = '<span class="stato-emoji">📦❌</span>';
-            statoTesto = `<div style="color:var(--warning); font-size:0.85rem; margin-top:5px; font-weight:bold;">PACCO SCADUTO (RESO) il ${p.dataRitiro}</div>`;
+            statoTesto = `<div style="color:var(--warning); font-size:0.85rem; margin-top:5px; font-weight:bold;">PACCO SCADUTO (RESO) il ${p.dataRitiro}${testoNoteArchivio}</div>`;
         } else {
             emojiIcona = '<span class="stato-emoji">✅</span>';
-            statoTesto = `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">RITIRATO DA ${p.ritiratoDa.toUpperCase()} IL ${p.dataRitiro} ${notaPudo}${notaContrassegno} ${firmaLink}</div>`;
+            statoTesto = `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">RITIRATO DA ${p.ritiratoDa.toUpperCase()} IL ${p.dataRitiro} ${notaPudo}${notaContrassegno} ${firmaLink}${testoNoteArchivio}</div>`;
         }
     }
 
@@ -1026,13 +1049,14 @@ function generateHtml(p) {
                 ${statoTesto}
             </div>
         </div>
-        <div style="display:flex; align-items:center;">${alertScadenza} ${azione}</div>
+        <div style="display:flex; align-items:center;">${alertScadenza} ${indicatoreNote} ${azione}</div>
     </div>`;
 }
 
 function apriModifica(id) {
     const p = pacchi.find(x => x.id === id);
     const container = document.getElementById('editFields');
+    const haNote = !!(p.noteAggiuntive && p.noteAggiuntive.trim() !== '');
     container.innerHTML = `
         <div>
             <label>Cognome</label>
@@ -1075,6 +1099,16 @@ function apriModifica(id) {
                 <input type="number" step="0.01" id="editImportoContrassegno" value="${p.importoContrassegno || ''}" placeholder="0.00" style="border-color:#ff4757;">
             </div>
         </div>
+        <div class="note-box">
+            <label style="display:flex; align-items:center; gap:10px; font-size:1rem; cursor:pointer;">
+                <input type="checkbox" id="editHasNote" ${haNote ? 'checked' : ''} onchange="toggleInputNote(this.checked)" style="width:auto; transform:scale(1.2);">
+                <span>Aggiungere note al pacco?</span>
+            </label>
+            <div id="subBoxNote" style="margin-top:10px; display:${haNote ? 'block' : 'none'};">
+                <label>Note aggiuntive</label>
+                <input type="text" id="editNoteAggiuntive" value="${p.noteAggiuntive || ''}" placeholder="Inserisci qui le note..." style="border-color:var(--primary);">
+            </div>
+        </div>
     `;
     document.getElementById('editModal').style.display = 'flex';
     document.getElementById('saveEditBtn').onclick = () => {
@@ -1086,6 +1120,10 @@ function apriModifica(id) {
         p.scaffale = document.getElementById('editScaffale').value;
         p.isContrassegno = document.getElementById('editIsContrassegno').checked;
         p.importoContrassegno = p.isContrassegno ? document.getElementById('editImportoContrassegno').value.trim() : '';
+        
+        const haNoteChecked = document.getElementById('editHasNote').checked;
+        p.noteAggiuntive = haNoteChecked ? document.getElementById('editNoteAggiuntive').value.trim() : '';
+        
         salva();
         closeEditModal();
     };
@@ -1093,6 +1131,10 @@ function apriModifica(id) {
 
 function toggleInputContrassegno(checked) {
     document.getElementById('subBoxContrassegno').style.display = checked ? 'block' : 'none';
+}
+
+function toggleInputNote(checked) {
+    document.getElementById('subBoxNote').style.display = checked ? 'block' : 'none';
 }
 
 function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
@@ -1111,12 +1153,13 @@ function handleRitira(id, forzaScaduto = false) {
     stessiPacchi.forEach(sp => {
         const isTarget = sp.id === id;
         let infoContr = sp.isContrassegno ? `<b style="color:#ff4757;"> [CONTRASSEGNO € ${sp.importoContrassegno}]</b>` : '';
+        let infoNote = (sp.noteAggiuntive && sp.noteAggiuntive.trim() !== '') ? ` <span style="color:var(--primary); font-weight:bold;">[ℹ️ ${sp.noteAggiuntive}]</span>` : '';
         htmlLista += `
             <label class="item-selezione">
                 <input type="checkbox" class="chk-multi-ritiro" data-id="${sp.id}" data-corriere="${sp.corriere}" ${isTarget ? 'checked' : ''}>
                 <div>
                     <strong>#${sp.riconoscimento}</strong> 
-                    - ${sp.corriere}${infoContr}<br>
+                    - ${sp.corriere}${infoContr}${infoNote}<br>
                     <small>TRK: ${sp.codiceTracciabilita} | Arrivato: ${sp.dataTestoInserimento || '-'}</small>
                 </div>
             </label>
