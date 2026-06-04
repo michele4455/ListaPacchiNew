@@ -922,7 +922,7 @@ firebase.auth().onAuthStateChanged((user) => {
     }
 });
 
-function aggiungerePacco(){
+function aggiungiPacco(){
     const trk = document.getElementById('codiceTracciabilita').value.trim().toUpperCase();
     const c = document.getElementById('cognome').value.trim().toUpperCase();
     const corr = document.getElementById('corriereSelect').value;
@@ -1050,7 +1050,6 @@ function aggiornaVista(){
     const sel = document.getElementById('corriereSelect');
     if(sel && sel.innerHTML === "") sel.innerHTML = '<option value="">Corriere...</option>' + corrieri.map(c => `<option value="${c}">${c}</option>`).join('');
     
-    // CORRETTO: Adesso reinserisce correttamente il nome del corriere (${c}) dentro i bottoni rotondi (le tab)
     const tabsBox = document.getElementById('tabs');
     if(tabsBox) tabsBox.innerHTML = `<button onclick="setTab('Tutti')" class="${tabAttiva==='Tutti'?'active':''}">Tutti</button>` + corrieri.map(c => `<button onclick="setTab('${c}')" class="${tabAttiva===c?'active':''}">${c}</button>`).join('');
     
