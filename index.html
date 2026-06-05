@@ -656,7 +656,7 @@
             <input type="text" id="codiceRiconoscimento" placeholder="ID Pacco" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
             
             <div class="autocomplete-container" style="position:relative;">
-                <input type="text" id="cognome" placeholder="Cognome" onkeydown="navigaSuggerimenti(event)" autocomplete="off">
+                <input type="text" id="cognome" placeholder="Cognome" required autocomplete="off" onkeyup="gestisciAutocomplete(this.value)">
                 <div id="suggestionsBox" class="suggestions-list" style="background: white;"></div>
             </div>
             <input type="text" id="nome" placeholder="Nome">
@@ -922,7 +922,7 @@ function gestisciAutocomplete(val) {
     const matches = [];
     const chiaviViste = new Set();
     
-    // Verifica che l'anagrafica esista e non sia vuota prima di fare il ciclo
+    // Controlla che l'anagrafica esista prima di fare il ciclo
     if (anagraficaClienti && Object.keys(anagraficaClienti).length > 0) {
         Object.keys(anagraficaClienti).forEach(key => {
             const c = anagraficaClienti[key];
@@ -1906,14 +1906,11 @@ function eliminaClienteAnagrafica(key) {
     }
 }
     
-// Gestione della tastiera sul campo cognome: mostra i suggerimenti e risponde al tasto CANC
-document.getElementById('cognome').addEventListener('keyup', function(event) {
+// Ascolta la tastiera sul campo cognome: se premi CANC (Delete), chiude la tendina dei suggerimenti
+document.getElementById('cognome').addEventListener('keydown', function(event) {
     if (event.key === 'Delete' || event.key === 'Canc') {
         document.getElementById('suggestionsBox').style.display = 'none';
-        return;
     }
-    // Chiama l'autocomplete per mostrare i suggerimenti mentre digiti le lettere
-    gestisciAutocomplete(this.value);
 });
     
 </script>
