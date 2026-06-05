@@ -656,7 +656,7 @@
             <input type="text" id="codiceRiconoscimento" placeholder="ID Pacco" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
             
             <div class="autocomplete-container" style="position:relative;">
-                <input type="text" id="cognome" placeholder="Cognome" required autocomplete="off" onkeyup="gestisciAutocomplete(this.value)">
+                <input type="text" id="cognome" placeholder="Cognome" required autocomplete="off">
                 <div id="suggestionsBox" class="suggestions-list" style="background: white;"></div>
             </div>
             <input type="text" id="nome" placeholder="Nome">
@@ -1956,41 +1956,41 @@ function eliminaClienteAnagrafica(key) {
 }
     
 // Variabile globale di controllo per impedire il rimbalzo del tasto CANC
+// Variabile di controllo per disattivare stabilmente i suggerimenti dopo il CANC
 let bloccoSuggerimentiAttivo = false;
 
-// Gestione tastiera unificata sul campo cognome (Pressione del tasto)
+// 1. Intercettazione immediata alla pressione del tasto (keydown)
 document.getElementById('cognome').addEventListener('keydown', function(event) {
-    // Se premi CANC o Delete, nasconde la tendina e attiva il blocco di sicurezza
     if (event.key === 'Delete' || event.key === 'Canc') {
         document.getElementById('suggestionsBox').style.display = 'none';
-        bloccoSuggerimentiAttivo = true;
+        bloccoSuggerimentiAttivo = true; // Attiva il blocco totale
     } else {
-        // Se premi un qualsiasi altro carattere normale, disattiva il blocco per permettere la ricerca
+        // Se l'utente digita un carattere alfanumerico normale, resetta il blocco per permettere la ricerca
         if (event.key !== 'Enter' && event.key !== 'Tab' && event.key !== 'Shift' && event.key !== 'Control') {
             bloccoSuggerimentiAttivo = false;
         }
     }
 });
 
-// Gestione digitazione lettere sul campo cognome (Rilascio del tasto)
+// 2. Gestione della scrittura vera e propria al rilascio del tasto (keyup)
 document.getElementById('cognome').addEventListener('keyup', function(event) {
-    // Se il campo viene svuotato del tutto, azzera il blocco e nasconde la lista
+    // Se il campo viene svuotato del tutto, chiude il box e resetta il blocco
     if (this.value.trim() === "") {
         bloccoSuggerimentiAttivo = false;
         document.getElementById('suggestionsBox').style.display = 'none';
         return;
     }
 
-    // Se l'utente ha usato il tasto CANC o il blocco è attivo, interrompe l'esecuzione e non riapre nulla
+    // Se l'utente ha premuto CANC o un tasto di comando, esce immediatamente senza riaprire nulla
     if (bloccoSuggerimentiAttivo || event.key === 'Delete' || event.key === 'Canc' || event.key === 'Enter' || event.key === 'Tab') {
         return; 
     }
 
-    // Mostra i suggerimenti solo se l'utente sta attivamente scrivendo nuove lettere
+    // Mostra la tendina dei suggerimenti solo se non ci sono blocchi attivi
     gestisciAutocomplete(this.value);
 });
 
-// Quando l'utente esce e rientra nel campo, reimposta lo stato iniziale per sicurezza
+// Quando l'utente clicca fuori e poi ritorna sul campo, ripristina la normalità
 document.getElementById('cognome').addEventListener('focus', function() {
     bloccoSuggerimentiAttivo = false;
 });
