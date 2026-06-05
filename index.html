@@ -139,14 +139,30 @@
             font-weight: bold;
         }
 
+       .header-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            width: 100%;
+        }
+
         .header-content img { 
-            max-height: 80px;
+            max-height: 100px; /* Dimensione logo originale */
+            width: auto;
             filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
             margin-bottom: 15px;
+            display: block;
         }
+
         .header-content h1 { 
             margin: 0;
-            font-size: 1.8rem; color: var(--white); text-transform: uppercase; letter-spacing: 2px;
+            font-size: 1.8rem; 
+            color: var(--white); 
+            text-transform: uppercase; 
+            letter-spacing: 2px;
+            font-weight: bold;
         }
 
         #loginPage { display: flex;
@@ -608,10 +624,10 @@
         </div>
         <div class="header-content">
             <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp">
-            <h1>Centro Post@ Anaclerio</h1>
+            <h1>📦Gestionale Pacchi Centro Post@ Anaclerio📦</h1>
             <div id="liveDateTime" class="live-clock">Caricamento data...</div>
         </div>
-    </div>
+</div>
 
     <div class="container">
         <button class="toggle-form-btn" onclick="toggleFormInserimento()">➕ REGISTRA NUOVO PACCO ▼</button>
