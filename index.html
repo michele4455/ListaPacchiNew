@@ -1060,13 +1060,15 @@ function login() {
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
 
-    if (!email || !password) {
-        showAlert("Inserisci email e password per accedere.");
-        return;
-    }
-
     firebase.auth().signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('mainPage').style.display = 'block';
+            
+            // 🌟 AGGIUNGI QUESTE DUE RIGHE QUI:
+            inizializzaSincronizzazioneFirebase();
+            inizializzaSincronizzazioneAnagrafica();
+            
             resetInattivita();
         })
         .catch((error) => {
