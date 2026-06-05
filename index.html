@@ -726,13 +726,15 @@ function inizializzaSincronizzazioneFirebase() {
 
 // Racchiudiamo il controllo in una funzione protetta
 function inizializzaSincronizzazioneAnagrafica() {
-    db.ref('anagraficaClienti').on('value', (snapshot) => {
-        const dati = snapshot.val() || {};
+    // 1. Legge prima l'anagrafica ufficiale di Firebase
+    db.ref('anagraficaClienti').once('value', (snapshot) => {
+        const datiAnagrafica = snapshot.val() || {};
         const anagraficaPulita = {};
         let modificato = false;
 
-        Object.keys(dati).forEach(key => {
-            const c = dati[key];
+        // Normalizza e inserisce i clienti anagrafici già esistenti
+        Object.keys(datiAnagrafica).forEach(key => {
+            const c = datiAnagrafica[key];
             if (!c || !c.cognome) return;
 
             const cognomePulito = c.cognome.trim().toUpperCase();
@@ -755,20 +757,57 @@ function inizializzaSincronizzazioneAnagrafica() {
                     telefono: telPulito
                 };
             }
-            
-            if (key !== chiaveUnica) {
-                modificato = true;
-            }
+            if (key !== chiaveUnica) modificato = true;
         });
 
-        anagraficaClienti = anagraficaPulita;
+        // 2. Scansiona TUTTI i pacchi (sia in giacenza che storici/ritirati) sul DB per estrarre i clienti mancanti
+        db.ref('pacchi').once('value', (pSnap) => {
+            const tuttiIPacchi = pSnap.val() || {};
+            
+            // Gestisce sia il formato Array che il formato Oggetto di Firebase per i pacchi
+            Object.keys(tuttiIPacchi).forEach(pKey => {
+                const p = tuttiIPacchi[pKey];
+                if (p && p.cognome) {
+                    const cognomePacco = p.cognome.trim().toUpperCase();
+                    const nomePacco = (p.nome || "").trim().toUpperCase();
+                    const chiavePacco = `${cognomePacco}_${nomePacco}`;
 
-        // Se ci sono stati dei cambiamenti o unioni di duplicati, aggiorna Firebase in modo sicuro
-        if (modificato) {
-            db.ref('anagraficaClienti').set(anagraficaClienti);
-        }
+                    // Se questo cliente ha un pacco sul DB ma non esiste in anagrafica, lo aggiunge al volo!
+                    if (!anagraficaPulita[chiavePacco]) {
+                        anagraficaPulita[chiavePacco] = {
+                            cognome: cognomePacco,
+                            nome: nomePacco,
+                            telefono: '-' // Imposta il telefono predefinito, modificabile in seguito
+                        };
+                        modificato = true;
+                    }
+                }
+            });
 
-        renderAnagrafica();
+            // Assegna la lista definitiva globale unificata
+            anagraficaClienti = anagraficaPulita;
+
+            // Se abbiamo scoperto nuovi clienti dai vecchi pacchi o unito duplicati, aggiorna Firebase
+            if (modificato) {
+                db.ref('anagraficaClienti').set(anagraficaClienti);
+            }
+
+            // Mostra i dati a schermo nella tabella anagrafica
+            renderAnagrafica();
+
+            // Attiva ora l'ascolto continuo in tempo reale sui clienti per modifiche future
+            db.ref('anagraficaClienti').on('value', (newSnapshot) => {
+                const aggiornati = newSnapshot.val() || {};
+                Object.keys(aggiornati).forEach(k => {
+                    if (aggiornati[k]) {
+                        aggiornati[k].cognome = aggiornati[k].cognome.toUpperCase();
+                        aggiornati[k].nome = (aggiornati[k].nome || "").toUpperCase();
+                    }
+                });
+                anagraficaClienti = aggiornati;
+                renderAnagrafica();
+            });
+        });
     });
 }
 
@@ -1093,15 +1132,25 @@ firebase.auth().onAuthStateChanged((user) => {
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainPage').style.display = 'block';
         
-        // 🌟 AGGIUNGI QUESTE DUE RIGHE ANCHE QUI:
-        inizializzaSincronizzazioneFirebase();
+        // Avvia la sincronizzazione unificata dell'anagrafica e dei pacchi storici
         inizializzaSincronizzazioneAnagrafica();
         
         resetInattivita();
+        
+        // Sincronizza i pacchi in tempo reale per la vista principale delle giacenze
+        db.ref('pacchi').off('value');
+        db.ref('pacchi').on('value', (snapshot) => {
+            pacchi = snapshot.val() ? snapshot.val() : [];
+            aggiornaVista();
+        });
+        
+        startClock();
     } else {
         document.getElementById('loginPage').style.display = 'flex';
         document.getElementById('mainPage').style.display = 'none';
-        clearTimeout(timeoutInattivita);
+        if (typeof html5QrcodeScanner !== 'undefined' && html5QrcodeScanner) {
+            html5QrcodeScanner.clear();
+        }
     }
 });
 
