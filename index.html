@@ -1955,21 +1955,44 @@ function eliminaClienteAnagrafica(key) {
     }
 }
     
+// Variabile di controllo per bloccare la riapertura automatica
+let suggerimentiBloccatiDaCanc = false;
+
+// Gestione tastiera unificata sul campo cognome (Pressione tasti speciali)
 document.getElementById('cognome').addEventListener('keydown', function(event) {
-    // Intercetta subito la pressione di CANC o Delete per chiudere la tendina
+    // Se premi CANC o Delete, chiude la tendina e attiva il blocco totale
     if (event.key === 'Delete' || event.key === 'Canc') {
         document.getElementById('suggestionsBox').style.display = 'none';
+        suggerimentiBloccatiDaCanc = true;
     }
 });
 
 // Gestione digitazione lettere sul campo cognome (Rilascio tasti per la scrittura)
 document.getElementById('cognome').addEventListener('keyup', function(event) {
-    // MODIFICA QUI: Se hai premuto CANC, Delete, Invio o Tab, non deve riaprire nulla!
-    if (event.key === 'Delete' || event.key === 'Canc' || event.key === 'Enter' || event.key === 'Tab') {
+    // Se il campo viene svuotato completamente dall'utente, resetta il blocco per il prossimo utilizzo
+    if (this.value.trim() === "") {
+        suggerimentiBloccatiDaCanc = false;
+        document.getElementById('suggestionsBox').style.display = 'none';
+        return;
+    }
+
+    // Se l'utente ha premuto CANC, si ferma immediatamente e non riapre nulla
+    if (suggerimentiBloccatiDaCanc) {
+        return;
+    }
+
+    // Ignora i tasti di comando classici
+    if (event.key === 'Enter' || event.key === 'Tab') {
         return; 
     }
-    // Avvia i suggerimenti solo se stai scrivendo lettere normali
+
+    // Avvia i suggerimenti solo se stai scrivendo lettere normali e non hai premuto CANC
     gestisciAutocomplete(this.value);
+});
+
+// Se l'utente esce dal campo e ci rientra, resetta il blocco per permettergli di rivedere i suggerimenti se serve
+document.getElementById('cognome').addEventListener('focus', function() {
+    suggerimentiBloccatiDaCanc = false;
 });
     
 </script>
