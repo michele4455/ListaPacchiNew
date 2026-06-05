@@ -1957,8 +1957,17 @@ function eliminaClienteAnagrafica(key) {
     
 // Ascolta la tastiera sul campo cognome: se premi CANC (Delete), chiude la tendina dei suggerimenti
 document.getElementById('cognome').addEventListener('keydown', function(event) {
+    // Intercetta subito la pressione di CANC o Delete per chiudere la tendina
     if (event.key === 'Delete' || event.key === 'Canc') {
         document.getElementById('suggestionsBox').style.display = 'none';
+    }
+});
+
+// Gestione digitazione lettere sul campo cognome (Rilascio tasti per la scrittura)
+document.getElementById('cognome').addEventListener('keyup', function(event) {
+    // Se premi un tasto normale, continua a mostrare i suggerimenti basati sulle lettere scritte
+    if (event.key !== 'Delete' && event.key !== 'Canc' && event.key !== 'Enter' && event.key !== 'Tab') {
+        gestisciAutocomplete(this.value);
     }
 });
     
