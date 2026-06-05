@@ -707,56 +707,52 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 let anagraficaClienti = {};
 
-// Carica anagrafica clienti in tempo reale con controllo automatico dei duplicati
-db.ref('anagraficaClienti').on('value', (snapshot) => {
-    const dati = snapshot.val() || {};
-    const anagraficaPulita = {};
-    let modificato = false;
+// Racchiudiamo il codice in una funzione che chiameremo solo DOPO il login riuscito
+function inizializzaSincronizzazioneAnagrafica() {
+    db.ref('anagraficaClienti').on('value', (snapshot) => {
+        const dati = snapshot.val() || {};
+        const anagraficaPulita = {};
+        let modificato = false;
 
-    Object.keys(dati).forEach(key => {
-        const c = dati[key];
-        if (!c || !c.cognome) return;
+        Object.keys(dati).forEach(key => {
+            const c = dati[key];
+            if (!c || !c.cognome) return;
 
-        // Normalizzazione per evitare duplicati causati da spazi o minuscole
-        const cognomePulito = c.cognome.trim().toUpperCase();
-        const nomePulito = (c.nome || "").trim().toUpperCase();
-        const chiaveUnica = `${cognomePulito}_${nomePulito}`;
+            const cognomePulito = c.cognome.trim().toUpperCase();
+            const nomePulito = (c.nome || "").trim().toUpperCase();
+            const chiaveUnica = `${cognomePulito}_${nomePulito}`;
 
-        // Gestione pulita del telefono
-        let telPulito = (c.telefono || "").trim();
-        if (telPulito === "" || telPulito === "-") telPulito = "-";
+            let telPulito = (c.telefono || "").trim();
+            if (telPulito === "" || telPulito === "-") telPulito = "-";
 
-        if (anagraficaPulita[chiaveUnica]) {
-            // Se esiste già il record (duplicato), unisce i telefoni senza perdere informazioni
-            let telEsistente = anagraficaPulita[chiaveUnica].telefono;
-            if (telPulito !== "-" && telEsistente.indexOf(telPulito) === -1) {
-                anagraficaPulita[chiaveUnica].telefono = telEsistente === "-" ? telPulito : `${telEsistente} / ${telPulito}`;
+            if (anagraficaPulita[chiaveUnica]) {
+                let telEsistente = anagraficaPulita[chiaveUnica].telefono;
+                if (telPulito !== "-" && telEsistente.indexOf(telPulito) === -1) {
+                    anagraficaPulita[chiaveUnica].telefono = telEsistente === "-" ? telPulito : `${telEsistente} / ${telPulito}`;
+                }
+                modificato = true;
+            } else {
+                anagraficaPulita[chiaveUnica] = {
+                    cognome: cognomePulito,
+                    nome: nomePulito,
+                    telefono: telPulito
+                };
             }
-            modificato = true; // Segnala che è stato trovato e rimosso un duplicato corrotto
-        } else {
-            anagraficaPulita[chiaveUnica] = {
-                cognome: cognomePulito,
-                nome: nomePulito,
-                telefono: telPulito
-            };
+            
+            if (key !== chiaveUnica) {
+                modificato = true;
+            }
+        });
+
+        anagraficaClienti = anagraficaPulita;
+
+        if (modificato) {
+            db.ref('anagraficaClienti').set(anagraficaClienti);
         }
-        
-        // Se la vecchia chiave del record era scritta male o con spazi, richiede l'allineamento
-        if (key !== chiaveUnica) {
-            modificato = true;
-        }
+
+        renderAnagrafica();
     });
-
-    anagraficaClienti = anagraficaPulita;
-
-    // Se sono stati rilevati e accorpati duplicati obsoleti, pulisce e riallinea Firebase in automatico
-    if (modificato) {
-        // Rimuove l'intera anagrafica sporca e scrive immediatamente quella sanata e unita
-        db.ref('anagraficaClienti').set(anagraficaClienti);
-    }
-
-    renderAnagrafica();
-});
+}
 
 let pacchi = [];
 let anagraficaClienti = {}; 
@@ -1069,6 +1065,7 @@ firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainPage').style.display = 'block';
+        inizializzaSincronizzazioneAnagrafica();
         resetInattivita();
         
         db.ref('anagrafica_clienti').on('value', (snapshot) => {
