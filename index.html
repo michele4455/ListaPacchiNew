@@ -763,6 +763,7 @@ function inizializzaSincronizzazioneAnagrafica() {
 
         anagraficaClienti = anagraficaPulita;
 
+        // Se ci sono stati dei cambiamenti o unioni di duplicati, aggiorna Firebase in modo sicuro
         if (modificato) {
             db.ref('anagraficaClienti').set(anagraficaClienti);
         }
@@ -921,18 +922,21 @@ function gestisciAutocomplete(val) {
     const matches = [];
     const chiaviViste = new Set();
     
-    Object.keys(anagraficaClienti).forEach(key => {
-        const c = anagraficaClienti[key];
-        if (c.cognome && c.cognome.toLowerCase().includes(query)) {
-            const cognomePulito = c.cognome.trim().toUpperCase();
-            const nomePulito = (c.nome || "").trim().toUpperCase();
-            const comboUnica = `${cognomePulito}_${nomePulito}`;
-            if (!chiaviViste.has(comboUnica)) {
-                chiaviViste.add(comboUnica);
-                matches.push({ cognome: cognomePulito, nome: nomePulito });
+    // Verifica che l'anagrafica esista e non sia vuota prima di fare il ciclo
+    if (anagraficaClienti && Object.keys(anagraficaClienti).length > 0) {
+        Object.keys(anagraficaClienti).forEach(key => {
+            const c = anagraficaClienti[key];
+            if (c && c.cognome && c.cognome.toLowerCase().includes(query)) {
+                const cognomePulito = c.cognome.trim().toUpperCase();
+                const nomePulito = (c.nome || "").trim().toUpperCase();
+                const comboUnica = `${cognomePulito}_${nomePulito}`;
+                if (!chiaviViste.has(comboUnica)) {
+                    chiaviViste.add(comboUnica);
+                    matches.push({ cognome: cognomePulito, nome: nomePulito });
+                }
             }
-        }
-    });
+        });
+    }
     
     if (matches.length > 0) {
         let htmlSuggerimenti = matches.map((m, index) => 
