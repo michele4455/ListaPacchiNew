@@ -1955,14 +1955,48 @@ function eliminaClienteAnagrafica(key) {
     }
 }
     
-// Ascolta la tastiera sul campo cognome: se premi CANC (Delete), chiude i suggerimenti
+// Variabile globale di controllo per impedire il rimbalzo del tasto CANC
+let bloccoSuggerimentiAttivo = false;
+
+// Gestione tastiera unificata sul campo cognome (Pressione del tasto)
 document.getElementById('cognome').addEventListener('keydown', function(event) {
+    // Se premi CANC o Delete, nasconde la tendina e attiva il blocco di sicurezza
     if (event.key === 'Delete' || event.key === 'Canc') {
         document.getElementById('suggestionsBox').style.display = 'none';
+        bloccoSuggerimentiAttivo = true;
+    } else {
+        // Se premi un qualsiasi altro carattere normale, disattiva il blocco per permettere la ricerca
+        if (event.key !== 'Enter' && event.key !== 'Tab' && event.key !== 'Shift' && event.key !== 'Control') {
+            bloccoSuggerimentiAttivo = false;
+        }
     }
+});
+
+// Gestione digitazione lettere sul campo cognome (Rilascio del tasto)
+document.getElementById('cognome').addEventListener('keyup', function(event) {
+    // Se il campo viene svuotato del tutto, azzera il blocco e nasconde la lista
+    if (this.value.trim() === "") {
+        bloccoSuggerimentiAttivo = false;
+        document.getElementById('suggestionsBox').style.display = 'none';
+        return;
+    }
+
+    // Se l'utente ha usato il tasto CANC o il blocco è attivo, interrompe l'esecuzione e non riapre nulla
+    if (bloccoSuggerimentiAttivo || event.key === 'Delete' || event.key === 'Canc' || event.key === 'Enter' || event.key === 'Tab') {
+        return; 
+    }
+
+    // Mostra i suggerimenti solo se l'utente sta attivamente scrivendo nuove lettere
+    gestisciAutocomplete(this.value);
+});
+
+// Quando l'utente esce e rientra nel campo, reimposta lo stato iniziale per sicurezza
+document.getElementById('cognome').addEventListener('focus', function() {
+    bloccoSuggerimentiAttivo = false;
 });
     
 </script>
+
     
 </body>
 </html>
