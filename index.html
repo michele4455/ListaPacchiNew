@@ -50,51 +50,59 @@
             border-radius: 50px;
         }
 
+/* Ripristina la struttura originale del titolo e posiziona il menu in alto a destra */
         .header-actions {
             position: absolute;
-            top: 15px;
-            right: 15px;
-            display: inline-block;
-            z-index: 1000;
+            top: 20px;
+            right: 20px;
+            z-index: 1001;
         }
 
+        /* Stile del pulsante Menu che usa i colori nativi della tua app */
         .menu-toggle-btn {
-            background: var(--accent);
+            background-color: var(--accent);
             color: var(--primary);
-            padding: 10px 20px;
+            padding: 10px 16px;
             border-radius: 8px;
             font-size: 0.9rem;
-            border: 2px solid var(--primary-dark);
+            border: 2px solid var(--primary);
             cursor: pointer;
             font-weight: bold;
             text-transform: uppercase;
+            transition: background 0.2s;
         }
 
-        /* Contenitore della tendina nascosto di base */
+        .menu-toggle-btn:hover {
+            background-color: var(--white);
+        }
+
+        /* Contenitore della tendina */
         .dropdown-menu {
             display: none;
             position: absolute;
             right: 0;
-            top: 100%;
-            background: var(--white);
+            top: 115%;
+            background-color: var(--white);
             border: 2px solid var(--primary);
             border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             padding: 10px;
             flex-direction: column;
             gap: 8px;
-            margin-top: 5px;
-            min-width: 180px;
+            min-width: 200px;
         }
 
+        /* Mostra la tendina */
         .dropdown-menu.show {
             display: flex;
         }
 
+        /* Forza i pulsanti dentro la tendina a mantenere i loro stili grafici originali */
         .dropdown-menu button {
             width: 100%;
-            text-align: center;
+            display: block;
             box-sizing: border-box;
+            margin: 0 !important;
         }
 
         .logout-btn {
