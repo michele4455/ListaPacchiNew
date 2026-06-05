@@ -139,7 +139,19 @@
             font-weight: bold;
         }
 
-       .header-content {
+       .app-header {
+            background-color: var(--primary);
+            color: var(--white);
+            padding: 20px 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            border-bottom: 4px solid var(--accent);
+            position: relative; /* Consente al menu a tendina di posizionarsi correttamente */
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Allineamento e centratura di Logo, Titolo e Data */
+        .header-content {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -149,7 +161,7 @@
         }
 
         .header-content img { 
-            max-height: 100px; /* Dimensione logo originale */
+            max-height: 100px;
             width: auto;
             filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
             margin-bottom: 15px;
@@ -614,6 +626,7 @@
 </div>
 
 <div id="mainPage" style="display:none;">
+    <div class="app-header">
         <div class="header-actions">
             <button class="menu-toggle-btn" onclick="toggleMenuTendina(event)">Menu ☰</button>
             <div id="menuTendina" class="dropdown-menu">
@@ -627,6 +640,7 @@
             <h1>📦Gestionale Pacchi Centro Post@ Anaclerio📦</h1>
             <div id="liveDateTime" class="live-clock">Caricamento data...</div>
         </div>
+    </div>
 </div>
 
     <div class="container">
