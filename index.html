@@ -704,10 +704,11 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
+// Riferimento al Database
 const db = firebase.database();
 let anagraficaClienti = {};
 
-// Racchiudiamo il codice in una funzione che chiameremo solo DOPO il login riuscito
+// Racchiudiamo il controllo in una funzione protetta
 function inizializzaSincronizzazioneAnagrafica() {
     db.ref('anagraficaClienti').on('value', (snapshot) => {
         const dati = snapshot.val() || {};
@@ -1061,46 +1062,7 @@ function login(){
 
 function logout() { firebase.auth().signOut().then(() => { location.reload(); }); }
 
-firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-        document.getElementById('loginPage').style.display = 'none';
-        document.getElementById('mainPage').style.display = 'block';
-        inizializzaSincronizzazioneAnagrafica();
-        resetInattivita();
-        
-        db.ref('anagrafica_clienti').on('value', (snapshot) => {
-            anagraficaClienti = snapshot.val() ? snapshot.val() : {};
-            
-            db.ref('pacchi').once('value', (pSnap) => {
-                let pacchiStorici = pSnap.val() ? pSnap.val() : [];
-                let modificato = false;
-                pacchiStorici.forEach(p => {
-                    if (p.cognome && p.nome) {
-                        let key = `${p.cognome.trim().toUpperCase()}_${p.nome.trim().toUpperCase()}`;
-                        if (!anagraficaClienti[key]) {
-                            anagraficaClienti[key] = {
-                                cognome: p.cognome.trim().toUpperCase(),
-                                nome: p.nome.trim().toUpperCase(),
-                                telefono: '-'
-                            };
-                            modificato = true;
-                        }
-                    }
-                });
-                if (modificato) { salvaAnagrafica(); }
-            });
-        });
 
-        db.ref('pacchi').off('value');
-        db.ref('pacchi').on('value', (snapshot) => {
-            pacchi = snapshot.val() ? snapshot.val() : [];
-            aggiornaVista();
-        });
-    } else {
-        document.getElementById('loginPage').style.display = 'flex';
-        document.getElementById('mainPage').style.display = 'none';
-    }
-});
 
 function aggiungerePacco(){
     const trk = document.getElementById('codiceTracciabilita').value.trim().toUpperCase();
@@ -1114,7 +1076,28 @@ function aggiungerePacco(){
     }
     finalizzaInserimentoPacco();
 }
-
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('mainPage').style.display = 'block';
+        
+        // 1. Facciamo partire la sincronizzazione pulita dei clienti
+        inizializzaSincronizzazioneAnagrafica();
+        
+        // 2. Resettiamo il timer di inattività
+        resetInattivita();
+        
+        // 3. Carichiamo la lista dei pacchi online per far funzionare la schermata
+        db.ref('pacchi').off('value');
+        db.ref('pacchi').on('value', (snapshot) => {
+            pacchi = snapshot.val() ? snapshot.val() : [];
+            aggiornaVista();
+        });
+    } else {
+        document.getElementById('loginPage').style.display = 'flex';
+        document.getElementById('mainPage').style.display = 'none';
+    }
+});
 function aggiungiPacco(){
     const trk = document.getElementById('codiceTracciabilita').value.trim().toUpperCase();
     const c = document.getElementById('cognome').value.trim().toUpperCase();
