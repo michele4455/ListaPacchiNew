@@ -876,11 +876,11 @@ function gestisciAutocomplete(val) {
     });
     
     if (matches.length > 0) {
-        // MODIFICA QUI: Viene inserito un elemento vuoto non cliccabile all'inizio della lista per interrompere il focus o la selezione automatica
-        let htmlSuggerimenti = `<div class="suggestion-item" style="pointer-events: none; background: transparent; border-bottom: none; height: 0; padding: 0; margin: 0;"></div>`;
+        // MODIFICA QUI: Aggiungiamo un primo elemento neutro cliccabile per ignorare la tendina
+        let htmlSuggerimenti = `<div class="suggestion-item" tabindex="0" data-index="0" onclick="chiudiSuggerimentiLibero()" onkeydown="if(event.key==='Enter'){event.preventDefault();chiudiSuggerimentiLibero();}" style="background:#f1f3f5; color:#495057; font-style:italic; font-weight:600; border-bottom:2px solid #dee2e6;"><span>❌ PROSEGUI SENZA SUGGERIMENTI</span></div>`;
         
         htmlSuggerimenti += matches.map((m, index) => 
-            `<div class="suggestion-item" tabindex="0" data-index="${index}" onclick="selezionaSuggerimento('${m.cognome.replace(/'/g, "\\'")}', '${m.nome.replace(/'/g, "\\'")}')" onkeydown="gestisciTastoSuggerimento(event, '${m.cognome.replace(/'/g, "\\'")}', '${m.nome.replace(/'/g, "\\'")}')"><span><b>${m.cognome.toUpperCase()}</b> ${m.nome.toUpperCase()}</span></div>`
+            `<div class="suggestion-item" tabindex="0" data-index="${index + 1}" onclick="selezionaSuggerimento('${m.cognome.replace(/'/g, "\\'")}', '${m.nome.replace(/'/g, "\\'")}')" onkeydown="gestisciTastoSuggerimento(event, '${m.cognome.replace(/'/g, "\\'")}', '${m.nome.replace(/'/g, "\\'")}')"><span><b>${m.cognome.toUpperCase()}</b> ${m.nome.toUpperCase()}</span></div>`
         ).join('');
         
         box.innerHTML = htmlSuggerimenti;
@@ -889,7 +889,12 @@ function gestisciAutocomplete(val) {
         box.style.display = 'none';
     }
 }
-
+    
+function chiudiSuggerimentiLibero() {
+    document.getElementById('suggestionsBox').style.display = 'none';
+    document.getElementById('cognome').focus();
+}
+    
 function navigaSuggerimenti(e) {
     if (e.key === 'Tab') {
         const box = document.getElementById('suggestionsBox');
@@ -907,7 +912,6 @@ function gestisciTastoSuggerimento(e, cog, nom) {
     const box = document.getElementById('suggestionsBox');
     const items = Array.from(box.getElementsByClassName('suggestion-item'));
     const currentIndex = items.indexOf(document.activeElement);
-
     if (e.key === 'Tab') {
         e.preventDefault();
         if (e.shiftKey) {
@@ -925,7 +929,11 @@ function gestisciTastoSuggerimento(e, cog, nom) {
         }
     } else if (e.key === 'Enter') {
         e.preventDefault();
-        selezionaSuggerimento(cog, nom);
+        if (currentIndex === 0) {
+            chiudiSuggerimentiLibero();
+        } else {
+            selezionaSuggerimento(cog, nom);
+        }
     }
 }
 
