@@ -706,7 +706,23 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 // Riferimento al Database
 const db = firebase.database();
+
+// DEFINIZIONE DELLE VARIABILI GLOBALI (Unica dichiarazione)
 let anagraficaClienti = {};
+let pacchi = [];
+const corrieri = ["InPost", "UPS", "Punto Poste", "DHL", "BRT", "GLS", "Amazon", "Corrieri No Pudo"];
+let tabAttiva = 'Tutti';
+let timeoutInattivita;
+let html5QrCode;
+let torciaAttiva = false;
+
+// Sincronizzazione automatica dei Pacchi da Firebase
+function inizializzaSincronizzazioneFirebase() {
+    db.ref('pacchi').on('value', (snapshot) => {
+        pacchi = snapshot.val() || [];
+        aggiornaVista();
+    });
+}
 
 // Racchiudiamo il controllo in una funzione protetta
 function inizializzaSincronizzazioneAnagrafica() {
@@ -755,14 +771,6 @@ function inizializzaSincronizzazioneAnagrafica() {
     });
 }
 
-let pacchi = [];
-let anagraficaClienti = {}; 
-const corrieri = ["InPost", "UPS", "Punto Poste", "DHL", "BRT", "GLS", "Amazon", "Corrieri No Pudo"];
-let tabAttiva = 'Tutti';
-let timeoutInattivita;
-let html5QrCode;
-let torciaAttiva = false;
-
 const canvas = document.getElementById('signature-pad');
 const ctx = canvas.getContext('2d');
 let drawing = false;
@@ -778,7 +786,6 @@ function chiudiMenuTendina() {
     if (menu) menu.classList.remove('show');
 }
 
-// Chiude la tendina automaticamente se si clicca in un qualsiasi altro punto della pagina
 window.addEventListener('click', chiudiMenuTendina);   
     
 function showAlert(testo, titolo = "Attenzione") {
@@ -796,11 +803,11 @@ function startScanner(targetInputId) {
 
     const config = { 
         fps: 60, 
-        qrbox: { width: 300, height: 180 }, // Box leggermente allargato per facilitare il puntamento immediato
+        qrbox: { width: 300, height: 180 }, 
         rememberLastUsedCamera: true, 
         aspectRatio: 1.777778,
         experimentalFeatures: {
-            useBarCodeDetectorIfSupported: true // Sfrutta l'accelerazione hardware nativa del telefono (istantaneo)
+            useBarCodeDetectorIfSupported: true 
         },
         formatsToSupport: [ 
             Html5QrcodeSupportedFormats.QR_CODE, 
@@ -891,7 +898,8 @@ function toggleTorcia() {
 function updateClock() {
     const ora = new Date();
     const opzioni = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
-    document.getElementById('liveDateTime').innerText = ora.toLocaleDateString('it-IT', opzioni).toUpperCase();
+    const liveEl = document.getElementById('liveDateTime');
+    if (liveEl) liveEl.innerText = ora.toLocaleDateString('it-IT', opzioni).toUpperCase();
 }
 setInterval(updateClock, 1000);
 updateClock();
@@ -927,7 +935,6 @@ function gestisciAutocomplete(val) {
     });
     
     if (matches.length > 0) {
-        // La lista ora contiene SOLO i suggerimenti reali, senza scritte fastidiose
         let htmlSuggerimenti = matches.map((m, index) => 
             `<div class="suggestion-item" tabindex="0" data-index="${index}" onclick="selezionaSuggerimento('${m.cognome.replace(/'/g, "\\'")}', '${m.nome.replace(/'/g, "\\'")}')" onkeydown="gestisciTastoSuggerimento(event, '${m.cognome.replace(/'/g, "\\'")}', '${m.nome.replace(/'/g, "\\'")}')"><span><b>${m.cognome.toUpperCase()}</b> ${m.nome.toUpperCase()}</span></div>`
         ).join('');
@@ -962,7 +969,6 @@ function gestisciTastoSuggerimento(e, cog, nom) {
     const items = Array.from(box.getElementsByClassName('suggestion-item'));
     const currentIndex = items.indexOf(document.activeElement);
     
-    // Se premi CANC anche mentre ti sposti sui suggerimenti con la tastiera, chiude la tendina
     if (e.key === 'Delete' || e.key === 'Canc') {
         e.preventDefault();
         box.style.display = 'none';
@@ -1061,7 +1067,6 @@ function login() {
 
     firebase.auth().signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
-            // Login effettuato con successo
             resetInattivita();
         })
         .catch((error) => {
@@ -1077,7 +1082,18 @@ function logout() {
     });
 }
 
-
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('mainPage').style.display = 'block';
+        
+        inizializzaSincronizzazioneAnagrafica();
+        inizializzaSincronizzazioneFirebase(); 
+    } else {
+        document.getElementById('loginPage').style.display = 'flex';
+        document.getElementById('mainPage').style.display = 'none';
+    }
+});
 
 function aggiungerePacco(){
     const trk = document.getElementById('codiceTracciabilita').value.trim().toUpperCase();
@@ -1091,28 +1107,6 @@ function aggiungerePacco(){
     }
     finalizzaInserimentoPacco();
 }
-    
-firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-        // Utente autorizzato: nasconde il login e mostra il gestionale principale
-        document.getElementById('loginPage').style.display = 'none';
-        document.getElementById('mainPage').style.display = 'block';
-        
-        // Sincronizza l'anagrafica clienti dal database online
-        if (typeof inizializzaSincronizzazioneAnagrafica === "function") {
-            inizializzaSincronizzazioneAnagrafica();
-        }
-        
-        // Sincronizza e scarica tutti i pacchi (in giacenza, storici, ecc.) da Firebase
-        if (typeof inizializzaSincronizzazioneFirebase === "function") {
-            inizializzaSincronizzazioneFirebase();
-        }
-    } else {
-        // Utente non autorizzato (o sloggato): mostra la schermata di accesso e nasconde il gestionale
-        document.getElementById('loginPage').style.display = 'flex';
-        document.getElementById('mainPage').style.display = 'none';
-    }
-});
     
 function aggiungiPacco(){
     const trk = document.getElementById('codiceTracciabilita').value.trim().toUpperCase();
@@ -1271,10 +1265,15 @@ function aggiornaVista(){
     const ritirati = pacchi.filter(p => p.ritirato && filterFn(p)).reverse();
     const perUltimoID = pacchi.filter(p => !p.ritirato && (tabAttiva === 'Tutti' || p.corriere === tabAttiva));
     let ultimoID = perUltimoID.length > 0 ? perUltimoID[perUltimoID.length - 1].riconoscimento : "---";
-    document.getElementById('counter').innerHTML = `📦 Giacenza ${tabAttiva}: ${inGiacenza.length} | 🏷️ Ultimo ID: #${ultimoID}`;
     
-    document.getElementById('contenitori').innerHTML = inGiacenza.map(p => generateHtml(p)).join('');
-    document.getElementById('ritiratiContainer').innerHTML = ritirati.map(p => generateHtml(p)).join('');
+    const counterEl = document.getElementById('counter');
+    if (counterEl) counterEl.innerHTML = `📦 Giacenza ${tabAttiva}: ${inGiacenza.length} | 🏷️ Ultimo ID: #${ultimoID}`;
+    
+    const contEl = document.getElementById('contenitori');
+    if (contEl) contEl.innerHTML = inGiacenza.map(p => generateHtml(p)).join('');
+    
+    const ritEl = document.getElementById('ritiratiContainer');
+    if (ritEl) ritEl.innerHTML = ritirati.map(p => generateHtml(p)).join('');
 }
 
 function generateHtml(p) {
@@ -1721,11 +1720,13 @@ function showFeedback(tipo) {
     let titolo = tipo === 'cliente' ? 'RITIRO COMPLETATO' : 'PACCO RESO (SCADUTO)';
     let colore = tipo === 'cliente' ? 'var(--success)' : 'var(--warning)';
 
-    card.innerHTML = `
-        <div style="font-size: 6rem; margin-bottom: 20px;">${icona}</div>
-        <h2 style="color:${colore}; font-size: 2.5rem; margin: 0; font-weight: 900;">${titolo}</h2>
-        <p style="color: #666; font-size: 1.2rem; font-weight: bold; margin-top: 10px;">Operazione registrata con successo</p>
-    `;
+    if (card) {
+        card.innerHTML = `
+            <div style="font-size: 6rem; margin-bottom: 20px;">${icona}</div>
+            <h2 style="color:${colore}; font-size: 2.5rem; margin: 0; font-weight: 900;">${titolo}</h2>
+            <p style="color: #666; font-size: 1.2rem; font-weight: bold; margin-top: 10px;">Operazione registrata con successo</p>
+        `;
+    }
     document.getElementById('successOverlay').style.display = 'flex';
     setTimeout(() => { document.getElementById('successOverlay').style.display = 'none'; }, 2000);
 }
@@ -1767,21 +1768,17 @@ function cancellaRitirati(){
 function riproduciSuonoScanner() {
     try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        // Primo oscillatore (Suono principale cristallino)
         const osc1 = audioCtx.createOscillator();
-        // Secondo oscillatore (Suono secondario per raddoppiare la potenza acustica)
         const osc2 = audioCtx.createOscillator();
-        
         const gainNode = audioCtx.createGain();
 
         osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(850, audioCtx.currentTime); // Frequenza ad alta penetrazione auricolare
+        osc1.frequency.setValueAtTime(850, audioCtx.currentTime); 
         
-        osc2.type = 'square'; // L'onda quadra taglia il rumore ambientale molto meglio
+        osc2.type = 'square'; 
         osc2.frequency.setValueAtTime(854, audioCtx.currentTime); 
 
-        gainNode.gain.setValueAtTime(1.0, audioCtx.currentTime); // Volume hardware impostato al massimo (100%)
+        gainNode.gain.setValueAtTime(1.0, audioCtx.currentTime); 
 
         osc1.connect(gainNode);
         osc2.connect(gainNode);
@@ -1790,7 +1787,6 @@ function riproduciSuonoScanner() {
         osc1.start();
         osc2.start();
         
-        // Durata del beep (0.12 secondi)
         osc1.stop(audioCtx.currentTime + 0.12);
         osc2.stop(audioCtx.currentTime + 0.12);
     } catch (e) {
@@ -1835,7 +1831,7 @@ function renderAnagrafica() {
                     <div style="margin-top:5px; color:#555; font-size:0.9rem;">📞 Telefono: <b>${telefono}</b></div>
                 </div>
                 <div style="display:flex; gap:5px;">
-                    <button class="edit-dots" style="margin:0; padding:8px 12px;" onclick="apriModificaCliente('${key}')">✏️</button>
+                    <button class="edit-dots" style="margin:0; padding:8px 12px;" onclick="modificaClienteAnagrafica('${key}')">✏️</button>
                     <button class="edit-dots" style="margin:0; padding:8px 12px; background:var(--warning); color:white;" onclick="eliminaClienteAnagrafica('${key}')">🗑️</button>
                 </div>
             </div>
@@ -1864,11 +1860,9 @@ function modificaClienteAnagrafica(key) {
 
         const nuovaKey = `${nuovoCognome}_${nuovoNome}`;
 
-        // Rimuove la vecchia chiave sia localmente che su Firebase per non lasciare residui orfani
         db.ref(`anagraficaClienti/${key}`).remove();
         delete anagraficaClienti[key];
 
-        // Se la nuova chiave esiste già, unisce i telefoni per non sovrascrivere dati utili
         if (anagraficaClienti[nuovaKey]) {
             let telEsistente = anagraficaClienti[nuovaKey].telefono;
             if (nuovoTelefono !== "-" && telEsistente.indexOf(nuovoTelefono) === -1) {
@@ -1876,14 +1870,12 @@ function modificaClienteAnagrafica(key) {
             }
         }
 
-        // Crea il record aggiornato
         anagraficaClienti[nuovaKey] = {
             cognome: nuovoCognome,
             nome: nuovoNome,
             telefono: nuovoTelefono
         };
 
-        // Salva istantaneamente online su Firebase
         db.ref(`anagraficaClienti/${nuovaKey}`).set(anagraficaClienti[nuovaKey]);
 
         document.getElementById('editAnagraficaModal').style.display = 'none';
@@ -1894,8 +1886,6 @@ function modificaClienteAnagrafica(key) {
 
 function eliminaClienteAnagrafica(key) {
     if (confirm("Sei sicuro di voler eliminare permanentemente questo cliente dall'Anagrafica?\nI pacchi storici e in giacenza non verranno cancellati.")) {
-        
-        // Elimina direttamente dal database remoto di Firebase
         db.ref(`anagraficaClienti/${key}`).remove().then(() => {
             delete anagraficaClienti[key];
             renderAnagrafica();
@@ -1906,13 +1896,12 @@ function eliminaClienteAnagrafica(key) {
     }
 }
     
-// Ascolta la tastiera sul campo cognome: se premi CANC (Delete), chiude i suggerimenti
 document.getElementById('cognome').addEventListener('keydown', function(event) {
     if (event.key === 'Delete' || event.key === 'Canc') {
         document.getElementById('suggestionsBox').style.display = 'none';
     }
 });
-    
 </script>
+    
 </body>
 </html>
