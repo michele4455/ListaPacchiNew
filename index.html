@@ -1849,8 +1849,10 @@ function renderAnagrafica() {
     container.innerHTML = htmlSorgente || '<p style="text-align:center; color:#666; padding:20px;">Nessun cliente corrisponde ai criteri di ricerca.</p>';
 }
 
-function apriModificaCliente(key) {
+function modificaClienteAnagrafica(key) {
     const c = anagraficaClienti[key];
+    if (!c) return;
+
     document.getElementById('editAnagraficaCognome').value = c.cognome.toUpperCase();
     document.getElementById('editAnagraficaNome').value = c.nome.toUpperCase();
     document.getElementById('editAnagraficaTelefono').value = c.telefono === '-' ? '' : c.telefono;
@@ -1860,23 +1862,34 @@ function apriModificaCliente(key) {
     document.getElementById('saveAnagraficaBtn').onclick = () => {
         const nuovoCognome = document.getElementById('editAnagraficaCognome').value.trim().toUpperCase();
         const nuovoNome = document.getElementById('editAnagraficaNome').value.trim().toUpperCase();
-        const nuovoTelefono = document.getElementById('editAnagraficaTelefono').value.trim() || '-';
+        let nuovoTelefono = document.getElementById('editAnagraficaTelefono').value.trim() || '-';
 
         if (!nuovoCognome) return showAlert("Il cognome è obbligatorio!");
 
         const nuovaKey = `${nuovoCognome}_${nuovoNome}`;
 
-        if (nuovaKey !== key) {
-            delete anagraficaClienti[key];
+        // Rimuove la vecchia chiave sia localmente che su Firebase per non lasciare residui orfani
+        db.ref(`anagraficaClienti/${key}`).remove();
+        delete anagraficaClienti[key];
+
+        // Se la nuova chiave esiste già, unisce i telefoni per non sovrascrivere dati utili
+        if (anagraficaClienti[nuovaKey]) {
+            let telEsistente = anagraficaClienti[nuovaKey].telefono;
+            if (nuovoTelefono !== "-" && telEsistente.indexOf(nuovoTelefono) === -1) {
+                nuovoTelefono = telEsistente === "-" ? nuovoTelefono : `${telEsistente} / ${nuovoTelefono}`;
+            }
         }
 
+        // Crea il record aggiornato
         anagraficaClienti[nuovaKey] = {
             cognome: nuovoCognome,
             nome: nuovoNome,
             telefono: nuovoTelefono
         };
 
-        salvaAnagrafica();
+        // Salva istantaneamente online su Firebase
+        db.ref(`anagraficaClienti/${nuovaKey}`).set(anagraficaClienti[nuovaKey]);
+
         document.getElementById('editAnagraficaModal').style.display = 'none';
         renderAnagrafica();
         aggiornaVista(); 
@@ -1885,10 +1898,15 @@ function apriModificaCliente(key) {
 
 function eliminaClienteAnagrafica(key) {
     if (confirm("Sei sicuro di voler eliminare permanentemente questo cliente dall'Anagrafica?\nI pacchi storici e in giacenza non verranno cancellati.")) {
-        delete anagraficaClienti[key];
-        salvaAnagrafica();
-        renderAnagrafica();
-        aggiornaVista();
+        
+        // Elimina direttamente dal database remoto di Firebase
+        db.ref(`anagraficaClienti/${key}`).remove().then(() => {
+            delete anagraficaClienti[key];
+            renderAnagrafica();
+            aggiornaVista();
+        }).catch((error) => {
+            showAlert("Errore durante l'eliminazione dal database cloud: " + error.message);
+        });
     }
 }
     
