@@ -853,7 +853,11 @@ function salvaAnagrafica(){ db.ref('anagrafica_clienti').set(anagraficaClienti);
 function gestisciAutocomplete(val) {
     const box = document.getElementById('suggestionsBox');
     const nomeInput = document.getElementById('nome');
-    if (!val || val.trim() === "") { nomeInput.value = ""; box.style.display = 'none'; return; }
+    if (!val || val.trim() === "") {
+        nomeInput.value = "";
+        box.style.display = 'none';
+        return;
+    }
     const query = val.toLowerCase().trim();
     const matches = [];
     const chiaviViste = new Set();
@@ -864,20 +868,26 @@ function gestisciAutocomplete(val) {
             const cognomePulito = c.cognome.trim().toUpperCase();
             const nomePulito = (c.nome || "").trim().toUpperCase();
             const comboUnica = `${cognomePulito}_${nomePulito}`;
-            
             if (!chiaviViste.has(comboUnica)) {
                 chiaviViste.add(comboUnica);
                 matches.push({ cognome: cognomePulito, nome: nomePulito });
             }
         }
     });
-
+    
     if (matches.length > 0) {
-        box.innerHTML = matches.map((m, index) => 
+        // MODIFICA QUI: Viene inserito un elemento vuoto non cliccabile all'inizio della lista per interrompere il focus o la selezione automatica
+        let htmlSuggerimenti = `<div class="suggestion-item" style="pointer-events: none; background: transparent; border-bottom: none; height: 0; padding: 0; margin: 0;"></div>`;
+        
+        htmlSuggerimenti += matches.map((m, index) => 
             `<div class="suggestion-item" tabindex="0" data-index="${index}" onclick="selezionaSuggerimento('${m.cognome.replace(/'/g, "\\'")}', '${m.nome.replace(/'/g, "\\'")}')" onkeydown="gestisciTastoSuggerimento(event, '${m.cognome.replace(/'/g, "\\'")}', '${m.nome.replace(/'/g, "\\'")}')"><span><b>${m.cognome.toUpperCase()}</b> ${m.nome.toUpperCase()}</span></div>`
         ).join('');
+        
+        box.innerHTML = htmlSuggerimenti;
         box.style.display = 'block';
-    } else box.style.display = 'none';
+    } else {
+        box.style.display = 'none';
+    }
 }
 
 function navigaSuggerimenti(e) {
