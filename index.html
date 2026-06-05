@@ -1078,26 +1078,35 @@ function aggiungerePacco(){
 }
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
+        // Nasconde la pagina di login e mostra il gestionale principale
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainPage').style.display = 'block';
         
-        // 1. Facciamo partire la sincronizzazione pulita dei clienti
+        // Attiva la sincronizzazione sicura dell'anagrafica ripulita dai duplicati
         inizializzaSincronizzazioneAnagrafica();
         
-        // 2. Resettiamo il timer di inattività
+        // Attiva il controllo di inattività automatica
         resetInattivita();
         
-        // 3. Carichiamo la lista dei pacchi online per far funzionare la schermata
+        // Carica la lista dei pacchi online in tempo reale e aggiorna lo schermo
         db.ref('pacchi').off('value');
         db.ref('pacchi').on('value', (snapshot) => {
             pacchi = snapshot.val() ? snapshot.val() : [];
             aggiornaVista();
         });
+        
+        // Avvia l'orologio digitale in alto
+        startClock();
     } else {
+        // Se l'utente non è loggato, mostra solo la schermata di Login
         document.getElementById('loginPage').style.display = 'flex';
         document.getElementById('mainPage').style.display = 'none';
+        if (typeof html5QrcodeScanner !== 'undefined' && html5QrcodeScanner) {
+            html5QrcodeScanner.clear();
+        }
     }
 });
+    
 function aggiungiPacco(){
     const trk = document.getElementById('codiceTracciabilita').value.trim().toUpperCase();
     const c = document.getElementById('cognome').value.trim().toUpperCase();
