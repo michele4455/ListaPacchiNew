@@ -54,8 +54,47 @@
             position: absolute;
             top: 15px;
             right: 15px;
+            display: inline-block;
+            z-index: 1000;
+        }
+
+        .menu-toggle-btn {
+            background: var(--accent);
+            color: var(--primary);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            border: 2px solid var(--primary-dark);
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        /* Contenitore della tendina nascosto di base */
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background: var(--white);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            padding: 10px;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 5px;
+            min-width: 180px;
+        }
+
+        .dropdown-menu.show {
             display: flex;
-            gap: 10px;
+        }
+
+        .dropdown-menu button {
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
         }
 
         .logout-btn {
@@ -551,11 +590,13 @@
 </div>
 
 <div id="mainPage" style="display:none;">
-    <div class="app-header">
         <div class="header-actions">
-            <button class="anagrafica-btn" onclick="apriAnagraficaModal()">ANAGRAFICA CLIENTI</button>
-            <button class="report-btn" onclick="document.getElementById('reportModal').style.display='flex'">REPORT</button>
-            <button class="logout-btn" onclick="logout()">LOGOUT</button>
+            <button class="menu-toggle-btn" onclick="toggleMenuTendina(event)">Menu ☰</button>
+            <div id="menuTendina" class="dropdown-menu">
+                <button class="anagrafica-btn" onclick="apriAnagraficaModal(); chiudiMenuTendina();">ANAGRAFICA CLIENTI</button>
+                <button class="report-btn" onclick="document.getElementById('reportModal').style.display='flex'; chiudiMenuTendina();">REPORT</button>
+                <button class="logout-btn" onclick="logout(); chiudiMenuTendina();">LOGOUT</button>
+            </div>
         </div>
         <div class="header-content">
             <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp">
@@ -637,6 +678,20 @@ const canvas = document.getElementById('signature-pad');
 const ctx = canvas.getContext('2d');
 let drawing = false;
 
+function toggleMenuTendina(event) {
+    event.stopPropagation();
+    const menu = document.getElementById('menuTendina');
+    menu.classList.toggle('show');
+}
+
+function chiudiMenuTendina() {
+    const menu = document.getElementById('menuTendina');
+    if (menu) menu.classList.remove('show');
+}
+
+// Chiude la tendina automaticamente se si clicca in un qualsiasi altro punto della pagina
+window.addEventListener('click', chiudiMenuTendina);   
+    
 function showAlert(testo, titolo = "Attenzione") {
     document.getElementById('alertTitle').innerText = titolo;
     document.getElementById('alertMsg').innerText = testo;
@@ -651,10 +706,13 @@ function startScanner(targetInputId) {
     document.getElementById('torchBtn').innerText = "🔦 ACCENDI TORCIA";
 
     const config = { 
-        fps: 30, // Portato a 30 fps per la massima fluidità
-        qrbox: { width: 280, height: 160 },
-        rememberLastUsedCamera: true, // Ricorda la fotocamera per aprirsi prima
+        fps: 60, 
+        qrbox: { width: 300, height: 180 }, // Box leggermente allargato per facilitare il puntamento immediato
+        rememberLastUsedCamera: true, 
         aspectRatio: 1.777778,
+        experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true // Sfrutta l'accelerazione hardware nativa del telefono (istantaneo)
+        },
         formatsToSupport: [ 
             Html5QrcodeSupportedFormats.QR_CODE, 
             Html5QrcodeSupportedFormats.CODE_128, 
