@@ -1050,17 +1050,32 @@ window.addEventListener('mouseup', () => drawing = false);
 canvas.addEventListener('touchstart', (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
 canvas.addEventListener('touchmove', (e) => { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
 
-function login(){
-    const email = document.getElementById('loginEmail').value.trim();
+function login() {
+    const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
-    if (!email || !password) return showAlert("Inserisci email e password");
+
+    if (!email || !password) {
+        showAlert("Inserisci email e password per accedere.");
+        return;
+    }
 
     firebase.auth().signInWithEmailAndPassword(email, password)
-        .then((userCredential) => { resetInattivita(); })
-        .catch((error) => { showAlert("Credenziali errate o errore di connessione"); });
+        .then((userCredential) => {
+            // Login effettuato con successo
+            resetInattivita();
+        })
+        .catch((error) => {
+            showAlert("Errore di accesso: " + error.message);
+        });
 }
 
-function logout() { firebase.auth().signOut().then(() => { location.reload(); }); }
+function logout() {
+    firebase.auth().signOut().then(() => {
+        window.location.reload();
+    }).catch((error) => {
+        showAlert("Errore durante il logout: " + error.message);
+    });
+}
 
 
 
@@ -1076,36 +1091,28 @@ function aggiungerePacco(){
     }
     finalizzaInserimentoPacco();
 }
+    
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
-        // Nasconde la pagina di login e mostra il gestionale principale
+        // Utente autorizzato: nasconde il login e mostra il gestionale principale
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainPage').style.display = 'block';
         
-        // Attiva la sincronizzazione sicura dell'anagrafica ripulita dai duplicati
-        inizializzaSincronizzazioneAnagrafica();
+        // Sincronizza l'anagrafica clienti dal database online
+        if (typeof inizializzaSincronizzazioneAnagrafica === "function") {
+            inizializzaSincronizzazioneAnagrafica();
+        }
         
-        // Attiva il controllo di inattività automatica
-        resetInattivita();
-        
-        // Carica la lista dei pacchi online in tempo reale e aggiorna lo schermo
-        db.ref('pacchi').off('value');
-        db.ref('pacchi').on('value', (snapshot) => {
-            pacchi = snapshot.val() ? snapshot.val() : [];
-            aggiornaVista();
-        });
-        
-        // Avvia l'orologio digitale in alto
-        startClock();
+        // Sincronizza e scarica tutti i pacchi (in giacenza, storici, ecc.) da Firebase
+        if (typeof inizializzaSincronizzazioneFirebase === "function") {
+            inizializzaSincronizzazioneFirebase();
+        }
     } else {
-        // Se l'utente non è loggato, mostra solo la schermata di Login
+        // Utente non autorizzato (o sloggato): mostra la schermata di accesso e nasconde il gestionale
         document.getElementById('loginPage').style.display = 'flex';
         document.getElementById('mainPage').style.display = 'none';
-        if (typeof html5QrcodeScanner !== 'undefined' && html5QrcodeScanner) {
-            html5QrcodeScanner.clear();
-        }
     }
-});
+
     
 function aggiungiPacco(){
     const trk = document.getElementById('codiceTracciabilita').value.trim().toUpperCase();
