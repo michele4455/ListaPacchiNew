@@ -705,6 +705,58 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+let anagraficaClienti = {};
+
+// Carica anagrafica clienti in tempo reale con controllo automatico dei duplicati
+db.ref('anagraficaClienti').on('value', (snapshot) => {
+    const dati = snapshot.val() || {};
+    const anagraficaPulita = {};
+    let modificato = false;
+
+    Object.keys(dati).forEach(key => {
+        const c = dati[key];
+        if (!c || !c.cognome) return;
+
+        // Normalizzazione per evitare duplicati causati da spazi o minuscole
+        const cognomePulito = c.cognome.trim().toUpperCase();
+        const nomePulito = (c.nome || "").trim().toUpperCase();
+        const chiaveUnica = `${cognomePulito}_${nomePulito}`;
+
+        // Gestione pulita del telefono
+        let telPulito = (c.telefono || "").trim();
+        if (telPulito === "" || telPulito === "-") telPulito = "-";
+
+        if (anagraficaPulita[chiaveUnica]) {
+            // Se esiste già il record (duplicato), unisce i telefoni senza perdere informazioni
+            let telEsistente = anagraficaPulita[chiaveUnica].telefono;
+            if (telPulito !== "-" && telEsistente.indexOf(telPulito) === -1) {
+                anagraficaPulita[chiaveUnica].telefono = telEsistente === "-" ? telPulito : `${telEsistente} / ${telPulito}`;
+            }
+            modificato = true; // Segnala che è stato trovato e rimosso un duplicato corrotto
+        } else {
+            anagraficaPulita[chiaveUnica] = {
+                cognome: cognomePulito,
+                nome: nomePulito,
+                telefono: telPulito
+            };
+        }
+        
+        // Se la vecchia chiave del record era scritta male o con spazi, richiede l'allineamento
+        if (key !== chiaveUnica) {
+            modificato = true;
+        }
+    });
+
+    anagraficaClienti = anagraficaPulita;
+
+    // Se sono stati rilevati e accorpati duplicati obsoleti, pulisce e riallinea Firebase in automatico
+    if (modificato) {
+        // Rimuove l'intera anagrafica sporca e scrive immediatamente quella sanata e unita
+        db.ref('anagraficaClienti').set(anagraficaClienti);
+    }
+
+    renderAnagrafica();
+});
 
 let pacchi = [];
 let anagraficaClienti = {}; 
@@ -848,7 +900,9 @@ setInterval(updateClock, 1000);
 updateClock();
 
 function salva(){ db.ref('pacchi').set(pacchi); }
-function salvaAnagrafica(){ db.ref('anagrafica_clienti').set(anagraficaClienti); }
+function salvaAnagrafica() {
+    db.ref('anagraficaClienti').set(anagraficaClienti);
+}
 
 function gestisciAutocomplete(val) {
     const box = document.getElementById('suggestionsBox');
