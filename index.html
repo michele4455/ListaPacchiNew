@@ -656,7 +656,7 @@
             <input type="text" id="codiceRiconoscimento" placeholder="ID Pacco" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
             
             <div class="autocomplete-container" style="position:relative;">
-                <input type="text" id="cognome" placeholder="Cognome" oninput="gestisciAutocomplete(this.value)" onkeydown="navigaSuggerimenti(event)" autocomplete="off">
+                <input type="text" id="cognome" placeholder="Cognome" onkeydown="navigaSuggerimenti(event)" autocomplete="off">
                 <div id="suggestionsBox" class="suggestions-list" style="background: white;"></div>
             </div>
             <input type="text" id="nome" placeholder="Nome">
@@ -1906,11 +1906,16 @@ function eliminaClienteAnagrafica(key) {
     }
 }
     
-document.getElementById('cognome').addEventListener('keydown', function(event) {
+// Gestione della tastiera sul campo cognome: mostra i suggerimenti e risponde al tasto CANC
+document.getElementById('cognome').addEventListener('keyup', function(event) {
     if (event.key === 'Delete' || event.key === 'Canc') {
         document.getElementById('suggestionsBox').style.display = 'none';
+        return;
     }
+    // Chiama l'autocomplete per mostrare i suggerimenti mentre digiti le lettere
+    gestisciAutocomplete(this.value);
 });
+    
 </script>
     
 </body>
