@@ -1089,11 +1089,15 @@ firebase.auth().onAuthStateChanged((user) => {
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainPage').style.display = 'block';
         
+        // 🌟 AGGIUNGI QUESTE DUE RIGHE ANCHE QUI:
+        inizializzaSincronizzazioneFirebase();
         inizializzaSincronizzazioneAnagrafica();
-        inizializzaSincronizzazioneFirebase(); 
+        
+        resetInattivita();
     } else {
         document.getElementById('loginPage').style.display = 'flex';
         document.getElementById('mainPage').style.display = 'none';
+        clearTimeout(timeoutInattivita);
     }
 });
 
