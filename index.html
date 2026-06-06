@@ -860,29 +860,30 @@ function startScanner(targetInputId) {
     document.getElementById('torchBtn').style.display = 'block';
     document.getElementById('torchBtn').innerText = "🔦 ACCENDI TORCIA";
 
-    // Impostazioni avanzate per contrasto dinamico e scotch/riflessi
+    // CONFIGURAZIONE VELOCE COMPRESA DI QR CODE
     const config = { 
-        fps: 25, 
+        fps: 30, 
         qrbox: function(viewfinderWidth, viewfinderHeight) {
+            // Finestra leggermente più alta per inquadrare comodamente sia i QR quadrati che i codici a barre lunghi
             return {
                 width: Math.floor(viewfinderWidth * 0.85),
-                height: Math.floor(viewfinderHeight * 0.45)
+                height: Math.floor(viewfinderHeight * 0.50)
             };
         },
         rememberLastUsedCamera: true,
         aspectRatio: 1.777778,
-        experimentalFeatures: { 
-            useBarCodeDetectorIfSupported: true 
+        // RISOLUZIONE OTTIMIZZATA: Meno pixel da elaborare = calcolo istantaneo sul telefono
+        videoConstraints: {
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            facingMode: "environment"
         },
+        // FORMATI SELEZIONATI: Solo QR e i codici reali dei corrieri (senza spreco di risorse)
         formatsToSupport: [ 
-            Html5QrcodeSupportedFormats.QR_CODE, 
-            Html5QrcodeSupportedFormats.CODE_128, 
-            Html5QrcodeSupportedFormats.CODE_39, 
-            Html5QrcodeSupportedFormats.EAN_13, 
-            Html5QrcodeSupportedFormats.EAN_8,
-            Html5QrcodeSupportedFormats.UPC_A,
-            Html5QrcodeSupportedFormats.UPC_E,
-            Html5QrcodeSupportedFormats.ITF
+            Html5QrcodeSupportedFormats.QR_CODE,  // <--- REINSERITI I QR CODE
+            Html5QrcodeSupportedFormats.CODE_128, // Per GLS, BRT, DHL, ecc.
+            Html5QrcodeSupportedFormats.ITF,      // Per Amazon e Poste Italiane
+            Html5QrcodeSupportedFormats.CODE_39   // Formato industriale generico
         ] 
     };
 
@@ -895,6 +896,23 @@ function startScanner(targetInputId) {
                 cameraId, 
                 config, 
                 (decodedText) => {
+                    // GENERATORE DI SUONO SUPER POTENZIATO AL MASSIMO
+                    try {
+                        let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                        let oscillator = audioCtx.createOscillator();
+                        let gainNode = audioCtx.createGain();
+                        
+                        oscillator.type = 'square'; 
+                        oscillator.frequency.value = 800; 
+                        gainNode.gain.setValueAtTime(1.0, audioCtx.currentTime); 
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioCtx.destination);
+                        
+                        oscillator.start();
+                        oscillator.stop(audioCtx.currentTime + 0.15); 
+                    } catch(e) { console.log("Impossibile riprodurre il beep audio", e); }
+
                     let pulito = decodedText.trim().toUpperCase();
                     document.getElementById(targetInputId).value = pulito;
                     if(targetInputId === 'codiceTracciabilita'){
@@ -906,7 +924,7 @@ function startScanner(targetInputId) {
                 },
                 (errorMessage) => {}
             ).then(() => {
-                // AGGIUNTA LOGICA: Forza la messa a fuoco continua sull'hardware dello smartphone
+                // Messa a fuoco continua hardware dello smartphone
                 try {
                     const track = html5QrCode.getRunningTrack();
                     const capabilities = track.getCapabilities();
@@ -915,34 +933,33 @@ function startScanner(targetInputId) {
                     }
                 } catch (e) { console.log("Messa a fuoco avanzata non supportata", e); }
 
-                // AGGIUNTA LOGICA: Crea la barra laser animata sovrapposta allo scanner
+                // Barra laser animata rossa
                 const readerDiv = document.getElementById('reader');
                 if (readerDiv && !document.getElementById('laser-scanner-line')) {
                     const laser = document.createElement('div');
                     laser.id = 'laser-scanner-line';
                     laser.style.position = 'absolute';
-                    laser.style.left = '10%';
-                    laser.style.width = '80%';
+                    laser.style.left = '5%';
+                    laser.style.width = '90%';
                     laser.style.height = '3px';
                     laser.style.backgroundColor = '#ff4757';
                     laser.style.boxShadow = '0 0 12px 3px #ff4757';
                     laser.style.zIndex = '10';
                     laser.style.pointerEvents = 'none';
-                    laser.style.top = '30%';
+                    laser.style.top = '35%';
                     
-                    // Animazione fluida su e giù
                     let andandoGiu = true;
                     setInterval(() => {
                         let topPct = parseFloat(laser.style.top);
                         if (andandoGiu) {
-                            topPct += 1.5;
+                            topPct += 2.0; 
                             if (topPct >= 65) andandoGiu = false;
                         } else {
-                            topPct -= 1.5;
-                            if (topPct <= 30) andandoGiu = true;
+                            topPct -= 2.0;
+                            if (topPct <= 35) andandoGiu = true;
                         }
                         laser.style.top = topPct + '%';
-                    }, 20);
+                    }, 15);
 
                     readerDiv.style.position = 'relative';
                     readerDiv.appendChild(laser);
