@@ -1516,7 +1516,7 @@ stessiPacchi.forEach(sp => {
             <div>
                 <strong>#${sp.riconoscimento}</strong> 
                 - ${sp.corriere}${infoContr}${infoNote}<br>
-                <small>TRK: <span class="highlight-trk" onclick="copiaTesto('${sp.codiceTracciabilita}'); event.preventDefault(); event.stopPropagation();">${sp.codiceTracciabilita}</span> | Arrivato: ${sp.dataTestoInserimento || '-'}</small>
+                <small>TRK: <span class="highlight-trk" onclick="event.preventDefault(); event.stopPropagation(); copiaTesto('${sp.codiceTracciabilita}');">${sp.codiceTracciabilita}</span> | Arrivato: ${sp.dataTestoInserimento || '-'}</small>
             </div>
         </label>
     `;
