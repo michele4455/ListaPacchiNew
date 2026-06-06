@@ -185,11 +185,10 @@
             align-items: center; 
             height: 100vh; 
             background: var(--primary); 
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            z-index: 9999;
+        }
+
+        body {
+            overflow: hidden;
         }
         
         .login-box button {
@@ -1142,6 +1141,7 @@ firebase.auth().onAuthStateChanged((user) => {
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainPage').style.display = 'block';
         document.querySelector('.container').style.display = 'block';
+        document.body.style.overflow = 'auto';
         
         // Avvia la sincronizzazione unificata dell'anagrafica e dei pacchi storici
         inizializzaSincronizzazioneAnagrafica();
@@ -1160,6 +1160,7 @@ firebase.auth().onAuthStateChanged((user) => {
         document.getElementById('loginPage').style.display = 'flex';
         document.getElementById('mainPage').style.display = 'none';
         document.querySelector('.container').style.display = 'none';
+        document.body.style.overflow = 'hidden';
         if (typeof html5QrcodeScanner !== 'undefined' && html5QrcodeScanner) {
             html5QrcodeScanner.clear();
         }
