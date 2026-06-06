@@ -179,12 +179,22 @@
             font-weight: bold;
         }
 
-        #loginPage { 
+        #loginPage {
             display: flex;
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            background: var(--primary); 
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: var(--primary);
+        }
+        .login-box { 
+            background: var(--white);
+            padding: 40px; 
+            border-radius: 20px; 
+            text-align: center; 
+            width: 100%; 
+            max-width: 350px; 
+            border-top: 8px solid var(--accent); 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         }
 
         body {
@@ -204,10 +214,10 @@
             transition: transform 0.2s, background-color 0.2s;
         }
 
-        .container { 
-            max-width: 1000px; 
+       .container {
+            max-width: 1000px;
             margin: 0 auto;
-            padding: 0 20px 40px 20px; 
+            padding: 0 20px 40px 20px;
         }
 
         .toggle-form-btn {
