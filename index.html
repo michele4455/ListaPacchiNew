@@ -1506,21 +1506,21 @@ function handleRitira(id, forzaScaduto = false) {
     document.getElementById('tipoUscita').value = forzaScaduto ? 'scaduto' : 'cliente';
     
     let htmlLista = `<p style="margin-top:0;"><b>Seleziona i pacchi da ritirare:</b></p>`;
-    stessiPacchi.forEach(sp => {
-        const isTarget = sp.id === id;
-        let infoContr = sp.isContrassegno ? `<b style="color:#ff4757;"> [CONTRASSEGNO € ${sp.importoContrassegno}]</b>` : '';
-        let infoNote = (sp.noteAggiuntive && sp.noteAggiuntive.trim() !== '') ? ` <span style="color:var(--primary); font-weight:bold;">[ℹ️ ${sp.noteAggiuntive}]</span>` : '';
-        htmlLista += `
-            <label class="item-selezione">
-                <input type="checkbox" class="chk-multi-ritiro" data-id="${sp.id}" data-corriere="${sp.corriere}" ${isTarget ? 'checked' : ''}>
-                <div>
-                    <strong>#${sp.riconoscimento}</strong> 
-                    - ${sp.corriere}${infoContr}${infoNote}<br>
-                    <small>TRK: ${sp.codiceTracciabilita} | Arrivato: ${sp.dataTestoInserimento || '-'}</small>
-                </div>
-            </label>
-        `;
-    });
+stessiPacchi.forEach(sp => {
+    const isTarget = sp.id === id;
+    let infoContr = sp.isContrassegno ? `<b style="color:#ff4757;"> [CONTRASSEGNO € ${sp.importoContrassegno}]</b>` : '';
+    let infoNote = (sp.noteAggiuntive && sp.noteAggiuntive.trim() !== '') ? ` <span style="color:var(--primary); font-weight:bold;">[ℹ️ ${sp.noteAggiuntive}]</span>` : '';
+    htmlLista += `
+        <label class="item-selezione">
+            <input type="checkbox" class="chk-multi-ritiro" data-id="${sp.id}" data-corriere="${sp.corriere}" ${isTarget ? 'checked' : ''}>
+            <div>
+                <strong>#${sp.riconoscimento}</strong> 
+                - ${sp.corriere}${infoContr}${infoNote}<br>
+                <small>TRK: <span class="highlight-trk" onclick="copiaTesto('${sp.codiceTracciabilita}'); event.preventDefault(); event.stopPropagation();">${sp.codiceTracciabilita}</span> | Arrivato: ${sp.dataTestoInserimento || '-'}</small>
+            </div>
+        </label>
+    `;
+});
     document.getElementById('modalText').innerHTML = htmlLista;
 
     const updatePudoBox = () => {
