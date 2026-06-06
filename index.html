@@ -860,12 +860,18 @@ function startScanner(targetInputId) {
     document.getElementById('torchBtn').style.display = 'block';
     document.getElementById('torchBtn').innerText = "🔦 ACCENDI TORCIA";
 
+    // Impostazioni avanzate per contrasto dinamico e scotch/riflessi
     const config = { 
-        fps: 60, 
-        qrbox: { width: 300, height: 180 }, 
-        rememberLastUsedCamera: true, 
+        fps: 25, 
+        qrbox: function(viewfinderWidth, viewfinderHeight) {
+            return {
+                width: Math.floor(viewfinderWidth * 0.85),
+                height: Math.floor(viewfinderHeight * 0.45)
+            };
+        },
+        rememberLastUsedCamera: true,
         aspectRatio: 1.777778,
-        experimentalFeatures: {
+        experimentalFeatures: { 
             useBarCodeDetectorIfSupported: true 
         },
         formatsToSupport: [ 
@@ -873,44 +879,83 @@ function startScanner(targetInputId) {
             Html5QrcodeSupportedFormats.CODE_128, 
             Html5QrcodeSupportedFormats.CODE_39, 
             Html5QrcodeSupportedFormats.EAN_13, 
-            Html5QrcodeSupportedFormats.ITF 
-        ]
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.ITF
+        ] 
     };
 
-    html5QrCode.start(
-        { facingMode: "environment" }, 
-        config,
-        (decodedText) => {
-            riproduciSuonoScanner(); 
-            document.getElementById(targetInputId).value = decodedText.toUpperCase();
-            if(targetInputId === 'search') { aggiornaVista(); }
-            stopScanner();
-        },
-        (errorMessage) => {}
-    ).then(() => {
-        setTimeout(() => {
-            try {
-                if (html5QrCode && typeof html5QrCode.getCameraCapabilities === "function") {
-                    const caps = html5QrCode.getCameraCapabilities();
-                    if (caps && caps.torchFeature && caps.torchFeature.isSupported()) {
-                        document.getElementById('torchBtn').innerText = "🔦 ACCENDI TORCIA";
-                        return;
+    Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length) {
+            let backCamera = devices.find(device => device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('ambiente') || device.label.toLowerCase().includes('posteriore'));
+            let cameraId = backCamera ? backCamera.id : devices[devices.length - 1].id;
+            
+            html5QrCode.start(
+                cameraId, 
+                config, 
+                (decodedText) => {
+                    let pulito = decodedText.trim().toUpperCase();
+                    document.getElementById(targetInputId).value = pulito;
+                    if(targetInputId === 'codiceTracciabilita'){
+                        document.getElementById('codiceRiconoscimento').focus();
+                    } else if(targetInputId === 'search') {
+                        aggiornaVista();
                     }
-                }
-                const videoTrack = html5QrCode._localMediaStream && html5QrCode._localMediaStream.getVideoTracks()[0];
-                if (videoTrack && typeof videoTrack.getCapabilities === "function") {
-                    const capabilities = videoTrack.getCapabilities();
-                    if (capabilities.torch) {
-                        document.getElementById('torchBtn').innerText = "🔦 ACCENDI TORCIA";
+                    stopScanner();
+                },
+                (errorMessage) => {}
+            ).then(() => {
+                // AGGIUNTA LOGICA: Forza la messa a fuoco continua sull'hardware dello smartphone
+                try {
+                    const track = html5QrCode.getRunningTrack();
+                    const capabilities = track.getCapabilities();
+                    if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+                        track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
                     }
+                } catch (e) { console.log("Messa a fuoco avanzata non supportata", e); }
+
+                // AGGIUNTA LOGICA: Crea la barra laser animata sovrapposta allo scanner
+                const readerDiv = document.getElementById('reader');
+                if (readerDiv && !document.getElementById('laser-scanner-line')) {
+                    const laser = document.createElement('div');
+                    laser.id = 'laser-scanner-line';
+                    laser.style.position = 'absolute';
+                    laser.style.left = '10%';
+                    laser.style.width = '80%';
+                    laser.style.height = '3px';
+                    laser.style.backgroundColor = '#ff4757';
+                    laser.style.boxShadow = '0 0 12px 3px #ff4757';
+                    laser.style.zIndex = '10';
+                    laser.style.pointerEvents = 'none';
+                    laser.style.top = '30%';
+                    
+                    // Animazione fluida su e giù
+                    let andandoGiu = true;
+                    setInterval(() => {
+                        let topPct = parseFloat(laser.style.top);
+                        if (andandoGiu) {
+                            topPct += 1.5;
+                            if (topPct >= 65) andandoGiu = false;
+                        } else {
+                            topPct -= 1.5;
+                            if (topPct <= 30) andandoGiu = true;
+                        }
+                        laser.style.top = topPct + '%';
+                    }, 20);
+
+                    readerDiv.style.position = 'relative';
+                    readerDiv.appendChild(laser);
                 }
-            } catch (e) {
-                console.log("Controllo torcia inizializzato:", e);
-            }
-        }, 500);
-    }).catch((err) => {
-        showAlert("Errore fotocamera: " + err);
-        stopScanner();
+            }).catch(err => {
+                console.error("Errore avvio fotocamera:", err);
+            });
+        } else {
+            showAlert("Nessuna fotocamera trovata.");
+        }
+    }).catch(err => {
+        console.error("Errore recupero fotocamere:", err);
+        showAlert("Permesso fotocamera negato o non disponibile.");
     });
 }
 
