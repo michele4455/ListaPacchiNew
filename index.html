@@ -861,39 +861,33 @@ function startScanner(targetInputId) {
     document.getElementById('torchBtn').innerText = "🔦 ACCENDI TORCIA";
 
     const config = {
-            fps: 60, // Riportato a 30 per evitare il surriscaldamento e dare tempo alla messa a fuoco
+            fps: 60, // Aumentato a 60 fps per una fluidità e cattura fulminea
             qrbox: function(viewfinderWidth, viewfinderHeight) {
-                // Finestra di scansione più alta: permette di inquadrare i codici anche se sono inclinati
+                // Finestra ideale: larga e sottile, perfetta per i codici a barre dei pacchi
                 return { 
-                    width: Math.floor(viewfinderWidth * 0.85), 
-                    height: Math.floor(viewfinderHeight * 0.60) 
+                    width: Math.floor(viewfinderWidth * 0.90), 
+                    height: Math.floor(viewfinderHeight * 0.40) 
                 };
             },
             rememberLastUsedCamera: true,
-            
-            // Impostazioni video flessibili per attivare l'autofocus nativo del telefono
+            aspectRatio: 1.777778, 
+            // RISOLUZIONE OTTIMIZZATA PER CODICI A BARRE (Full HD / HD)
             videoConstraints: {
-                width: { ideal: 1280 },
-                height: { ideal: 720 },
-                facingMode: "environment",
-                // Chiediamo esplicitamente lo zoom minimo e la messa a fuoco continua (ove supportati)
-                focusMode: "continuous",
-                advanced: [{ orthofracture: true }, { zoom: 1.0 }] 
+                width: { ideal: 1920, min: 1280 },
+                height: { ideal: 1080, min: 720 },
+                facingMode: "environment"
             },
-            
-            // Sfrutta i sensori hardware dello smartphone (Android/iOS) per la lettura istantanea
-            useBarCodeDetectorIfSupported: true, 
-            
+            // TUTTI I FORMATI REALI DEI CORRIERI (Senza esclusioni che causano blocchi)
             formatsToSupport: [
-                Html5QrcodeSupportedFormats.CODE_128,   // Lettere di vettura standard (GLS, BRT, DHL, InPost)
-                Html5QrcodeSupportedFormats.CODE_39,    // Logistica/Amazon
-                Html5QrcodeSupportedFormats.ITF,        // Poste Italiane / Amazon (2 di 5 Interleto)
-                Html5QrcodeSupportedFormats.EAN_13,      // Codici a barre di prodotti commerciali
-                Html5QrcodeSupportedFormats.EAN_8,       // Prodotti piccoli
-                Html5QrcodeSupportedFormats.UPC_A,
-                Html5QrcodeSupportedFormats.UPC_E,
-                Html5QrcodeSupportedFormats.CODABAR,
-                Html5QrcodeSupportedFormats.QR_CODE     // Messo per ultimo per dare priorità ai codici a barre
+                Html5QrcodeSupportedFormats.QR_CODE,
+                Html5QrcodeSupportedFormats.CODE_128,   // Leader assoluto nei pacchi (GLS, BRT, DHL, InPost)
+                Html5QrcodeSupportedFormats.ITF,        // Poste Italiane / Amazon
+                Html5QrcodeSupportedFormats.CODE_39,     // Amazon / Logistica interna
+                Html5QrcodeSupportedFormats.EAN_13,      // Codici standard commerciali ed europei
+                Html5QrcodeSupportedFormats.EAN_8,       // Varianti corte
+                Html5QrcodeSupportedFormats.UPC_A,       // Standard internazionale
+                Html5QrcodeSupportedFormats.UPC_E,       // Standard internazionale corto
+                Html5QrcodeSupportedFormats.CODABAR      // Usato in alcune vecchie logistiche e spedizionieri
             ]
         };
     
