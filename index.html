@@ -812,21 +812,36 @@ function inizializzaSincronizzazioneAnagrafica() {
             }
 
             // Mostra i dati a schermo nella tabella anagrafica
-            renderAnagrafica();
+            function renderAnagrafica() {
+    const tbody = document.getElementById('anagraficaTableBody');
+    tbody.innerHTML = '';
 
-            // Attiva ora l'ascolto continuo in tempo reale sui clienti per modifiche future
-            db.ref('anagraficaClienti').on('value', (newSnapshot) => {
-                const aggiornati = newSnapshot.val() || {};
-                Object.keys(aggiornati).forEach(k => {
-                    if (aggiornati[k]) {
-                        aggiornati[k].cognome = aggiornati[k].cognome.toUpperCase();
-                        aggiornati[k].nome = (aggiornati[k].nome || "").toUpperCase();
-                    }
-                });
-                anagraficaClienti = aggiornati;
-                renderAnagrafica();
-            });
-        });
+    const sortedKeys = Object.keys(anagraficaClienti).sort((a, b) => a.localeCompare(b));
+
+    if (sortedKeys.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#666;">Nessun cliente in anagrafica.</td></tr>`;
+        return;
+    }
+
+    sortedKeys.forEach(key => {
+        const c = anagraficaClienti[key];
+        const tr = document.createElement('tr');
+        
+        // Protezione per evitare errori se la chiave contiene apici o caratteri speciali
+        const safeKey = key.replace(/'/g, "\\'");
+
+        tr.innerHTML = `
+            <td>${c.cognome}</td>
+            <td>${c.nome}</td>
+            <td>${c.telefono}</td>
+            <td>
+                <div class="actions-btn-container">
+                    <button class="btn-action btn-edit" title="Modifica" onclick="modificaClienteAnagrafica('${safeKey}')">✏️</button>
+                    <button class="btn-action btn-delete" title="Elimina" onclick="eliminaClienteAnagrafica('${safeKey}')">🗑️</button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
     });
 }
 
@@ -1986,19 +2001,15 @@ function renderAnagrafica() {
 }
 
 function modificaClienteAnagrafica(key) {
-    // Recuperiamo il cliente usando la chiave passata come parametro
     const c = anagraficaClienti[key];
     if (!c) return;
 
-    // Popoliamo i campi del Modal con i dati attuali
     document.getElementById('editAnagraficaCognome').value = c.cognome.toUpperCase();
     document.getElementById('editAnagraficaNome').value = c.nome.toUpperCase();
     document.getElementById('editAnagraficaTelefono').value = c.telefono === '-' ? '' : c.telefono;
     
-    // Mostriamo il Modal
     document.getElementById('editAnagraficaModal').style.display = 'flex';
     
-    // Gestiamo il click sul pulsante Salva
     document.getElementById('saveAnagraficaBtn').onclick = () => {
         const nuovoCognome = document.getElementById('editAnagraficaCognome').value.trim().toUpperCase();
         const nuovoNome = document.getElementById('editAnagraficaNome').value.trim().toUpperCase();
@@ -2008,34 +2019,31 @@ function modificaClienteAnagrafica(key) {
 
         const nuovaKey = `${nuovoCognome}_${nuovoNome}`;
 
-        // 1. Rimuoviamo il vecchio record SIA da Firebase SIA dalla memoria locale subito
-        db.ref(`anagraficaClienti/${key}`).remove();
-        delete anagraficaClienti[key];
+        // Se la chiave è cambiata (es. corretto un errore nel cognome), rimuove il vecchio record
+        if (nuovaKey !== key) {
+            db.ref(`anagraficaClienti/${key}`).remove();
+            delete anagraficaClienti[key];
+        }
 
-        // 2. Se esiste già un cliente con la nuova combinazione Nome_Cognome, uniamo i telefoni
-        if (anagraficaClienti[nuovaKey]) {
+        if (anagraficaClienti[nuovaKey] && nuovaKey !== key) {
             let telEsistente = anagraficaClienti[nuovaKey].telefono;
             if (nuovoTelefono !== "-" && telEsistente.indexOf(nuovoTelefono) === -1) {
                 nuovoTelefono = telEsistente === "-" ? nuovoTelefono : `${telEsistente} / ${nuovoTelefono}`;
             }
         }
 
-        // 3. Salviamo i nuovi dati nella memoria locale
         anagraficaClienti[nuovaKey] = {
             cognome: nuovoCognome,
             nome: nuovoNome,
             telefono: nuovoTelefono
         };
 
-        // 4. Salviamo su Firebase e, SOLO QUANDO HA FINITO, resettiamo e ridisegnamo tutto
+        // Salvataggio asincrono sicuro
         db.ref(`anagraficaClienti/${nuovaKey}`).set(anagraficaClienti[nuovaKey]).then(() => {
-            // Chiudiamo il modal
             document.getElementById('editAnagraficaModal').style.display = 'none';
+            document.getElementById('saveAnagraficaBtn').onclick = null; // Resetta il puntatore per sicurezza
             
-            // Svuotiamo l'evento del tasto salva per evitare che mantenga in memoria i vecchi dati al prossimo click
-            document.getElementById('saveAnagraficaBtn').onclick = null;
-            
-            // Ricarichiamo l'anagrafica pulita così tutti i nuovi pulsanti avranno la "nuovaKey" corretta
+            // Sincronizzazione forzata del database e render della tabella
             renderAnagrafica();
             aggiornaVista(); 
         }).catch((error) => {
