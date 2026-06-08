@@ -1986,15 +1986,19 @@ function renderAnagrafica() {
 }
 
 function modificaClienteAnagrafica(key) {
+    // Recuperiamo il cliente usando la chiave passata come parametro
     const c = anagraficaClienti[key];
     if (!c) return;
 
+    // Popoliamo i campi del Modal con i dati attuali
     document.getElementById('editAnagraficaCognome').value = c.cognome.toUpperCase();
     document.getElementById('editAnagraficaNome').value = c.nome.toUpperCase();
     document.getElementById('editAnagraficaTelefono').value = c.telefono === '-' ? '' : c.telefono;
     
+    // Mostriamo il Modal
     document.getElementById('editAnagraficaModal').style.display = 'flex';
     
+    // Gestiamo il click sul pulsante Salva
     document.getElementById('saveAnagraficaBtn').onclick = () => {
         const nuovoCognome = document.getElementById('editAnagraficaCognome').value.trim().toUpperCase();
         const nuovoNome = document.getElementById('editAnagraficaNome').value.trim().toUpperCase();
@@ -2004,9 +2008,11 @@ function modificaClienteAnagrafica(key) {
 
         const nuovaKey = `${nuovoCognome}_${nuovoNome}`;
 
+        // 1. Rimuoviamo il vecchio record SIA da Firebase SIA dalla memoria locale subito
         db.ref(`anagraficaClienti/${key}`).remove();
         delete anagraficaClienti[key];
 
+        // 2. Se esiste già un cliente con la nuova combinazione Nome_Cognome, uniamo i telefoni
         if (anagraficaClienti[nuovaKey]) {
             let telEsistente = anagraficaClienti[nuovaKey].telefono;
             if (nuovoTelefono !== "-" && telEsistente.indexOf(nuovoTelefono) === -1) {
@@ -2014,16 +2020,22 @@ function modificaClienteAnagrafica(key) {
             }
         }
 
+        // 3. Salviamo i nuovi dati nella memoria locale
         anagraficaClienti[nuovaKey] = {
             cognome: nuovoCognome,
             nome: nuovoNome,
             telefono: nuovoTelefono
         };
 
-        // MODIFICA APPLICATA QUI: 
-        // Spostati la chiusura del modal e il render della tabella dentro il .then() di Firebase
+        // 4. Salviamo su Firebase e, SOLO QUANDO HA FINITO, resettiamo e ridisegnamo tutto
         db.ref(`anagraficaClienti/${nuovaKey}`).set(anagraficaClienti[nuovaKey]).then(() => {
+            // Chiudiamo il modal
             document.getElementById('editAnagraficaModal').style.display = 'none';
+            
+            // Svuotiamo l'evento del tasto salva per evitare che mantenga in memoria i vecchi dati al prossimo click
+            document.getElementById('saveAnagraficaBtn').onclick = null;
+            
+            // Ricarichiamo l'anagrafica pulita così tutti i nuovi pulsanti avranno la "nuovaKey" corretta
             renderAnagrafica();
             aggiornaVista(); 
         }).catch((error) => {
