@@ -2020,11 +2020,15 @@ function modificaClienteAnagrafica(key) {
             telefono: nuovoTelefono
         };
 
-        db.ref(`anagraficaClienti/${nuovaKey}`).set(anagraficaClienti[nuovaKey]);
-
-        document.getElementById('editAnagraficaModal').style.display = 'none';
-        renderAnagrafica();
-        aggiornaVista(); 
+        // MODIFICA APPLICATA QUI: 
+        // Spostati la chiusura del modal e il render della tabella dentro il .then() di Firebase
+        db.ref(`anagraficaClienti/${nuovaKey}`).set(anagraficaClienti[nuovaKey]).then(() => {
+            document.getElementById('editAnagraficaModal').style.display = 'none';
+            renderAnagrafica();
+            aggiornaVista(); 
+        }).catch((error) => {
+            alert("Errore nel salvataggio: " + error.message);
+        });
     };
 }
 
