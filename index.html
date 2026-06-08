@@ -860,33 +860,37 @@ function startScanner(targetInputId) {
     document.getElementById('torchBtn').style.display = 'block';
     document.getElementById('torchBtn').innerText = "🔦 ACCENDI TORCIA";
 
-    // CONFIGURAZIONE VELOCE COMPRESA DI QR CODE
-    const config = { 
-        fps: 30, 
-        qrbox: function(viewfinderWidth, viewfinderHeight) {
-            // Finestra leggermente più alta per inquadrare comodamente sia i QR quadrati che i codici a barre lunghi
-            return {
-                width: Math.floor(viewfinderWidth * 0.85),
-                height: Math.floor(viewfinderHeight * 0.50)
-            };
-        },
-        rememberLastUsedCamera: true,
-        aspectRatio: 1.777778,
-        // RISOLUZIONE OTTIMIZZATA: Meno pixel da elaborare = calcolo istantaneo sul telefono
-        videoConstraints: {
-            width: { ideal: 640 },
-            height: { ideal: 480 },
-            facingMode: "environment"
-        },
-        // FORMATI SELEZIONATI: Solo QR e i codici reali dei corrieri (senza spreco di risorse)
-        formatsToSupport: [ 
-            Html5QrcodeSupportedFormats.QR_CODE,  // <--- REINSERITI I QR CODE
-            Html5QrcodeSupportedFormats.CODE_128, // Per GLS, BRT, DHL, ecc.
-            Html5QrcodeSupportedFormats.ITF,      // Per Amazon e Poste Italiane
-            Html5QrcodeSupportedFormats.CODE_39   // Formato industriale generico
-        ] 
-    };
-
+    const config = {
+            fps: 60, // Aumentato a 60 fps per una fluidità e cattura fulminea
+            qrbox: function(viewfinderWidth, viewfinderHeight) {
+                // Finestra ideale: larga e sottile, perfetta per i codici a barre dei pacchi
+                return { 
+                    width: Math.floor(viewfinderWidth * 0.90), 
+                    height: Math.floor(viewfinderHeight * 0.40) 
+                };
+            },
+            rememberLastUsedCamera: true,
+            aspectRatio: 1.777778, 
+            // RISOLUZIONE OTTIMIZZATA PER CODICI A BARRE (Full HD / HD)
+            videoConstraints: {
+                width: { ideal: 1920, min: 1280 },
+                height: { ideal: 1080, min: 720 },
+                facingMode: "environment"
+            },
+            // TUTTI I FORMATI REALI DEI CORRIERI (Senza esclusioni che causano blocchi)
+            formatsToSupport: [
+                Html5QrcodeSupportedFormats.QR_CODE,
+                Html5QrcodeSupportedFormats.CODE_128,   // Leader assoluto nei pacchi (GLS, BRT, DHL, InPost)
+                Html5QrcodeSupportedFormats.ITF,        // Poste Italiane / Amazon
+                Html5QrcodeSupportedFormats.CODE_39,     // Amazon / Logistica interna
+                Html5QrcodeSupportedFormats.EAN_13,      // Codici standard commerciali ed europei
+                Html5QrcodeSupportedFormats.EAN_8,       // Varianti corte
+                Html5QrcodeSupportedFormats.UPC_A,       // Standard internazionale
+                Html5QrcodeSupportedFormats.UPC_E,       // Standard internazionale corto
+                Html5QrcodeSupportedFormats.CODABAR      // Usato in alcune vecchie logistiche e spedizionieri
+            ]
+        };
+    
     Html5Qrcode.getCameras().then(devices => {
         if (devices && devices.length) {
             let backCamera = devices.find(device => device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('ambiente') || device.label.toLowerCase().includes('posteriore'));
