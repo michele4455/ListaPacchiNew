@@ -812,36 +812,21 @@ function inizializzaSincronizzazioneAnagrafica() {
             }
 
             // Mostra i dati a schermo nella tabella anagrafica
-            function renderAnagrafica() {
-    const tbody = document.getElementById('anagraficaTableBody');
-    tbody.innerHTML = '';
+            renderAnagrafica();
 
-    const sortedKeys = Object.keys(anagraficaClienti).sort((a, b) => a.localeCompare(b));
-
-    if (sortedKeys.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#666;">Nessun cliente in anagrafica.</td></tr>`;
-        return;
-    }
-
-    sortedKeys.forEach(key => {
-        const c = anagraficaClienti[key];
-        const tr = document.createElement('tr');
-        
-        // Protezione per evitare errori se la chiave contiene apici o caratteri speciali
-        const safeKey = key.replace(/'/g, "\\'");
-
-        tr.innerHTML = `
-            <td>${c.cognome}</td>
-            <td>${c.nome}</td>
-            <td>${c.telefono}</td>
-            <td>
-                <div class="actions-btn-container">
-                    <button class="btn-action btn-edit" title="Modifica" onclick="modificaClienteAnagrafica('${safeKey}')">✏️</button>
-                    <button class="btn-action btn-delete" title="Elimina" onclick="eliminaClienteAnagrafica('${safeKey}')">🗑️</button>
-                </div>
-            </td>
-        `;
-        tbody.appendChild(tr);
+            // Attiva ora l'ascolto continuo in tempo reale sui clienti per modifiche future
+            db.ref('anagraficaClienti').on('value', (newSnapshot) => {
+                const aggiornati = newSnapshot.val() || {};
+                Object.keys(aggiornati).forEach(k => {
+                    if (aggiornati[k]) {
+                        aggiornati[k].cognome = aggiornati[k].cognome.toUpperCase();
+                        aggiornati[k].nome = (aggiornati[k].nome || "").toUpperCase();
+                    }
+                });
+                anagraficaClienti = aggiornati;
+                renderAnagrafica();
+            });
+        });
     });
 }
 
@@ -2019,13 +2004,10 @@ function modificaClienteAnagrafica(key) {
 
         const nuovaKey = `${nuovoCognome}_${nuovoNome}`;
 
-        // Se la chiave è cambiata (es. corretto un errore nel cognome), rimuove il vecchio record
-        if (nuovaKey !== key) {
-            db.ref(`anagraficaClienti/${key}`).remove();
-            delete anagraficaClienti[key];
-        }
+        db.ref(`anagraficaClienti/${key}`).remove();
+        delete anagraficaClienti[key];
 
-        if (anagraficaClienti[nuovaKey] && nuovaKey !== key) {
+        if (anagraficaClienti[nuovaKey]) {
             let telEsistente = anagraficaClienti[nuovaKey].telefono;
             if (nuovoTelefono !== "-" && telEsistente.indexOf(nuovoTelefono) === -1) {
                 nuovoTelefono = telEsistente === "-" ? nuovoTelefono : `${telEsistente} / ${nuovoTelefono}`;
@@ -2038,17 +2020,11 @@ function modificaClienteAnagrafica(key) {
             telefono: nuovoTelefono
         };
 
-        // Salvataggio asincrono sicuro
-        db.ref(`anagraficaClienti/${nuovaKey}`).set(anagraficaClienti[nuovaKey]).then(() => {
-            document.getElementById('editAnagraficaModal').style.display = 'none';
-            document.getElementById('saveAnagraficaBtn').onclick = null; // Resetta il puntatore per sicurezza
-            
-            // Sincronizzazione forzata del database e render della tabella
-            renderAnagrafica();
-            aggiornaVista(); 
-        }).catch((error) => {
-            alert("Errore nel salvataggio: " + error.message);
-        });
+        db.ref(`anagraficaClienti/${nuovaKey}`).set(anagraficaClienti[nuovaKey]);
+
+        document.getElementById('editAnagraficaModal').style.display = 'none';
+        renderAnagrafica();
+        aggiornaVista(); 
     };
 }
 
