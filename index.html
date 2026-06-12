@@ -750,8 +750,9 @@
         </div>
 
         <div style="margin-top:20px; display:flex; gap:10px;">
-            <button onclick="chiudiInventarioModal()" class="modal-btn" style="background:#e0e0e0; color:#333;">CHIUDI INVENTARIO</button>
-        </div>
+    <button onclick="chiudiInventarioModal()" class="modal-btn" style="background:#e0e0e0; color:#333;">CHIUDI INVENTARIO</button>
+    <button id="btnTerminaInventario" onclick="terminaInventarioConReport()" class="modal-btn" style="display:none; background:var(--success, #00b894); color:white; font-weight:bold;">TERMINA INVENTARIO</button>
+</div>
     </div>
 </div>
 
@@ -2203,32 +2204,23 @@ function riproduciBeepSuccesso() {
         const oscillator = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
 
-        // L'onda quadra ('square') produce un suono drastico, sfacciato e molto più rumoroso di quella normale
         oscillator.type = 'square'; 
-        
-        // Frequenza acuta e perforante (1400Hz), ottima per ambienti con rumore per farsi sentire chiaramente
         oscillator.frequency.setValueAtTime(1400, audioCtx.currentTime); 
-        
-        // VOLUME FORZATO AL MASSIMO ASSOLUTO (Valore 5.0 per spingere al limite i diffusori hardware)
         gainNode.gain.setValueAtTime(5.0, audioCtx.currentTime); 
 
         oscillator.connect(gainNode);
         gainNode.connect(audioCtx.destination);
-
         oscillator.start();
-        // Durata di 250ms per un suono ben definito e impossibile da ignorare
         oscillator.stop(audioCtx.currentTime + 0.25); 
     } catch (e) {
         console.error("Errore nell'avvio dell'audio:", e);
     }
 }
 
-// Funzione che apre la schermata dell'inventario e inizializza il selettore dei corrieri nativi
 function apriInventarioModal() {
     const selectCorriere = document.getElementById('inventarioCorriereSelect');
-    selectCorriere.innerHTML = ""; // Pulisce
+    selectCorriere.innerHTML = ""; 
     
-    // Popola il menu a tendina usando l'array dei corrieri già registrato a livello globale ("corrieri")
     corrieri.forEach(corriere => {
         let opt = document.createElement('option');
         opt.value = corriere;
@@ -2236,40 +2228,33 @@ function apriInventarioModal() {
         selectCorriere.appendChild(opt);
     });
 
-    // Reset dei campi e dell'array delle scansioni temporanee
     trkScansionatiInventario = [];
     document.getElementById('inventarioSearchInput').value = "";
     
-    // Nasconde il pulsante "Termina Inventario" all'apertura (poiché non ci sono ancora scansioni)
+    // Nasconde sempre il pulsante termina all'inizio
     const btnTermina = document.getElementById('btnTerminaInventario');
     if (btnTermina) {
         btnTermina.style.display = 'none';
     }
     
     document.getElementById('inventarioModal').style.display = 'flex';
-    caricaPacchiInventario(); // Carica i pacchi del primo corriere selezionato di default
+    caricaPacchiInventario(); 
 }
 
-// Funzione di chiusura pura dell'inventario (Chiudi senza salvare/scaricare nulla)
 function chiudiInventarioModal() {
     document.getElementById('inventarioModal').style.display = 'none';
     trkScansionatiInventario = [];
 }
 
-// Filtra e carica dinamicamente i soli pacchi in giacenza associati al corriere selezionato
 function caricaPacchiInventario() {
     const corriereSelezionato = document.getElementById('inventarioCorriereSelect').value;
     const container = document.getElementById('inventarioPacchiContainer');
-    container.innerHTML = ""; // Svuota contenitore precedente
+    container.innerHTML = ""; 
     
-    // FILTRO GIACENZA CORRETTO: Prendiamo solo i pacchi del corriere che NON sono ritirati (ritirato === false)
     const listaPacchiAttivi = Object.values(pacchi).filter(p => {
         if (!p || typeof p !== 'object') return false;
         if (p.corriere !== corriereSelezionato) return false;
-        
-        // Se il pacco è contrassegnato come ritirato nel database, viene escluso dall'inventario
         if (p.ritirato === true || p.ritirato === "true") return false;
-        
         return true;
     });
 
@@ -2278,13 +2263,12 @@ function caricaPacchiInventario() {
     } else {
         listaPacchiAttivi.forEach(p => {
             const trkUpper = (p.codiceTracciabilita || "").trim().toUpperCase();
-            if (trkUpper === "" || trkUpper === "-") return; // Salta se privo di tracking valido
+            if (trkUpper === "" || trkUpper === "-") return; 
 
             const divPacco = document.createElement('div');
             divPacco.className = 'pacco-inventario-item';
             divPacco.id = `inv-pacco-${trkUpper}`;
             
-            // Imposta lo stato visivo basandosi sul fatto che sia già stato inserito/scansionato in questa sessione
             if (trkScansionatiInventario.includes(trkUpper)) {
                 divPacco.classList.add('scansionato');
             }
@@ -2296,12 +2280,9 @@ function caricaPacchiInventario() {
             container.appendChild(divPacco);
         });
     }
-
-    // Aggiorna immediatamente il calcolo dei riepiloghi numerici passandogli la lista pulita dei soli presenti a scaffale
     aggiornaRiepiloghiInventario(listaPacchiAttivi);
 }
 
-// Gestisce l'evento di inserimento o lettura tramite scanner della barra di input
 function gestisciScansioneInventario() {
     const inputField = document.getElementById('inventarioSearchInput');
     const codiceLetto = inputField.value.trim().toUpperCase();
@@ -2309,7 +2290,6 @@ function gestisciScansioneInventario() {
 
     const corriereSelezionato = document.getElementById('inventarioCorriereSelect').value;
     
-    // FILTRO IDENTICO AL CARICAMENTO
     const listaPacchiAttivi = Object.values(pacchi).filter(p => {
         if (!p || typeof p !== 'object') return false;
         if (p.corriere !== corriereSelezionato) return false;
@@ -2317,7 +2297,6 @@ function gestisciScansioneInventario() {
         return true;
     });
 
-    // Verifica se il codice inserito corrisponde ad un tracciamento presente in giacenza o al suo ID Riconoscimento
     const trovato = listaPacchiAttivi.find(p => {
         const trkPacco = (p.codiceTracciabilita || "").trim().toUpperCase();
         const idPacco = String(p.riconoscimento || "").trim();
@@ -2325,57 +2304,42 @@ function gestisciScansioneInventario() {
     });
 
     if (trovato) {
-        // EFFETTUA IL BEEP AD ALTISSIMO VOLUME
         riproduciBeepSuccesso();
-
         const trkChiave = (trovato.codiceTracciabilita || "").trim().toUpperCase();
 
-        // Se non era già stato aggiunto ai letti in questa sessione, lo inserisce
         if (!trkScansionatiInventario.includes(trkChiave)) {
             trkScansionatiInventario.push(trkChiave);
             
-            // Cerca l'elemento grafico e lo illumina istantaneamente di verde
             const elementoGrafico = document.getElementById(`inv-pacco-${trkChiave}`);
             if (elementoGrafico) {
                 elementoGrafico.classList.add('scansionato');
             }
             
-            // Mostra il pulsante "Termina Inventario" dal momento in cui viene registrata almeno una scansione valida
+            // FAI COMPARIRE IL PULSANTE NON APPENA FA LA PRIMA SCANSIONE
             const btnTermina = document.getElementById('btnTerminaInventario');
             if (btnTermina) {
                 btnTermina.style.display = 'inline-block';
             }
             
-            // Aggiorna i conteggi di riepilogo a schermo
             aggiornaRiepiloghiInventario(listaPacchiAttivi);
         }
-        
-        // Svuota la barra di input pronto per accogliere la scansione successiva continuativa
         inputField.value = "";
     }
 }
 
-// Calcola ed aggiorna i tre parametri richiesti: Totali, Scansionati e Mancanti con elenco dettagliato
 function aggiornaRiepiloghiInventario(listaPacchiAttivi) {
-    // 1. Pacchi in inventario complessivi su giacenza reale
     const totaleGiacenza = listaPacchiAttivi.length;
-    
-    // 2. Pacchi effettivamente scansionati che trovano corrispondenza sulla lista attiva
     const scansionatiEInGiacenza = listaPacchiAttivi.filter(p => trkScansionatiInventario.includes((p.codiceTracciabilita || "").trim().toUpperCase()));
     const totaleScansionati = scansionatiEInGiacenza.length;
-    
-    // 3. Pacchi mancanti (presenti attivi a sistema ma non ancora passati sotto lettura)
     const pacchiMancanti = listaPacchiAttivi.filter(p => !trkScansionatiInventario.includes((p.codiceTracciabilita || "").trim().toUpperCase()));
     const totaleMancanti = pacchiMancanti.length;
 
-    // Assegnazione valori ai relativi nodi dell'interfaccia
     document.getElementById('invTotaleGiacenza').innerText = totaleGiacenza;
     document.getElementById('invTotaleScansionati').innerText = totaleScansionati;
     document.getElementById('invTotaleMancanti').innerText = totaleMancanti;
 
-    // Creazione dell'elenco testuale/visivo dei codici tracciamento mancanti all'appello
     const listaMancantiUl = document.getElementById('invListaMancantiText');
-    listaMancantiUl.innerHTML = ""; // Pulisce vecchio elenco
+    listaMancantiUl.innerHTML = ""; 
     
     if (pacchiMancanti.length === 0 && totaleGiacenza > 0) {
         listaMancantiUl.innerHTML = "<li style='color:var(--success); font-weight:bold; list-style:none;'>🎉 Inventario completato con successo! Nessun pacco mancante.</li>";
@@ -2383,13 +2347,12 @@ function aggiornaRiepiloghiInventario(listaPacchiAttivi) {
         pacchiMancanti.forEach(p => {
             let li = document.createElement('li');
             li.style.marginBottom = "3px";
-            li.innerText = `TRK: ${(p.codiceTracciabilita || "").toUpperCase()} (ID Pacco: #${p.riconoscimento || '-'} — Destinatario: ${p.cognome || ''})`;
+            li.innerText = `TRK: ${(p.codiceTracciabilita || "").toUpperCase()} (ID: #${p.riconoscimento || '-'} — ${p.cognome || ''})`;
             listaMancantiUl.appendChild(li);
         });
     }
 }
 
-// Genera e scarica automaticamente il PDF di riepilogo dell'inventario corrente
 function scaricaPDFInventario() {
     try {
         const { jsPDF } = window.jspdf;
@@ -2399,17 +2362,14 @@ function scaricaPDFInventario() {
         const dataOggi = new Date().toLocaleDateString('it-IT') + ' ' + new Date().toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'});
         
         const listaPacchiAttivi = Object.values(pacchi).filter(p => {
-            if (!p || typeof p !== 'object') return false;
-            return p.corriere === corriereSelezionato && p.ritirato !== true && p.ritirato !== "true";
+            return p && p.corriere === corriereSelezionato && p.ritirato !== true && p.ritirato !== "true";
         });
         
         const scansionati = listaPacchiAttivi.filter(p => trkScansionatiInventario.includes((p.codiceTracciabilita || "").trim().toUpperCase()));
         const mancanti = listaPacchiAttivi.filter(p => !trkScansionatiInventario.includes((p.codiceTracciabilita || "").trim().toUpperCase()));
 
-        // Intestazione PDF Professionale Blu
         doc.setFillColor(0, 51, 153); 
         doc.rect(0, 0, 210, 40, 'F');
-        
         doc.setTextColor(255, 255, 255);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(22);
@@ -2420,7 +2380,6 @@ function scaricaPDFInventario() {
         doc.text("Centro Post@ Anaclerio — Sistema Gestionale", 15, 30);
         doc.text("Data Elaborazione: " + dataOggi, 130, 30);
 
-        // Sezione Statistiche
         doc.setTextColor(26, 26, 26);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(14);
@@ -2436,27 +2395,22 @@ function scaricaPDFInventario() {
         doc.text(`• Pacchi Effettivamente Trovati (Scansionati): ${scansionati.length}`, 15, 75);
         
         if (mancanti.length > 0) {
-            doc.setTextColor(220, 53, 69); // Rosso
-            doc.setFont("helvetica", "bold");
+            doc.setTextColor(220, 53, 69); doc.setFont("helvetica", "bold");
         } else {
-            doc.setTextColor(40, 167, 69); // Verde
-            doc.setFont("helvetica", "bold");
+            doc.setTextColor(40, 167, 69); doc.setFont("helvetica", "bold");
         }
         doc.text(`• Pacchi Mancanti all'Appello: ${mancanti.length}`, 15, 82);
 
         doc.setTextColor(26, 26, 26);
         let yPos = 98;
 
-        // Sezione Elenco Pacchi Mancanti
         if (mancanti.length > 0) {
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(13);
+            doc.setFont("helvetica", "bold"); doc.setFontSize(13);
             doc.text("ELENCO DETTAGLIATO PACCHI MANCANTI", 15, yPos);
             doc.line(15, yPos + 2, 195, yPos + 2);
             yPos += 10;
 
-            doc.setFontSize(10);
-            doc.setFillColor(240, 242, 245);
+            doc.setFontSize(10); doc.setFillColor(240, 242, 245);
             doc.rect(15, yPos, 180, 7, 'F');
             doc.text("ID PACCO", 17, yPos + 5);
             doc.text("CODICE TRACCIABILITÀ (TRK)", 50, yPos + 5);
@@ -2466,47 +2420,31 @@ function scaricaPDFInventario() {
             doc.setFont("helvetica", "normal");
             mancanti.forEach((p, index) => {
                 if (yPos > 275) {
-                    doc.addPage();
-                    yPos = 20;
-                    doc.setFont("helvetica", "bold");
-                    doc.setFillColor(240, 242, 245);
+                    doc.addPage(); yPos = 20;
+                    doc.setFont("helvetica", "bold"); doc.setFillColor(240, 242, 245);
                     doc.rect(15, yPos, 180, 7, 'F');
-                    doc.text("ID PACCO", 17, yPos + 5);
-                    doc.text("CODICE TRACCIABILITÀ (TRK)", 50, yPos + 5);
-                    doc.text("DESTINATARIO", 130, yPos + 5);
-                    yPos += 12;
-                    doc.setFont("helvetica", "normal");
+                    doc.text("ID PACCO", 17, yPos + 5); doc.text("CODICE TRACCIABILITÀ (TRK)", 50, yPos + 5); doc.text("DESTINATARIO", 130, yPos + 5);
+                    yPos += 12; doc.setFont("helvetica", "normal");
                 }
+                if (index % 2 === 0) { doc.setFillColor(248, 249, 250); doc.rect(15, yPos - 4, 180, 6, 'F'); }
 
-                if (index % 2 === 0) {
-                    doc.setFillColor(248, 249, 250);
-                    doc.rect(15, yPos - 4, 180, 6, 'F');
-                }
-
-                const idStr = String(p.riconoscimento || '-');
-                const trkStr = String(p.codiceTracciabilita || '').toUpperCase();
-                const destStr = `${p.cognome || ''} ${p.nome || ''}`.substring(0, 35);
-
-                doc.text(idStr, 17, yPos);
-                doc.text(trkStr, 50, yPos);
-                doc.text(destStr, 130, yPos);
+                doc.text(String(p.riconoscimento || '-'), 17, yPos);
+                doc.text(String(p.codiceTracciabilita || '').toUpperCase(), 50, yPos);
+                doc.text(`${p.cognome || ''} ${p.nome || ''}`.substring(0, 35), 130, yPos);
                 yPos += 7;
             });
         } else {
-            doc.setFont("helvetica", "bold");
-            doc.setTextColor(40, 167, 69);
-            doc.text("🎉 ECCELLENTE! Tutti i pacchi sono presenti. Nessuna anomalia riscontrata.", 15, yPos);
+            doc.setFont("helvetica", "bold"); doc.setTextColor(40, 167, 69);
+            doc.text("🎉 ECCELLENTE! Tutti i pacchi sono presenti.", 15, yPos);
         }
 
         const filename = `Inventario_${corriereSelezionato}_${new Date().toISOString().slice(0,10)}.pdf`;
         doc.save(filename);
     } catch (err) {
         console.error("Errore durante la generazione del PDF:", err);
-        alert("Errore nella generazione del report.");
     }
 }
 
-// Funzione legata al bottone "Termina Inventario" che scarica il report e chiude il pannello
 function terminaInventarioConReport() {
     if (confirm("Vuoi terminare l'inventario corrente e scaricare il report PDF dei pacchi mancanti?")) {
         scaricaPDFInventario();
@@ -2514,11 +2452,9 @@ function terminaInventarioConReport() {
     }
 }
 
-// Ascoltatore evento scanner per l'input continuo
 document.getElementById('inventarioSearchInput').addEventListener('change', function() {
     gestisciScansioneInventario();
-});
-    
+});    
 </script>
 </body>
 </html>
