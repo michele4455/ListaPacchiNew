@@ -2395,8 +2395,9 @@ function scaricaPDFInventario() {
         doc.text(`Pacchi Mancanti: ${mancanti.length}`, 20, 72);
         doc.setTextColor(0, 0, 0);
 
-        // --- TABELLA MANCANTI ---
         let yPos = 85;
+
+        // --- TABELLA 1: PACCHI MANCANTI ---
         if (mancanti.length > 0) {
             doc.setFont("helvetica", "bold");
             doc.setFontSize(11);
@@ -2436,6 +2437,54 @@ function scaricaPDFInventario() {
             doc.setTextColor(0, 150, 0);
             doc.setFont("helvetica", "bold");
             doc.text("TUTTI I PACCHI SONO PRESENTI. INVENTARIO CONFORME.", 15, yPos + 10);
+            yPos += 15;
+        }
+
+        // Spazio di stacco tra le due tabelle
+        yPos += 10;
+
+        // --- TABELLA 2: PACCHI PRESENTI ---
+        if (yPos > 260) { // Se lo spazio sulla pagina sta per terminare, inizia la tabella dei presenti in una nuova pagina
+            doc.addPage();
+            yPos = 20;
+        }
+
+        if (scansionati.length > 0) {
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(11);
+            doc.setTextColor(0, 0, 0);
+            doc.text("DETTAGLIO PACCHI PRESENTI (SCANSIONATI):", 15, yPos);
+            yPos += 5;
+            
+            // Header Tabella Presenti (Stessa grafica blu)
+            doc.setFillColor(0, 51, 153);
+            doc.rect(15, yPos, 180, 8, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.text("ID", 17, yPos + 6);
+            doc.text("CODICE TRACCIABILITÀ", 40, yPos + 6);
+            doc.text("DESTINATARIO", 110, yPos + 6);
+            yPos += 8;
+            
+            doc.setTextColor(0, 0, 0);
+            doc.setFont("helvetica", "normal");
+            
+            scansionati.forEach((p, i) => {
+                if (yPos > 280) { // Nuova pagina se finisce lo spazio
+                    doc.addPage();
+                    yPos = 20;
+                }
+                // Righe alternate per leggibilità
+                if (i % 2 === 0) {
+                    doc.setFillColor(245, 245, 245);
+                    doc.rect(15, yPos, 180, 7, 'F');
+                }
+                
+                doc.text(String(p.riconoscimento || '-'), 17, yPos + 5);
+                doc.text(String(p.codiceTracciabilita || '-').toUpperCase(), 40, yPos + 5);
+                doc.text(`${p.cognome || ''} ${p.nome || ''}`, 110, yPos + 5);
+                
+                yPos += 7;
+            });
         }
 
         doc.save(`Inventario_${corriereSelezionato}_${new Date().toLocaleDateString('it-IT').replace(/\//g,'-')}.pdf`);
@@ -2444,7 +2493,6 @@ function scaricaPDFInventario() {
         alert("Errore durante la generazione del PDF.");
     }
 }
-
 function terminaInventarioConReport() {
     // Controllo: assicuriamoci che il pulsante sia collegato
     if (confirm("Vuoi scaricare il PDF dei mancanti e chiudere l'inventario?")) {
