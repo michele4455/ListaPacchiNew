@@ -1732,6 +1732,16 @@ function apriModifica(id) {
                 ${Array.from({length:12}, (_,i)=>i+1).map(i => `<option value="Scaffale ${i}" ${p.scaffale === 'Scaffale '+i ? 'selected' : ''}>Scaffale ${i}</option>`).join('')}
             </select>
         </div>
+        let campoGrandezzaHTML = `
+            <div>
+                <label style="font-size: 0.8rem; font-weight: bold; color: var(--primary);">Dimensione</label>
+                <select id="editGrandezza" style="width:100%; padding:14px; border-radius:10px; border:2px solid var(--border-color);">
+                    <option value="P" ${paccoSelezionato.grandezza === 'P' ? 'selected' : ''}>P</option>
+                    <option value="M" ${paccoSelezionato.grandezza === 'M' ? 'selected' : ''}>M</option>
+                    <option value="G" ${paccoSelezionato.grandezza === 'G' ? 'selected' : ''}>G</option>
+                </select>
+            </div>
+        `;
         <div class="contrassegno-box">
             <label style="display:flex; align-items:center; gap:10px; font-size:1rem; cursor:pointer;">
                 <input type="checkbox" id="editIsContrassegno" ${p.isContrassegno ? 'checked' : ''} onchange="toggleInputContrassegno(this.checked)" style="width:auto; transform:scale(1.2);">
@@ -1761,6 +1771,7 @@ function apriModifica(id) {
         p.codiceTracciabilita = document.getElementById('editTrk').value.trim().toUpperCase();
         p.corriere = document.getElementById('editCorriere').value;
         p.scaffale = document.getElementById('editScaffale').value;
+        const nuovaGrandezza = document.getElementById('editGrandezza').value;
         p.isContrassegno = document.getElementById('editIsContrassegno').checked;
         p.importoContrassegno = p.isContrassegno ? document.getElementById('editImportoContrassegno').value.trim() : '';
         
