@@ -2354,99 +2354,51 @@ function aggiornaRiepiloghiInventario(listaPacchiAttivi) {
 }
 
 function scaricaPDFInventario() {
+    // Controllo di sicurezza: verifichiamo che la libreria sia caricata
+    if (typeof window.jspdf === 'undefined') {
+        alert("Errore: La libreria PDF non è stata caricata. Controlla la connessione internet o il file HTML.");
+        return;
+    }
+
     try {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         
         const corriereSelezionato = document.getElementById('inventarioCorriereSelect').value;
-        const dataOggi = new Date().toLocaleDateString('it-IT') + ' ' + new Date().toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'});
+        const dataOggi = new Date().toLocaleDateString('it-IT');
         
+        // Recupero dati (stessa logica del filtro che funziona)
         const listaPacchiAttivi = Object.values(pacchi).filter(p => {
             return p && p.corriere === corriereSelezionato && p.ritirato !== true && p.ritirato !== "true";
         });
         
-        const scansionati = listaPacchiAttivi.filter(p => trkScansionatiInventario.includes((p.codiceTracciabilita || "").trim().toUpperCase()));
         const mancanti = listaPacchiAttivi.filter(p => !trkScansionatiInventario.includes((p.codiceTracciabilita || "").trim().toUpperCase()));
 
-        doc.setFillColor(0, 51, 153); 
-        doc.rect(0, 0, 210, 40, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(22);
-        doc.text("REPORT INVENTARIO GIACENZA", 15, 20);
-        
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(10);
-        doc.text("Centro Post@ Anaclerio — Sistema Gestionale", 15, 30);
-        doc.text("Data Elaborazione: " + dataOggi, 130, 30);
+        // Creazione PDF
+        doc.setFontSize(18);
+        doc.text("REPORT INVENTARIO: " + corriereSelezionato, 15, 20);
+        doc.setFontSize(12);
+        doc.text("Data: " + dataOggi, 15, 30);
+        doc.text("Pacchi mancanti all'appello: " + mancanti.length, 15, 40);
 
-        doc.setTextColor(26, 26, 26);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(14);
-        doc.text("Dettagli e Statistiche Corriere: " + corriereSelezionato, 15, 55);
-        
-        doc.setLineWidth(0.5);
-        doc.setDrawColor(200, 200, 200);
-        doc.line(15, 58, 195, 58);
+        let y = 50;
+        mancanti.forEach(p => {
+            let riga = `TRK: ${(p.codiceTracciabilita || "").toUpperCase()} - ID: ${p.riconoscimento || '-'}`;
+            doc.text(riga, 15, y);
+            y += 10;
+            if (y > 280) { doc.addPage(); y = 20; }
+        });
 
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(11);
-        doc.text(`• Totale Pacchi Attesi a Sistema: ${listaPacchiAttivi.length}`, 15, 68);
-        doc.text(`• Pacchi Effettivamente Trovati (Scansionati): ${scansionati.length}`, 15, 75);
-        
-        if (mancanti.length > 0) {
-            doc.setTextColor(220, 53, 69); doc.setFont("helvetica", "bold");
-        } else {
-            doc.setTextColor(40, 167, 69); doc.setFont("helvetica", "bold");
-        }
-        doc.text(`• Pacchi Mancanti all'Appello: ${mancanti.length}`, 15, 82);
-
-        doc.setTextColor(26, 26, 26);
-        let yPos = 98;
-
-        if (mancanti.length > 0) {
-            doc.setFont("helvetica", "bold"); doc.setFontSize(13);
-            doc.text("ELENCO DETTAGLIATO PACCHI MANCANTI", 15, yPos);
-            doc.line(15, yPos + 2, 195, yPos + 2);
-            yPos += 10;
-
-            doc.setFontSize(10); doc.setFillColor(240, 242, 245);
-            doc.rect(15, yPos, 180, 7, 'F');
-            doc.text("ID PACCO", 17, yPos + 5);
-            doc.text("CODICE TRACCIABILITÀ (TRK)", 50, yPos + 5);
-            doc.text("DESTINATARIO", 130, yPos + 5);
-            yPos += 12;
-
-            doc.setFont("helvetica", "normal");
-            mancanti.forEach((p, index) => {
-                if (yPos > 275) {
-                    doc.addPage(); yPos = 20;
-                    doc.setFont("helvetica", "bold"); doc.setFillColor(240, 242, 245);
-                    doc.rect(15, yPos, 180, 7, 'F');
-                    doc.text("ID PACCO", 17, yPos + 5); doc.text("CODICE TRACCIABILITÀ (TRK)", 50, yPos + 5); doc.text("DESTINATARIO", 130, yPos + 5);
-                    yPos += 12; doc.setFont("helvetica", "normal");
-                }
-                if (index % 2 === 0) { doc.setFillColor(248, 249, 250); doc.rect(15, yPos - 4, 180, 6, 'F'); }
-
-                doc.text(String(p.riconoscimento || '-'), 17, yPos);
-                doc.text(String(p.codiceTracciabilita || '').toUpperCase(), 50, yPos);
-                doc.text(`${p.cognome || ''} ${p.nome || ''}`.substring(0, 35), 130, yPos);
-                yPos += 7;
-            });
-        } else {
-            doc.setFont("helvetica", "bold"); doc.setTextColor(40, 167, 69);
-            doc.text("🎉 ECCELLENTE! Tutti i pacchi sono presenti.", 15, yPos);
-        }
-
-        const filename = `Inventario_${corriereSelezionato}_${new Date().toISOString().slice(0,10)}.pdf`;
-        doc.save(filename);
+        doc.save(`Inventario_${corriereSelezionato}.pdf`);
     } catch (err) {
-        console.error("Errore durante la generazione del PDF:", err);
+        console.error("Dettaglio errore:", err);
+        alert("Errore nella creazione del PDF: " + err.message);
     }
 }
 
 function terminaInventarioConReport() {
-    if (confirm("Vuoi terminare l'inventario corrente e scaricare il report PDF dei pacchi mancanti?")) {
+    // Controllo: assicuriamoci che il pulsante sia collegato
+    if (confirm("Vuoi scaricare il PDF dei mancanti e chiudere l'inventario?")) {
         scaricaPDFInventario();
         chiudiInventarioModal();
     }
