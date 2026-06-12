@@ -2267,9 +2267,16 @@ function gestisciScansioneInventario() {
     if (codiceLetto === "") return;
 
     const corriereSelezionato = document.getElementById('inventarioCorriereSelect').value;
-    const listaPacchiAttivi = Object.values(pacchi).filter(p => p && p.corriere === corriereSelezionato && p.stato !== 'ritirato' && p.stato !== 'scaduto');
+    
+    // FILTRO RIGIDO: Considera SOLO i pacchi del corriere selezionato che NON sono ritirati e NON sono scaduti
+    const listaPacchiAttivi = Object.values(pacchi).filter(p => 
+        p && 
+        p.corriere === corriereSelezionato && 
+        p.stato !== 'ritirato' && 
+        p.stato !== 'scaduto'
+    );
 
-    // Verifica se il codice inserito corrisponde ESATTAMENTE ad un tracciamento di quel corriere presente a gestionale
+    // Verifica se il codice inserito corrisponde ESATTAMENTE ad un tracciamento presente SOLO tra quelli attivi in giacenza
     const trovato = listaPacchiAttivi.some(p => (p.codiceTracciabilita || "").trim().toUpperCase() === codiceLetto);
 
     if (trovato) {
