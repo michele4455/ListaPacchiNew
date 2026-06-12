@@ -513,6 +513,79 @@
             font-size: 1.1rem;
             text-align: center;
         }
+
+        #inventarioModal {
+            display: none;
+            position: fixed; 
+            z-index: 1000; 
+            left: 0; top: 0; 
+            width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.8); 
+            align-items: center; 
+            justify-content: center; 
+            overflow-y: auto;
+            padding: 20px 0;
+        }
+
+        .inventario-btn {
+            background: #00bcd4; /* Colore celeste richiesto */
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .inventario-grid-pacchi {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 250px;
+            overflow-y: auto;
+            margin-top: 15px;
+            padding: 5px;
+            text-align: left;
+        }
+
+        .pacco-inventario-item {
+            background: #e0e0e0; /* Grigio iniziale per tutti i pacchi */
+            color: #333;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 5px solid #9e9e9e;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .pacco-inventario-item.scansionato {
+            background: var(--success) !important; /* Verde al riscontro positivo */
+            color: white !important;
+            border-left-color: #009432 !important;
+        }
+
+        .riepilogo-inventario-box {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        .riepilogo-inventario-box ul {
+            margin: 5px 0 0 0;
+            padding-left: 20px;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+        
     </style>
 </head>
 <body onmousedown="resetInattivita()" onkeypress="resetInattivita()" ontouchstart="resetInattivita()">
@@ -646,11 +719,48 @@
     </div>
 </div>
 
+<div id="inventarioModal">
+    <div class="modal-content" style="max-width: 600px;">
+        <h3 style="color:var(--primary); margin:0 0 15px 0;">📦 Inventario Pacchi per Corriere</h3>
+        
+        <div style="margin-bottom: 12px;">
+            <label style="font-weight:bold; display:block; margin-bottom:5px; text-align:left;">Seleziona Corriere:</label>
+            <select id="inventarioCorriereSelect" onchange="caricaPacchiInventario()">
+                </select>
+        </div>
+
+        <div class="input-with-icon" style="margin-bottom: 15px;">
+            <input type="text" id="inventarioSearchInput" placeholder="Scansiona o inserisci codice TRK..." oninput="gestisciScansioneInventario()" style="text-transform: uppercase;">
+            <span class="scanner-trigger" onclick="startScanner('inventarioSearchInput')">📸</span>
+        </div>
+
+        <h4 style="text-align:left; margin: 15px 0 5px 0; color: var(--primary);">Elenco Pacchi del Corriere:</h4>
+        <div class="inventario-grid-pacchi" id="inventarioPacchiContainer">
+            </div>
+
+        <div class="riepilogo-inventario-box">
+            <div style="margin-bottom: 5px;"><b>• Pacchi in inventario (totale a gestionale):</b> <span id="invTotaleGiacenza" style="font-weight:bold; color:var(--primary);">0</span></div>
+            <div style="margin-bottom: 5px;"><b>• Pacchi scansionati (presenti e verificati):</b> <span id="invTotaleScansionati" style="font-weight:bold; color:var(--success);">0</span></div>
+            <div style="margin-bottom: 5px;"><b>• Pacchi mancanti (non scansionati):</b> <span id="invTotaleMancanti" style="font-weight:bold; color:var(--warning);">0</span></div>
+            <div style="margin-top: 10px;">
+                <b>Lista codici mancanti:</b>
+                <ul id="invListaMancantiText" style="color:#c92a2a; font-weight:500;">
+                    </ul>
+            </div>
+        </div>
+
+        <div style="margin-top:20px; display:flex; gap:10px;">
+            <button onclick="chiudiInventarioModal()" class="modal-btn" style="background:#e0e0e0; color:#333;">CHIUDI INVENTARIO</button>
+        </div>
+    </div>
+</div>
+
 <div id="mainPage" style="display:none;">
     <div class="app-header">
         <div class="header-actions">
             <button class="menu-toggle-btn" onclick="toggleMenuTendina(event)">Menu ☰</button>
             <div id="menuTendina" class="dropdown-menu">
+                <button class="inventario-btn" onclick="apriInventarioModal(); chiudiMenuTendina();">INVENTARIO</button>
                 <button class="anagrafica-btn" onclick="apriAnagraficaModal(); chiudiMenuTendina();">ANAGRAFICA CLIENTI</button>
                 <button class="report-btn" onclick="document.getElementById('reportModal').style.display='flex'; chiudiMenuTendina();">REPORT</button>
                 <button class="logout-btn" onclick="logout(); chiudiMenuTendina();">LOGOUT</button>
@@ -2083,9 +2193,143 @@ document.getElementById('cognome').addEventListener('keyup', function(event) {
 document.getElementById('cognome').addEventListener('focus', function() {
     bloccoSuggerimentiAttivo = false;
 });
+
+// Array locale temporaneo per tenere traccia dei codici tracciamento effettivamente scansionati nell'inventario in corso
+let trkScansionatiInventario = [];
+
+// Funzione che apre la schermata dell'inventario e inizializza il selettore dei corrieri nativi
+function apriInventarioModal() {
+    const selectCorriere = document.getElementById('inventarioCorriereSelect');
+    selectCorriere.innerHTML = ""; // Pulisce
+    
+    // Popola il menu a tendina usando l'array dei corrieri già registrato a livello globale ("corrieri")
+    corrieri.forEach(corriere => {
+        let opt = document.createElement('option');
+        opt.value = corriere;
+        opt.innerText = corriere;
+        selectCorriere.appendChild(opt);
+    });
+
+    // Reset dei campi e dell'array delle scansioni temporanee
+    trkScansionatiInventario = [];
+    document.getElementById('inventarioSearchInput').value = "";
+    
+    document.getElementById('inventarioModal').style.display = 'flex';
+    caricaPacchiInventario(); // Carica i pacchi del primo corriere selezionato di default
+}
+
+// Funzione di chiusura dell'inventario
+function chiudiInventarioModal() {
+    document.getElementById('inventarioModal').style.display = 'none';
+    trkScansionatiInventario = [];
+}
+
+// Filtra e carica dinamicamente i soli pacchi in giacenza associati al corriere selezionato
+function caricaPacchiInventario() {
+    const corriereSelezionato = document.getElementById('inventarioCorriereSelect').value;
+    const container = document.getElementById('inventarioPacchiContainer');
+    container.innerHTML = ""; // Svuota contenitore precedente
+    
+    // Filtra i soli pacchi NON ancora ritirati/scaduti (quindi attivi a gestionale) appartenenti al corriere scelto
+    // Gestisce il fatto che 'pacchi' può essere un oggetto o un array
+    const listaPacchiAttivi = Object.values(pacchi).filter(p => p && p.corriere === corriereSelezionato && p.stato !== 'ritirato' && p.stato !== 'scaduto');
+
+    if (listaPacchiAttivi.length === 0) {
+        container.innerHTML = "<div style='text-align:center; color:#777; font-weight:bold; padding:15px;'>Nessun pacco in giacenza per questo corriere.</div>";
+    } else {
+        listaPacchiAttivi.forEach(p => {
+            const trkUpper = (p.codiceTracciabilita || "").trim().toUpperCase();
+            const divPacco = document.createElement('div');
+            divPacco.className = 'pacco-inventario-item';
+            divPacco.id = `inv-pacco-${trkUpper}`;
+            
+            // Imposta lo stato visivo basandosi sul fatto che sia già stato inserito/scansionato in questa sessione
+            if (trkScansionatiInventario.includes(trkUpper)) {
+                divPacco.classList.add('scansionato');
+            }
+
+            divPacco.innerHTML = `
+                <span>🆔 ID: ${p.codiceRiconoscimento || '-'} — TRK: <span style="letter-spacing:1px;">${trkUpper}</span></span>
+                <small style="font-style:italic;">(${p.cognome || ''} ${p.nome || ''})</small>
+            `;
+            container.appendChild(divPacco);
+        });
+    }
+
+    // Aggiorna immediatamente il calcolo dei riepiloghi numerici
+    aggiornaRiepiloghiInventario(listaPacchiAttivi);
+}
+
+// Gestisce l'evento di inserimento o lettura tramite scanner della barra di input
+function gestisciScansioneInventario() {
+    const inputField = document.getElementById('inventarioSearchInput');
+    const codiceLetto = inputField.value.trim().toUpperCase();
+    if (codiceLetto === "") return;
+
+    const corriereSelezionato = document.getElementById('inventarioCorriereSelect').value;
+    const listaPacchiAttivi = Object.values(pacchi).filter(p => p && p.corriere === corriereSelezionato && p.stato !== 'ritirato' && p.stato !== 'scaduto');
+
+    // Verifica se il codice inserito corrisponde ESATTAMENTE ad un tracciamento di quel corriere presente a gestionale
+    const trovato = listaPacchiAttivi.some(p => (p.codiceTracciabilita || "").trim().toUpperCase() === codiceLetto);
+
+    if (trovato) {
+        // Se non era già stato aggiunto ai letti in questa sessione, lo inserisce
+        if (!trkScansionatiInventario.includes(codiceLetto)) {
+            trkScansionatiInventario.push(codiceLetto);
+            
+            // Cerca l'elemento grafico e lo illumina istantaneamente di verde
+            const elementoGrafico = document.getElementById(`inv-pacco-${codiceLetto}`);
+            if (elementoGrafico) {
+                elementoGrafico.classList.add('scansionato');
+            }
+            
+            // Aggiorna i conteggi di riepilogo a schermo
+            aggiornaRiepiloghiInventario(listaPacchiAttivi);
+        }
+        
+        // Svuota la barra di input pronto per accogliere la scansione successiva continuativa
+        inputField.value = "";
+    }
+}
+
+// Calcola ed aggiorna i tre parametri richiesti: Totali, Scansionati e Mancanti con elenco dettagliato
+function aggiornaRiepiloghiInventario(listaPacchiAttivi) {
+    // 1. Pacchi in inventario complessivi su gestionale
+    const totaleGiacenza = listaPacchiAttivi.length;
+    
+    // 2. Pacchi effettivamente scansionati che trovano corrispondenza sul gestionale
+    const scansionatiEInGiacenza = listaPacchiAttivi.filter(p => trkScansionatiInventario.includes((p.codiceTracciabilita || "").trim().toUpperCase()));
+    const totaleScansionati = scansionatiEInGiacenza.length;
+    
+    // 3. Pacchi mancanti (presenti a sistema ma non ancora passati sotto lettura)
+    const pacchiMancanti = listaPacchiAttivi.filter(p => !trkScansionatiInventario.includes((p.codiceTracciabilita || "").trim().toUpperCase()));
+    const totaleMancanti = pacchiMancanti.length;
+
+    // Assegnazione valori ai relativi nodi dell'interfaccia
+    document.getElementById('invTotaleGiacenza').innerText = totaleGiacenza;
+    document.getElementById('invTotaleScansionati').innerText = totaleScansionati;
+    document.getElementById('invTotaleMancanti').innerText = totaleMancanti;
+
+    // Creazione dell'elenco testuale/visivo dei codici tracciamento mancanti all'appello
+    const listaMancantiUl = document.getElementById('invListaMancantiText');
+    listaMancantiUl.innerHTML = ""; // Pulisce vecchio elenco
+    
+    if (pacchiMancanti.length === 0 && totaleGiacenza > 0) {
+        listaMancantiUl.innerHTML = "<li style='color:var(--success); font-weight:bold; list-style:none;'>🎉 Inventario completato con successo! Nessun pacco mancante.</li>";
+    } else {
+        pacchiMancanti.forEach(p => {
+            let li = document.createElement('li');
+            li.innerText = `TRK: ${(p.codiceTracciabilita || "").toUpperCase()} (ID Pacco: ${p.codiceRiconoscimento || '-'} — Destinatario: ${p.cognome || ''})`;
+            listaMancantiUl.appendChild(li);
+        });
+    }
+}
+
+// Estensione del comportamento dell'ascoltatore di eventi per intercettare l'aggiornamento automatico dello scanner se l'inventario è aperto
+document.getElementById('inventarioSearchInput').addEventListener('change', function() {
+    gestisciScansioneInventario();
+});
     
 </script>
-
-    
 </body>
 </html>
