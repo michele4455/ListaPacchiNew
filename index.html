@@ -2240,11 +2240,17 @@ function apriInventarioModal() {
     trkScansionatiInventario = [];
     document.getElementById('inventarioSearchInput').value = "";
     
+    // Nasconde il pulsante "Termina Inventario" all'apertura (poiché non ci sono ancora scansioni)
+    const btnTermina = document.getElementById('btnTerminaInventario');
+    if (btnTermina) {
+        btnTermina.style.display = 'none';
+    }
+    
     document.getElementById('inventarioModal').style.display = 'flex';
     caricaPacchiInventario(); // Carica i pacchi del primo corriere selezionato di default
 }
 
-// Funzione di chiusura dell'inventario
+// Funzione di chiusura pura dell'inventario (Chiudi senza salvare/scaricare nulla)
 function chiudiInventarioModal() {
     document.getElementById('inventarioModal').style.display = 'none';
     trkScansionatiInventario = [];
@@ -2332,6 +2338,12 @@ function gestisciScansioneInventario() {
             const elementoGrafico = document.getElementById(`inv-pacco-${trkChiave}`);
             if (elementoGrafico) {
                 elementoGrafico.classList.add('scansionato');
+            }
+            
+            // Mostra il pulsante "Termina Inventario" dal momento in cui viene registrata almeno una scansione valida
+            const btnTermina = document.getElementById('btnTerminaInventario');
+            if (btnTermina) {
+                btnTermina.style.display = 'inline-block';
             }
             
             // Aggiorna i conteggi di riepilogo a schermo
