@@ -634,31 +634,6 @@
             padding-bottom: 5px;
             text-transform: uppercase;
         }
-
-                 /* Nuovo Stile Pulsante Torna in Alto (Sempre attivo) */
-        .scroll-to-top {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: #003399; /* Colore blu primario del tuo gestionale */
-            color: #ffffff;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: none;
-            display: none; /* Viene mostrato solo dopo il login */
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            z-index: 99999;
-            transition: transform 0.2s;
-        }
-        .scroll-to-top:hover {
-            transform: scale(1.1);
-            background-color: #002266;
-        }
         
     </style>
 </head>
@@ -868,10 +843,6 @@
         <input type="email" id="loginEmail" placeholder="Email" style="margin-bottom:10px; width:100%">
         <input type="password" id="loginPassword" placeholder="Password" style="margin-bottom:20px; width:100%">
         <button onclick="login()">Login</button>
-        
-        <div style="margin-top: 25px; font-size: 0.68rem; color: #777; font-weight: 500; letter-spacing: 0.3px;">
-    © Tutti i diritti riservati. Questa web app è realizzata da <strong>Centro Post@ Anaclerio</strong>
-        </div>
     </div>
 </div>
 
@@ -1485,7 +1456,6 @@ firebase.auth().onAuthStateChanged((user) => {
         document.getElementById('mainPage').style.display = 'block';
         document.querySelector('.container').style.display = 'block';
         document.body.style.overflow = 'auto';
-        document.getElementById('btnScrollTop').style.display = 'flex';
         
         // Avvia la sincronizzazione unificata dell'anagrafica e dei pacchi storici
         inizializzaSincronizzazioneAnagrafica();
@@ -2068,7 +2038,6 @@ function generaReport() {
                 <tbody>${htmlRitirati || '<tr><td colspan="5" style="text-align:center">Nessun pacco uscito in questa data</td></tr>'}</tbody>
             </table>
             <div class="footer">Centro Post@ Anaclerio - Sistema Gestionale Interno</div>
-            <button id="btnScrollTop" class="scroll-to-top" onclick="tornaInAlto()">⬆</button>
         </body>
         </html>
     `);
@@ -2831,29 +2800,6 @@ function calcolaStatisticheNonPudo() {
     document.getElementById('resTotalePacchi').innerText = conteggioPacchi;
     document.getElementById('resCompensoMaturato').innerText = `€ ${compenso.toFixed(2)}`;
 }
-
-// Gestione del pulsante Torna in Alto
-window.addEventListener('scroll', function() {
-    const btn = document.getElementById('btnScrollTop');
-    // Mostra il pulsante se si scende oltre i 300 pixel
-    if (window.scrollY > 300) {
-        btn.style.display = 'flex';
-    } else {
-        btn.style.display = 'none';
-    }
-});
-
-function tornaInAlto() {
-    // Riporta in alto la pagina globale
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    
-    // Riporta in alto l'eventuale contenitore interno dei pacchi
-    const container = document.querySelector('.container, main, body');
-    if (container) {
-        container.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-}
-    
 </script>
 </body>
 </html>
