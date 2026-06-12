@@ -54,7 +54,6 @@
             border-radius: 50px;
         }
 
-        /* Ripristina la struttura originale del titolo e posiziona il menu in alto a destra */
         .header-actions {
             position: absolute;
             top: 20px;
@@ -62,7 +61,6 @@
             z-index: 1001;
         }
 
-        /* Stile del pulsante Menu che usa i colori nativi della tua app */
         .menu-toggle-btn {
             background-color: var(--accent);
             color: var(--primary);
@@ -80,7 +78,6 @@
             background-color: var(--white);
         }
 
-        /* Contenitore della tendina */
         .dropdown-menu {
             display: none;
             position: absolute;
@@ -96,12 +93,10 @@
             min-width: 200px;
         }
 
-        /* Mostra la tendina */
         .dropdown-menu.show {
             display: flex;
         }
 
-        /* Forza i pulsanti dentro la tendina a mantenere i loro stili grafici originali */
         .dropdown-menu button {
             width: 100%;
             display: block;
@@ -131,7 +126,6 @@
             font-weight: bold;
         }
 
-        /* Pulsante Anagrafica Verde Richiesto */
         .anagrafica-btn {
             background: var(--success);
             color: white;
@@ -143,7 +137,6 @@
             font-weight: bold;
         }
 
-        /* Pulsante Inventario Celeste Richiesto */
         .inventario-btn {
             background: var(--celeste-inventario);
             color: white;
@@ -169,7 +162,6 @@
             box-sizing: border-box;
         }
 
-        /* Allineamento e centratura di Logo, Titolo e Data */
         .header-content {
             display: flex;
             flex-direction: column;
@@ -297,7 +289,6 @@
             width: 100%;
         }
 
-        /* Trasforma visivamente in maiuscolo durante la digitazione */
         #codiceTracciabilita, #cognome, #nome, #search, #editCognome, #editNome, #editTrk, #modalInput, #searchAnagrafica, #editAnagraficaCognome, #editAnagraficaNome, #inventarioInput {
             text-transform: uppercase;
         }
@@ -531,7 +522,6 @@
             text-align: center;
         }
 
-        /* Stili specifici per l'elenco pacchi in inventario */
         .inventario-pacco-item {
             background: #e0e0e0;
             color: #333;
@@ -815,10 +805,8 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-// Riferimento al Database
 const db = firebase.database();
 
-// DEFINIZIONE DELLE VARIABILI GLOBALI (Unica dichiarazione)
 let anagraficaClienti = {};
 let pacchi = [];
 const corrieri = ["InPost", "UPS", "Punto Poste", "DHL", "BRT", "GLS", "Amazon", "Corrieri No Pudo"];
@@ -827,31 +815,25 @@ let timeoutInattivita;
 let html5QrCode;
 let torciaAttiva = false;
 
-// VARIABILI GLOBALI AGGIUNTIVE PER INVENTARIO
 let pacchiSelezionatiInventario = [];
 let codiciScansionatiInventario = new Set();
 
-// Sincronizzazione automatica dei Pacchi da Firebase
 function inizializzaSincronizzazioneFirebase() {
     db.ref('pacchi').on('value', (snapshot) => {
         pacchi = snapshot.val() || [];
         aggiornaVista();
-        // Se la schermata inventario è aperta, si auto-aggiorna in background mantenendo l'allineamento con Firebase
         if(document.getElementById('inventarioModal').style.display === 'flex') {
             caricaPacchiInventario(false); 
         }
     });
 }
 
-// Racchiudiamo il controllo in una funzione protetta
 function inizializzaSincronizzazioneAnagrafica() {
-    // 1. Legge prima l'anagrafica ufficiale di Firebase
     db.ref('anagraficaClienti').once('value', (snapshot) => {
         const datiAnagrafica = snapshot.val() || {};
         const anagraficaPulita = {};
         let modificato = false;
 
-        // Normalizza e inserisce i clienti anagrafici già esistenti
         Object.keys(datiAnagrafica).forEach(key => {
             const c = datiAnagrafica[key];
             if (!c || !c.cognome) return;
@@ -879,11 +861,9 @@ function inizializzaSincronizzazioneAnagrafica() {
             if (key !== chiaveUnica) modificato = true;
         });
 
-        // 2. Scansiona TUTTI i pacchi (sia in giacenza che storici/ritirati) sul DB per estrarre i clienti mancanti
         db.ref('pacchi').once('value', (pSnap) => {
             const tuttiIPacchi = pSnap.val() || {};
             
-            // Gestisce sia il formato Array che il formato Oggetto di Firebase per i pacchi
             Object.keys(tuttiIPacchi).forEach(pKey => {
                 const p = tuttiIPacchi[pKey];
                 if (p && p.cognome) {
@@ -891,30 +871,28 @@ function inizializzaSincronizzazioneAnagrafica() {
                     const nomePacco = (p.nome || "").trim().toUpperCase();
                     const chiavePacco = `${cognomePacco}_${nomePacco}`;
 
-                    // Se questo cliente ha un pacco sul DB ma non esiste in anagrafica, lo aggiunge al volo!
                     if (!anagraficaPulita[chiavePacco]) {
                         anagraficaPulita[chiavePacco] = {
                             cognome: cognomePacco,
                             nome: nomePacco,
-                            telefono: '-' // Imposta il telefono predefinito, modificabile in seguito
+                            telefono: '-'
                         };
                         modificato = true;
                     }
                 }
             });
 
-            // Assegna la lista definitiva globale unificata
             anagraficaClienti = anagraficaPulita;
 
-            // Se abbiamo scoperto nuovi clienti dai vecchi pacchi o unito duplicati, aggiorna Firebase
             if (modificato) {
                 db.ref('anagraficaClienti').set(anagraficaClienti);
             }
 
-            // Mostra i dati a schermo nella tabella anagrafica
             renderAnagrafica();
+            
+            // AVVIA I PACCHI SOLO DOPO CHE L'ANAGRAFICA HA FINITO IL CONTROLLO
+            inizializzaSincronizzazioneFirebase();
 
-            // Attiva ora l'ascolto continuo in tempo reale sui clienti per modifiche future
             db.ref('anagraficaClienti').on('value', (newSnapshot) => {
                 const aggiornati = newSnapshot.val() || {};
                 Object.keys(aggiornati).forEach(k => {
@@ -998,9 +976,7 @@ function startScanner(targetInputId) {
                         gainNode.connect(audioCtx.destination);
                         oscillator.start();
                         oscillator.stop(audioCtx.currentTime + 0.15);
-                    } catch(e) {
-                        console.log("Impossibile riprodurre il beep audio", e);
-                    }
+                    } catch(e) {}
                     let pulito = decodedText.trim().toUpperCase();
                     document.getElementById(targetInputId).value = pulito;
                     if(targetInputId === 'codiceTracciabilita'){
@@ -1019,9 +995,7 @@ function startScanner(targetInputId) {
                     if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
                         track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
                     }
-                } catch (e) {
-                    console.log("Messa a fuoco avanzata non supportata", e);
-                }
+                } catch (e) {}
                 const readerDiv = document.getElementById('reader');
                 if (readerDiv && !document.getElementById('laser-scanner-line')) {
                     const laser = document.createElement('div');
@@ -1038,9 +1012,7 @@ function startScanner(targetInputId) {
                     readerDiv.style.position = 'relative';
                     readerDiv.appendChild(laser);
                 }
-            }).catch(err => {
-                console.log("Errore avvio fotocamera avanzata", err);
-            });
+            }).catch(err => {});
         } else {
             showAlert("Nessuna fotocamera trovata.");
         }
@@ -1084,7 +1056,6 @@ function toggleTorcia() {
     }
 }
 
-// FUNZIONALITÀ GESTIONE SCHERMATA INVENTARIO MODAL
 function apriInventarioModal() {
     document.getElementById('inventarioModal').style.display = 'flex';
     const select = document.getElementById('inventarioCorriereSelect');
@@ -1096,7 +1067,6 @@ function apriInventarioModal() {
         select.appendChild(opt);
     });
     
-    // Resetta i dati ad ogni nuova apertura pulita dell'inventario
     codiciScansionatiInventario.clear();
     document.getElementById('inventarioInput').value = "";
     caricaPacchiInventario(true);
@@ -1112,12 +1082,8 @@ function caricaPacchiInventario(resetScansioni = false) {
     if(resetScansioni) {
         codiciScansionatiInventario.clear();
     }
-    
     const corriereSelezionato = document.getElementById('inventarioCorriereSelect').value;
-    
-    // Filtra solo i pacchi del corriere selezionato che NON sono ritirati o scaduti (quindi attivi in giacenza)
     pacchiSelezionatiInventario = pacchi.filter(p => p && p.corriere === corriereSelezionato && p.stato !== 'ritirato' && p.stato !== 'scaduto');
-    
     renderListaPacchiInventario();
     aggiornaRiepiloghiInventario();
 }
@@ -1136,7 +1102,6 @@ function renderListaPacchiInventario() {
         div.className = "inventario-pacco-item";
         div.id = "inv-item-" + index;
         
-        // Se il codice di tracciamento risulta già scansionato, applica l'evidenziazione verde
         if(p.trk && codiciScansionatiInventario.has(p.trk.trim().toUpperCase())) {
             div.classList.add('scansionato');
         }
@@ -1165,22 +1130,13 @@ function gestisciInvioInventario(event) {
 function elaboraScansioneInventario(codice) {
     if(!codice) return;
     const cod = codice.trim().toUpperCase();
-    
-    // Verifica se il trk appartiene ai pacchi caricati per il corriere corrente
-    const trovato = pacchiSelezionatiInventario.some(p => p.trk && p.trk.trim().toUpperCase() === cod);
-    
-    // Registra lo scan indipendentemente dal fatto che esista (continua a registrare fino al completamento)
     codiciScansionatiInventario.add(cod);
-    
-    // Rinfresca la visualizzazione della lista e i contatori di riepilogo
     renderListaPacchiInventario();
     aggiornaRiepiloghiInventario();
 }
 
 function aggiornaRiepiloghiInventario() {
     const totPacchi = pacchiSelezionatiInventario.length;
-    
-    // Calcola quanti tra i pacchi a gestionale sono stati effettivamente scansionati
     let conteggioScansionatiValidi = 0;
     let mancantiList = [];
     
@@ -1244,7 +1200,6 @@ firebase.auth().onAuthStateChanged(user => {
         document.getElementById('mainPage').style.display = 'block';
         document.body.style.overflow = 'auto';
         popolaSelettoriCorrieri();
-        inizializzaSincronizzazioneFirebase();
         inizializzaSincronizzazioneAnagrafica();
         resetInattivita();
     } else {
@@ -1261,7 +1216,7 @@ function resetInattivita() {
         timeoutInattivita = setTimeout(() => {
             logout();
             showAlert("Sei stato disconnesso per inattività prolungata.");
-        }, 15 * 60 * 1000); // 15 Minuti reali richiesti
+        }, 15 * 60 * 1000);
     }
 }
 
@@ -1332,7 +1287,6 @@ function aggiungiPacco() {
         note: ""
     };
 
-    // Trova il primo indice disponibile libero nell'array
     let indexInserimento = pacchi.length;
     for(let i=0; i<pacchi.length; i++) {
         if(pacchi[i] === null || pacchi[i] === undefined) {
@@ -1348,7 +1302,6 @@ function aggiungiPacco() {
         document.getElementById('nome').value = "";
         document.getElementById('scaffaleSelect').value = "";
         
-        // Riapre il blocco suggerimenti anagrafica
         bloccoSuggerimentiAttivo = false;
 
         const overlay = document.getElementById('successOverlay');
@@ -1387,6 +1340,8 @@ function aggiornaVista() {
     const contenitoriDiv = document.getElementById('contenitori');
     const ritiratiContainer = document.getElementById('ritiratiContainer');
     
+    if (!contenitoriDiv || !ritiratiContainer) return;
+
     contenitoriDiv.innerHTML = "";
     ritiratiContainer.innerHTML = "";
 
@@ -1398,7 +1353,6 @@ function aggiornaVista() {
     pacchi.forEach((p, index) => {
         if (!p) return;
         
-        // Verifica se corrisponde ai filtri di ricerca globale
         const matchQuery = (
             p.id.includes(query) ||
             (p.trk && p.trk.toUpperCase().includes(query)) ||
@@ -1421,7 +1375,6 @@ function aggiornaVista() {
 
     document.getElementById('counter').innerText = `PACCHI IN GIACENZA: ${contatoriCorrieri['Tutti']}`;
 
-    // Rigenera i Pulsanti Tab mantenendo lo stato attivo ed i badge aggiornati in tempo reale
     contabs.innerHTML = "";
     const tabsUnificate = ['Tutti', ...corrieri];
     tabsUnificate.forEach(tabLabel => {
@@ -1433,15 +1386,12 @@ function aggiornaVista() {
         contabs.appendChild(b);
     });
 
-    // Filtra la giacenza in base alla TAB attiva selezionata
     let giacenzaDaMostrare = inGiacenzaFiltrati;
     if (tabAttiva !== 'Tutti') {
         giacenzaDaMostrare = inGiacenzaFiltrati.filter(item => item.p.corriere === tabAttiva);
     }
 
-    // Ordina per ID Pacco crescente numerico reale
     giacenzaDaMostrare.sort((a,b) => parseInt(a.p.id) - parseInt(b.p.id));
-    // Ordina l'archivio storico per data decrescente (i più recenti in cima)
     archiviatiFiltrati.sort((a,b) => new Date(b.p.dataUscita || b.p.dataArrivo) - new Date(a.p.dataUscita || a.p.dataArrivo));
 
     if (giacenzaDaMostrare.length === 0) {
@@ -1465,7 +1415,6 @@ function creaElementoPaccoHTML(p, index, inArchivio) {
     const div = document.createElement('div');
     div.className = `pacco ${p.stato === 'ritirato' ? 'ritirato' : ''} ${p.stato === 'scaduto' ? 'scaduto' : ''}`;
     
-    // Calcolo real-time dei giorni di giacenza effettivi
     let giorniGiacenzaEffettivi = 0;
     if (p.dataArrivo) {
         const fine = (p.stato === 'ritirato' || p.stato === 'scaduto') && p.dataUscita ? new Date(p.dataUscita) : new Date();
@@ -1562,10 +1511,8 @@ function openModal(index) {
     }
 
     toggleCampiUscita();
-
     document.getElementById('customModal').style.display = 'flex';
     clearCanvas();
-    
     setTimeout(ridimensionaFirmaCanvas, 200);
 }
 
@@ -1593,7 +1540,6 @@ function closeModal() {
     paccoCorrenteIndex = null;
 }
 
-// GESTIONE CANVAS PER LA FIRMA (Mouse e Touch completi e reattivi)
 function ridimensionaFirmaCanvas() {
     const box = canvas.parentElement;
     const larghezzaContenitore = Math.min(box.clientWidth - 20, 360);
@@ -1641,7 +1587,6 @@ document.getElementById('modalConfirmBtn').addEventListener('click', () => {
         const persona = document.getElementById('modalInput').value.trim();
         if (!persona) { showAlert("Inserire il nome di chi sta ritirando il pacco."); return; }
         
-        // Verifica se il canvas è vuoto controllando se l'utente ha firmato
         const buffer = document.createElement('canvas');
         buffer.width = canvas.width; buffer.height = canvas.height;
         const bCtx = buffer.getContext('2d');
@@ -1679,7 +1624,6 @@ function ripristinaInGiacenza(index) {
     let ripristinato = { ...p };
     ripristinato.stato = 'in_giacenza';
     
-    // Rimuove i dati di uscita storici per riallineare i filtri
     if(ripristinato.dataUscita) delete ripristinato.dataUscita;
     if(ripristinato.ritiratoDa) delete ripristinato.ritiratoDa;
     if(ripristinato.firmaBase64) delete ripristinato.firmaBase64;
@@ -1926,6 +1870,7 @@ function apriAnagraficaModal() {
 function renderAnagrafica() {
     const query = document.getElementById('searchAnagrafica').value.trim().toUpperCase();
     const container = document.getElementById('anagraficaContainer');
+    if (!container) return;
     container.innerHTML = "";
 
     const chiaviOrdinate = Object.keys(anagraficaClienti).sort();
@@ -1996,7 +1941,6 @@ document.getElementById('saveAnagraficaBtn').addEventListener('click', () => {
 
     const nuovaChiave = `${cognomeNuovo}_${nomeNuovo}`;
 
-    // Riferimento atomico e pulito alle tabelle Firebase
     db.ref('anagraficaClienti/' + chiaveAnagraficaCorrente).remove().then(() => {
         db.ref('anagraficaClienti/' + nuovaChiave).set({
             cognome: cognomeNuovo,
@@ -2010,7 +1954,6 @@ document.getElementById('saveAnagraficaBtn').addEventListener('click', () => {
     });
 });
 
-// LOGICA AUTOCOMPLETE AVANZATA PER CAMPO INSERIMENTO COGNOME NUOVO PACCO
 let bloccoSuggerimentiAttivo = false;
 
 function gestisciAutocomplete(valoreDigitato) {
@@ -2026,7 +1969,6 @@ function gestisciAutocomplete(valoreDigitato) {
     const chiavi = Object.keys(anagraficaClienti);
     let trovati = [];
 
-    // Estrae i suggerimenti univoci basandosi sui cognomi memorizzati
     chiavi.forEach(k => {
         const c = anagraficaClienti[k];
         if(c && c.cognome.startsWith(test)) {
@@ -2040,12 +1982,11 @@ function gestisciAutocomplete(valoreDigitato) {
         return;
     }
 
-    // Mostra al massimo i primi 5 risultati pertinenti
     const limiteSuggerimenti = trovati.slice(0, 5);
     limiteSuggerimenti.forEach(c => {
         const div = document.createElement('div');
         div.className = "suggestion-item";
-        div.tabIndex = 0; // Consente il focus da tastiera freccia giù
+        div.tabIndex = 0;
         div.innerHTML = `<span><b>${c.cognome}</b> ${c.nome || ''}</span> <span style="font-size:11px; color:#777;">📞 ${c.telefono}</span>`;
         
         const selezionaQuesto = () => {
@@ -2053,7 +1994,7 @@ function gestisciAutocomplete(valoreDigitato) {
             document.getElementById('nome').value = c.nome || "";
             box.innerHTML = "";
             box.style.display = 'none';
-            bloccoSuggerimentiAttivo = true; // Blocca riapertura fino a reset
+            bloccoSuggerimentiAttivo = true;
             document.getElementById('corriereSelect').focus();
         };
 
