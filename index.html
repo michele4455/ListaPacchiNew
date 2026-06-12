@@ -2230,14 +2230,12 @@ function caricaPacchiInventario() {
     const container = document.getElementById('inventarioPacchiContainer');
     container.innerHTML = ""; // Svuota contenitore precedente
     
-    // FILTRO RIGIDO: Trasforma in array (sia se oggetto che array Firebase con indici vuoti), rimuove i nulli 
-    // e prende SOLO quelli del corriere il cui stato NON è 'ritirato' e NON è 'scaduto'
+    // FILTRO RIGIDO: Prende SOLO i pacchi del corriere selezionato che NON sono usciti (tipoUscita non impostato)
     const listaPacchiAttivi = Object.values(pacchi).filter(p => 
         p !== null && 
         typeof p === 'object' && 
         p.corriere === corriereSelezionato && 
-        p.stato !== 'ritirato' && 
-        p.stato !== 'scaduto'
+        (!p.tipoUscita || p.tipoUscita === "")
     );
 
     if (listaPacchiAttivi.length === 0) {
@@ -2276,13 +2274,12 @@ function gestisciScansioneInventario() {
 
     const corriereSelezionato = document.getElementById('inventarioCorriereSelect').value;
     
-    // FILTRO RIGIDO: Identico al caricamento. Esclude categoricamente i pacchi ritirati o scaduti
+    // FILTRO RIGIDO: Identico al caricamento. Esclude categoricamente i pacchi con tipoUscita valorizzato
     const listaPacchiAttivi = Object.values(pacchi).filter(p => 
         p !== null && 
         typeof p === 'object' && 
         p.corriere === corriereSelezionato && 
-        p.stato !== 'ritirato' && 
-        p.stato !== 'scaduto'
+        (!p.tipoUscita || p.tipoUscita === "")
     );
 
     // Verifica se il codice inserito corrisponde ESATTAMENTE ad un tracciamento presente SOLO tra quelli attivi in giacenza
@@ -2310,7 +2307,7 @@ function gestisciScansioneInventario() {
 
 // Calcola ed aggiorna i tre parametri richiesti: Totali, Scansionati e Mancanti con elenco dettagliato
 function aggiornaRiepiloghiInventario(listaPacchiAttivi) {
-    // 1. Pacchi in inventario complessivi su gestionale (già filtrati a monte)
+    // 1. Pacchi in inventario complessivi su giacenza reale
     const totaleGiacenza = listaPacchiAttivi.length;
     
     // 2. Pacchi effettivamente scansionati che trovano corrispondenza sulla lista attiva
