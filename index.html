@@ -586,6 +586,31 @@
             max-height: 100px;
             overflow-y: auto;
         }
+        /* Pulsante Area Amministratore Viola nel Menu a tendina */
+        .admin-btn {
+            background: #8e44ad;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .admin-btn:hover { background: #732d91; }
+
+        /* Nuovi Stili Area Amministratore */
+        #adminModal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); align-items: center; justify-content: center; overflow-y: auto; padding: 20px 0;
+        }
+        .admin-tabs { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 2px solid var(--primary); padding-bottom: 5px; }
+        .admin-tab-btn { flex: 1; padding: 10px; border: none; background: #e0e0e0; cursor: pointer; font-weight: bold; border-radius: 5px 5px 0 0; }
+        .admin-tab-btn.active { background: var(--primary); color: white; }
+        .admin-section { display: none; text-align: left; }
+        .admin-section.active { display: block; }
+        .admin-list-item { display: flex; justify-content: space-between; align-items: center; background: #f1f2f6; padding: 8px 12px; margin-bottom: 5px; border-radius: 6px; font-weight: bold; }
+        .admin-del-btn { background: #ff4757; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
         
     </style>
 </head>
@@ -620,6 +645,56 @@
         <div style="display:flex; gap:10px;">
             <button onclick="document.getElementById('reportModal').style.display='none'" class="modal-btn" style="background:#e0e0e0; color:#333;">ANNULLA</button>
             <button onclick="generaReport()" class="modal-btn" style="background:var(--primary); color:var(--accent);">GENERA E STAMPA</button>
+        </div>
+    </div>
+</div>
+
+<div id="adminModal">
+    <div class="modal-content" style="max-width: 600px;">
+        <h3 style="color:#8e44ad; margin:0 0 15px 0;">🔐 Area Amministratore</h3>
+        
+        <div class="admin-tabs">
+            <button class="admin-tab-btn active" onclick="switchAdminTab('tabCorrieri')">Corrieri</button>
+            <button class="admin-tab-btn" onclick="switchAdminTab('tabScaffali')">Scaffali</button>
+            <button class="admin-tab-btn" onclick="switchAdminTab('tabGuadagni')">Guadagni No Pudo</button>
+        </div>
+
+        <div id="tabCorrieri" class="admin-section active">
+            <h4>Gestione Lista Corrieri</h4>
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <input type="text" id="nuovoCorriereInput" placeholder="Nome nuovo corriere" style="text-transform:uppercase;">
+                <button onclick="aggiungiCorriereDinamico()" class="modal-btn" style="background:var(--success); color:white; width:auto; padding:10px 20px;">Aggiungi</button>
+            </div>
+            <div id="listaCorrieriAdminContainer" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 8px;"></div>
+        </div>
+
+        <div id="tabScaffali" class="admin-section">
+            <h4>Gestione Lista Scaffali</h4>
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <input type="text" id="nuovoScaffaleInput" placeholder="Es. Scaffale 13" style="text-transform:uppercase;">
+                <button onclick="aggiungiScaffaleDinamico()" class="modal-btn" style="background:var(--success); color:white; width:auto; padding:10px 20px;">Aggiungi</button>
+            </div>
+            <div id="listaScaffaliAdminContainer" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 8px;"></div>
+        </div>
+
+        <div id="tabGuadagni" class="admin-section">
+            <h4>Calcolo Compensi Corrieri No Pudo (€ 0.50 a pacco)</h4>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+                <div>
+                    <label style="font-size:0.8rem; font-weight:bold;">Da Data:</label>
+                    <input type="date" id="guadagniDaData">
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; font-weight:bold;">A Data:</label>
+                    <input type="date" id="guadagniAData">
+                </div>
+            </div>
+            <button onclick="calcolaGuadagniNoPudo()" class="modal-btn" style="background:var(--primary); color:var(--accent); margin-bottom:15px;">Calcola Guadagno</button>
+            <div id="risultatoGuadagniBox" style="background:#fff9db; padding:15px; border-radius:10px; border:2px solid #fab005; font-size:1.1rem; text-align:center; display:none; font-weight:bold; color:var(--primary);"></div>
+        </div>
+
+        <div style="margin-top:20px; text-align:right;">
+            <button onclick="document.getElementById('adminModal').style.display='none'" class="modal-btn" style="background:#e0e0e0; color:#333; width:auto; padding:10px 20px;">CHIUDI AREA ADMIN</button>
         </div>
     </div>
 </div>
@@ -761,6 +836,7 @@
         <div class="header-actions">
             <button class="menu-toggle-btn" onclick="toggleMenuTendina(event)">Menu ☰</button>
             <div id="menuTendina" class="dropdown-menu">
+                <button class="admin-btn" onclick="richiediAccessoAdmin(); chiudiMenuTendina();">AREA AMMINISTRATORE</button>
                 <button class="inventario-btn" onclick="apriInventarioModal(); chiudiMenuTendina();">INVENTARIO</button>
                 <button class="anagrafica-btn" onclick="apriAnagraficaModal(); chiudiMenuTendina();">ANAGRAFICA CLIENTI</button>
                 <button class="report-btn" onclick="document.getElementById('reportModal').style.display='flex'; chiudiMenuTendina();">REPORT</button>
@@ -840,7 +916,8 @@ const db = firebase.database();
 // DEFINIZIONE DELLE VARIABILI GLOBALI (Unica dichiarazione)
 let anagraficaClienti = {};
 let pacchi = [];
-const corrieri = ["InPost", "UPS", "Punto Poste", "DHL", "BRT", "GLS", "Amazon", "Corrieri No Pudo"];
+let corrieri = ["InPost", "UPS", "Punto Poste", "DHL", "BRT", "GLS", "Amazon", "Corrieri No Pudo"];
+let scaffali = [];
 let tabAttiva = 'Tutti';
 let timeoutInattivita;
 let html5QrCode;
@@ -852,6 +929,39 @@ function inizializzaSincronizzazioneFirebase() {
         pacchi = snapshot.val() || [];
         aggiornaVista();
     });
+}
+
+function inizializzaListeConfig() {
+    db.ref('config/corrieri').on('value', (snapshot) => {
+        if(snapshot.exists()) { corrieri = snapshot.val(); }
+        popolaSelectCorrieri();
+        renderAdminCorrieri();
+    });
+    db.ref('config/scaffali').on('value', (snapshot) => {
+        if(snapshot.exists()) { scaffali = snapshot.val(); }
+        popolaSelectScaffali();
+        renderAdminScaffali();
+    });
+}
+// Chiamala al caricamento della pagina o insieme alle altre sincronizzazioni di Firebase
+inizializzaListeConfig();
+
+function popolaSelectCorrieri() {
+    const cSelect = document.getElementById('corriereSelect');
+    const invSelect = document.getElementById('inventarioCorriereSelect');
+    if(cSelect) {
+        cSelect.innerHTML = corrieri.map(c => `<option value="${c}">${c}</option>`).join('');
+    }
+    if(invSelect) {
+        invSelect.innerHTML = corrieri.map(c => `<option value="${c}">${c}</option>`).join('');
+    }
+}
+
+function popolaSelectScaffali() {
+    const sSelect = document.getElementById('scaffaleSelect');
+    if(sSelect) {
+        sSelect.innerHTML = '<option value="">Scaffale...</option>' + scaffali.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
 }
 
 // Racchiudiamo il controllo in una funzione protetta
@@ -2503,7 +2613,160 @@ function terminaInventarioConReport() {
 
 document.getElementById('inventarioSearchInput').addEventListener('change', function() {
     gestisciScansioneInventario();
-});    
+});
+
+// Controllo Password di Accesso
+function richiediAccessoAdmin() {
+    // Creiamo un prompt personalizzato usando lo stile del tuo avviso "beautifyAlert"
+    const alertModal = document.getElementById('beautifyAlert');
+    const alertTitle = document.getElementById('alertTitle');
+    const alertMsg = document.getElementById('alertMsg');
+    
+    alertTitle.innerText = "ACCESSO RISERVATO";
+    alertTitle.style.color = "#8e44ad";
+    
+    // Inseriamo un campo password temporaneo mantenendo la stessa identica veste grafica
+    alertMsg.innerHTML = `
+        <p>Inserisci il codice di sblocco Amministratore:</p>
+        <input type="password" id="adminPasswordInput" placeholder="Password Amministratore" style="width:100%; padding:10px; margin-top:5px; border:2px solid var(--primary); border-radius:8px;">
+    `;
+    
+    // Cambiamo temporaneamente il comportamento del tasto OK dell'alert
+    const okBtn = alertModal.querySelector('.modal-btn');
+    const vecchioClick = okBtn.getAttribute('onclick');
+    
+    okBtn.onclick = function() {
+        const pass = document.getElementById('adminPasswordInput').value;
+        if(pass === "2026") {
+            alertModal.style.display = 'none';
+            // Ripristina il bottone originale
+            okBtn.setAttribute('onclick', vecchioClick);
+            // Apri l'area amministrativa
+            document.getElementById('adminModal').style.display = 'flex';
+        } else {
+            alert('Codice Errato!');
+        }
+    };
+    
+    alertModal.style.display = 'flex';
+}
+
+// Navigazione tra i Tab interni dell'Amministratore
+function switchAdminTab(tabId) {
+    document.querySelectorAll('.admin-section').forEach(sec => sec.classList.remove('active'));
+    document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
+    
+    document.getElementById(tabId).classList.add('active');
+    event.currentTarget.classList.add('active');
+}
+
+// GESTIONE DINAMICA CORRIERI
+function renderAdminCorrieri() {
+    const container = document.getElementById('listaCorrieriAdminContainer');
+    if(!container) return;
+    container.innerHTML = corrieri.map((c, index) => `
+        <div class="admin-list-item">
+            <span>${c}</span>
+            <button class="admin-del-btn" onclick="rimuoviCorriereDinamico(${index})">Elimina</button>
+        </div>
+    `).join('');
+}
+
+function aggiungiCorriereDinamico() {
+    const input = document.getElementById('nuovoCorriereInput');
+    const nuovo = input.value.trim();
+    if(!nuovo) return;
+    if(corrieri.includes(nuovo)) { alert("Corriere già esistente!"); return; }
+    corrieri.push(nuovo);
+    db.ref('config/corrieri').set(corrieri);
+    input.value = "";
+}
+
+function rimuoviCorriereDinamico(index) {
+    if(confirm(`Vuoi davvero rimuovere il corriere "${corrieri[index]}"?`)) {
+        corrieri.splice(index, 1);
+        db.ref('config/corrieri').set(corrieri);
+    }
+}
+
+// GESTIONE DINAMICA SCAFFALI
+function renderAdminScaffali() {
+    const container = document.getElementById('listaScaffaliAdminContainer');
+    if(!container) return;
+    container.innerHTML = scaffali.map((s, index) => `
+        <div class="admin-list-item">
+            <span>${s}</span>
+            <div style="display:flex; gap:5px;">
+                <button class="admin-del-btn" style="background:#e67e22;" onclick="rinominaScaffaleDinamico(${index})">Rinomina</button>
+                <button class="admin-del-btn" onclick="rimuoviScaffaleDinamico(${index})">Elimina</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function aggiungiScaffaleDinamico() {
+    const input = document.getElementById('nuovoScaffaleInput');
+    const nuovo = input.value.trim();
+    if(!nuovo) return;
+    if(scaffali.includes(nuovo)) { alert("Scaffale già esistente!"); return; }
+    scaffali.push(nuovo);
+    db.ref('config/scaffali').set(scaffali);
+    input.value = "";
+}
+
+function rimuoviScaffaleDinamico(index) {
+    if(confirm(`Vuoi davvero rimuovere lo scaffale "${scaffali[index]}"?`)) {
+        scaffali.splice(index, 1);
+        db.ref('config/scaffali').set(scaffali);
+    }
+}
+
+function rinominaScaffaleDinamico(index) {
+    const nuovoNome = prompt(`Rinomina lo scaffale "${scaffali[index]}" in:`, scaffali[index]);
+    if(nuovoNome && nuovoNome.trim() !== "") {
+        scaffali[index] = nuovoNome.trim();
+        db.ref('config/scaffali').set(scaffali);
+    }
+}
+
+// CALCOLO SEZIONE GUADAGNI "CORRIERI NO PUDO"
+function calcolaGuadagniNoPudo() {
+    const daDataStr = document.getElementById('guadagniDaData').value;
+    const aDataStr = document.getElementById('guadagniAData').value;
+    const risBox = document.getElementById('risultatoGuadagniBox');
+    
+    if(!daDataStr || !aDataStr) {
+        alert("Inserisci entrambe le date!");
+        return;
+    }
+    
+    const daData = new Date(daDataStr);
+    daData.setHours(0,0,0,0);
+    const aData = new Date(aDataStr);
+    aData.setHours(23,59,59,999);
+    
+    let conteggioPacchi = 0;
+    
+    // Filtra tutti i pacchi che appartengono a "Corrieri No Pudo" e rientrano nel range di date indicato
+    pacchi.forEach(p => {
+        if(p && p.corriere === "Corrieri No Pudo" && p.dataUscita) {
+            const dataPacco = new Date(p.dataUscita);
+            if(dataPacco >= daData && dataPacco <= aData) {
+                conteggioPacchi++;
+            }
+        }
+    });
+    
+    const totaleGuadagnato = conteggioPacchi * 0.50;
+    
+    risBox.style.display = "block";
+    risBox.innerHTML = `
+        📈 RISULTATO RICERCA:<br>
+        📦 Pacchi Ritirati trovati: <strong>${conteggioPacchi}</strong><br>
+        💰 Totale Percepito: <strong>€ ${totaleGuadagnato.toFixed(2)}</strong>
+    `;
+}
+    
 </script>
 </body>
 </html>
