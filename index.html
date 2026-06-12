@@ -2194,38 +2194,37 @@ document.getElementById('cognome').addEventListener('focus', function() {
     bloccoSuggerimentiAttivo = false;
 });
 
-// Array locale temporaneo per tenere traccia dei codici tracciamento effettivamente scansionati nell'inventario in corso
 // ==========================================================================
-// LOGICA INTEGRATA PER LA GESTIONE DELL'INVENTARIO (CON BEEP AUDIO E FILTRO CORRETTO)
+// LOGICA INTEGRATA PER LA GESTIONE DELL'INVENTARIO (SUONO ALTISSIMO E FILTRO TOTALE)
 // ==========================================================================
 
-// Array locale temporaccia per tenere traccia dei codici tracciamento effettivamente scansionati nell'inventario in corso
+// Array locale temporaneo per tenere traccia dei codici tracciamento effettivamente scansionati nell'inventario in corso
 let trkScansionatiInventario = [];
 
-// Funzione nativa per riprodurre un Beep elettronico ad ALTISSIMO VOLUME (non richiede file mp3 esterni)
+// Funzione nativa per riprodurre un Beep elettronico ad ALTISSIMO VOLUME (Onda Quadra ad altissimo guadagno)
 function riproduciBeepSuccesso() {
     try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const oscillator = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
 
-        // Onda quadra (Square) per produrre un suono molto più forte, squillante e marcato rispetto a quella sinusoidale
+        // L'onda quadra ('square') produce un suono drastico, sfacciato e molto più rumoroso di quella normale
         oscillator.type = 'square'; 
         
-        // Frequenza acuta e penetrante (1200Hz), ideale per essere sentita anche con rumore nel negozio
-        oscillator.frequency.setValueAtTime(1200, audioCtx.currentTime); 
+        // Frequenza acuta e perforante (1300Hz), ottima per ambienti con rumore o per farsi sentire chiaramente
+        oscillator.frequency.setValueAtTime(1300, audioCtx.currentTime); 
         
-        // VOLUME ECCESSIVO / MASSIMO: Impostato a 2.5 per forzare la massima amplificazione della scheda audio
-        gainNode.gain.setValueAtTime(2.5, audioCtx.currentTime); 
+        // VOLUME FORZATO AL MASSIMO ASSOLUTO (Valore 4.0 per spingere al limite i diffusori hardware)
+        gainNode.gain.setValueAtTime(4.0, audioCtx.currentTime); 
 
         oscillator.connect(gainNode);
         gainNode.connect(audioCtx.destination);
 
         oscillator.start();
-        // Durata estesa a 250 millisecondi per renderlo un bip pieno e impossibile da non sentire
+        // Durata di 250ms per un suono ben definito e impossibile da ignorare
         oscillator.stop(audioCtx.currentTime + 0.25); 
     } catch (e) {
-        console.log("Impossibile riprodurre l'audio:", e);
+        console.error("Errore nell'avvio dell'audio:", e);
     }
 }
 
@@ -2262,20 +2261,22 @@ function caricaPacchiInventario() {
     const container = document.getElementById('inventarioPacchiContainer');
     container.innerHTML = ""; // Svuota contenitore precedente
     
-    // BLOCCO FILTRO TOTALMENTE RIGIDO: Esclude categoricamente qualsiasi stringa di archivio (ritirato / scaduto / uscito)
+    // FILTRO TOTALE AUTOMATICO: Rifiuta qualsiasi record che contenga tracce di ritiro, scadenza o uscita
     const listaPacchiAttivi = Object.values(pacchi).filter(p => {
         if (!p || typeof p !== 'object') return false;
+        if (p.corriere !== corriereSelezionato) return false;
         
-        // Normalizza lo stato per evitare errori di minuscole/maiuscole
+        // Estrazione e controllo pulito delle proprietà di stato ed uscita
         const statoPacco = (p.stato || "").toLowerCase().trim();
+        const tipoUscita = (p.tipoUscita || "").toLowerCase().trim();
+        const dataUscita = (p.dataUscita || "").trim();
         
-        // Prende solo il corriere selezionato e rifiuta se lo stato indica che non è in giacenza
-        return p.corriere === corriereSelezionato && 
-               statoPacco !== 'ritirato' && 
-               statoPacco !== 'scaduto' && 
-               p.uscito !== true && 
-               p.uscito !== "true" &&
-               (!p.dataUscita || p.dataUscita === "");
+        // Se ha una data di uscita, uno stato non idoneo o l'indicatore di uscita attivo, VIENE SCARTATO
+        if (dataUscita !== "" || p.uscito === true || p.uscito === "true") return false;
+        if (statoPacco === "ritirato" || statoPacco === "scaduto" || statoPacco === "reso") return false;
+        if (tipoUscita === "cliente" || tipoUscita === "scaduto" || tipoUscita === "reso") return false;
+        
+        return true;
     });
 
     if (listaPacchiAttivi.length === 0) {
@@ -2283,7 +2284,7 @@ function caricaPacchiInventario() {
     } else {
         listaPacchiAttivi.forEach(p => {
             const trkUpper = (p.codiceTracciabilita || "").trim().toUpperCase();
-            if (trkUpper === "") return; // Salta se non ha tracciamento valido
+            if (trkUpper === "") return; // Salta se privo di tracking valido
 
             const divPacco = document.createElement('div');
             divPacco.className = 'pacco-inventario-item';
@@ -2314,23 +2315,27 @@ function gestisciScansioneInventario() {
 
     const corriereSelezionato = document.getElementById('inventarioCorriereSelect').value;
     
-    // BLOCCO FILTRO IDENTICO: Esclude categoricamente i pacchi ritirati o usciti
+    // FILTRO TOTALE AUTOMATICO IDENTICO: Esclude categoricamente i pacchi ritirati
     const listaPacchiAttivi = Object.values(pacchi).filter(p => {
         if (!p || typeof p !== 'object') return false;
+        if (p.corriere !== corriereSelezionato) return false;
+        
         const statoPacco = (p.stato || "").toLowerCase().trim();
-        return p.corriere === corriereSelezionato && 
-               statoPacco !== 'ritirato' && 
-               statoPacco !== 'scaduto' && 
-               p.uscito !== true && 
-               p.uscito !== "true" &&
-               (!p.dataUscita || p.dataUscita === "");
+        const tipoUscita = (p.tipoUscita || "").toLowerCase().trim();
+        const dataUscita = (p.dataUscita || "").trim();
+        
+        if (dataUscita !== "" || p.uscito === true || p.uscito === "true") return false;
+        if (statoPacco === "ritirato" || statoPacco === "scaduto" || statoPacco === "reso") return false;
+        if (tipoUscita === "cliente" || tipoUscita === "scaduto" || tipoUscita === "reso") return false;
+        
+        return true;
     });
 
     // Verifica se il codice inserito corrisponde ESATTAMENTE ad un tracciamento presente SOLO tra quelli attivi in giacenza
     const trovato = listaPacchiAttivi.some(p => (p.codiceTracciabilita || "").trim().toUpperCase() === codiceLetto);
 
     if (trovato) {
-        // SUONO ALTISSIMO DI RISCONTRO: Suona immediatamente al riscontro positivo
+        // EFFETTUA IL BEEP AD ALTISSIMO VOLUME
         riproduciBeepSuccesso();
 
         // Se non era già stato aggiunto ai letti in questa sessione, lo inserisce
