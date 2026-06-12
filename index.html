@@ -661,6 +661,29 @@
         }
         
     </style>
+    <script>
+        window.addEventListener('scroll', function() {
+            gestisciPulsanteScroll();
+        }, true);
+
+        function gestisciPulsanteScroll() {
+            const btn = document.getElementById("scrollToTopBtn");
+            if (btn) {
+                if (window.scrollY > 250 || document.documentElement.scrollTop > 250 || document.body.scrollTop > 250) {
+                    btn.style.display = "flex";
+                } else {
+                    btn.style.display = "none";
+                }
+            }
+        }
+
+        function tornaSu() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+    </script>
 </head>
 <body onmousedown="resetInattivita()" onkeypress="resetInattivita()" ontouchstart="resetInattivita()">
 
