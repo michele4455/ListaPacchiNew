@@ -634,6 +634,31 @@
             padding-bottom: 5px;
             text-transform: uppercase;
         }
+
+                /* Stile Pulsante Torna in Alto */
+        .scroll-to-top {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background-color: var(--primary);
+            color: var(--accent);
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+            display: none; /* Inizialmente nascosto */
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            z-index: 9999;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        .scroll-to-top:hover {
+            background-color: var(--primary-dark);
+            transform: scale(1.1);
+        }
         
     </style>
 </head>
@@ -843,6 +868,10 @@
         <input type="email" id="loginEmail" placeholder="Email" style="margin-bottom:10px; width:100%">
         <input type="password" id="loginPassword" placeholder="Password" style="margin-bottom:20px; width:100%">
         <button onclick="login()">Login</button>
+        
+        <div style="margin-top: 25px; font-size: 0.75rem; color: #666; font-weight: 500; line-height: 1.4;">
+            © Tutti i diritti riservati.<br>Questa web app è realizzata da<br><strong>Centro Post@ Anaclerio</strong>
+        </div>
     </div>
 </div>
 
@@ -2038,6 +2067,7 @@ function generaReport() {
                 <tbody>${htmlRitirati || '<tr><td colspan="5" style="text-align:center">Nessun pacco uscito in questa data</td></tr>'}</tbody>
             </table>
             <div class="footer">Centro Post@ Anaclerio - Sistema Gestionale Interno</div>
+            <div id="btnScrollTop" class="scroll-to-top" onclick="tornaInAlto()">⬆</div>
         </body>
         </html>
     `);
@@ -2800,6 +2830,25 @@ function calcolaStatisticheNonPudo() {
     document.getElementById('resTotalePacchi').innerText = conteggioPacchi;
     document.getElementById('resCompensoMaturato').innerText = `€ ${compenso.toFixed(2)}`;
 }
+
+// Gestione del pulsante Torna in Alto
+window.addEventListener('scroll', function() {
+    const btn = document.getElementById('btnScrollTop');
+    // Mostra il pulsante se si scende oltre i 300 pixel
+    if (window.scrollY > 300) {
+        btn.style.display = 'flex';
+    } else {
+        btn.style.display = 'none';
+    }
+});
+
+function tornaInAlto() {
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth' // Ritorno fluido e morbido verso l'alto
+    });
+}
+    
 </script>
 </body>
 </html>
