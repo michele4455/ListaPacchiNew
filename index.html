@@ -586,6 +586,54 @@
             max-height: 100px;
             overflow-y: auto;
         }
+
+        /* Pulsante Area Amministratore - Viola Intenso per differenziarsi */
+        .admin-btn {
+            background: #6c5ce7;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .admin-btn:hover {
+            background: #5b4bc4;
+        }
+
+        /* Stili interni per le tabelle di gestione amministratore */
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+        .admin-table th, .admin-table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+        .admin-table th {
+            background-color: var(--primary);
+            color: white;
+        }
+        .admin-section {
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 15px;
+            background: #fdfdfd;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+        .admin-section h4 {
+            margin-top: 0;
+            color: var(--primary);
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 5px;
+            text-transform: uppercase;
+        }
         
     </style>
 </head>
@@ -664,6 +712,84 @@
         <div style="display:flex; gap:10px; margin-top:20px;">
             <button onclick="closeEditModal()" class="modal-btn" style="background:#e0e0e0; color:#333;">ANNULLA</button>
             <button id="saveEditBtn" class="modal-btn" style="background:var(--success); color:white;">SALVA MODIFICHE</button>
+        </div>
+    </div>
+</div>
+
+<div id="adminPasswordModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center;">
+    <div class="modal-content" style="max-width: 400px; border-top: 10px solid #6c5ce7;">
+        <h3 style="color:#6c5ce7; margin-bottom:15px;">🔒 Accesso Area Amministratore</h3>
+        <p>Inserisci il codice di sblocco:</p>
+        <input type="password" id="inputPasswordAdmin" style="margin-bottom:20px; text-align:center;" placeholder="••••">
+        <div style="display:flex; gap:10px;">
+            <button onclick="document.getElementById('adminPasswordModal').style.display='none'" class="modal-btn" style="background:#e0e0e0; color:#333;">ANNULLA</button>
+            <button onclick="verificaPasswordAdmin()" class="modal-btn" style="background:#6c5ce7; color:white;">ACCEDI</button>
+        </div>
+    </div>
+</div>
+
+<div id="adminAreaModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; overflow-y: auto; padding: 20px 0;">
+    <div class="modal-content" style="max-width: 850px; border-top: 10px solid #6c5ce7;">
+        <h2 style="color:#6c5ce7; margin:0 0 20px 0;">⚙️ Area Amministratore</h2>
+        
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            
+            <div class="admin-section">
+                <h4>Gestione Corrieri</h4>
+                <div style="display:flex; gap:10px; margin-bottom:10px;">
+                    <input type="text" id="nuovoCorriereNome" placeholder="Nome nuovo corriere" style="text-transform:uppercase;">
+                    <button onclick="aggiungiNuovoCorriereAdmin()" class="action-btn-green" style="width:auto; white-space:nowrap; background:#6c5ce7;">+ AGGIUNGI</button>
+                </div>
+                <div style="max-height: 180px; overflow-y: auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr><th>Nome Corriere</th><th style="width:120px; text-align:center;">Azioni</th></tr>
+                        </thead>
+                        <tbody id="tabellaCorrieriAdmin"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h4>Gestione Scaffali</h4>
+                <div style="display:flex; gap:10px; margin-bottom:10px;">
+                    <input type="text" id="nuovoScaffaleNome" placeholder="Es. Scaffale 13" style="text-transform:uppercase;">
+                    <button onclick="aggiungiNuovoScaffaleAdmin()" class="action-btn-green" style="width:auto; white-space:nowrap; background:#6c5ce7;">+ AGGIUNGI</button>
+                </div>
+                <div style="max-height: 180px; overflow-y: auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr><th>Nome Scaffale</th><th style="width:120px; text-align:center;">Azioni</th></tr>
+                        </thead>
+                        <tbody id="tabellaScaffaliAdmin"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h4>Statistiche Pacchi Non PUDO</h4>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+                    <div>
+                        <label style="font-size:0.8rem; font-weight:bold; color:var(--primary);">Data Inizio</label>
+                        <input type="date" id="statDataInizio">
+                    </div>
+                    <div>
+                        <label style="font-size:0.8rem; font-weight:bold; color:var(--primary);">Data Fine</label>
+                        <input type="date" id="statDataFine">
+                    </div>
+                </div>
+                <button onclick="calcolaStatisticheNonPudo()" class="modal-btn" style="background:var(--primary); color:white; margin-bottom:15px;">ELABORA DATI</button>
+                
+                <div style="background:#fff9db; padding:15px; border:2px dashed #fab005; border-radius:10px; display:flex; justify-content:space-around; text-align:center; font-weight:bold;">
+                    <div>Totale Pacchi Non PUDO:<br><span id="resTotalePacchi" style="font-size:1.3rem; color:var(--primary);">0</span></div>
+                    <div>Compenso Maturato:<br><span id="resCompensoMaturato" style="font-size:1.3rem; color:#d9480f;">€ 0.00</span></div>
+                </div>
+            </div>
+
+        </div>
+
+        <div style="margin-top:20px;">
+            <button onclick="document.getElementById('adminAreaModal').style.display='none'" class="modal-btn" style="background:#e0e0e0; color:#333;">CHIUDI AREA AMMINISTRATORE</button>
         </div>
     </div>
 </div>
@@ -761,6 +887,7 @@
         <div class="header-actions">
             <button class="menu-toggle-btn" onclick="toggleMenuTendina(event)">Menu ☰</button>
             <div id="menuTendina" class="dropdown-menu">
+                <button class="admin-btn" onclick="richiediAccessoAdmin(); chiudiMenuTendina();">AREA AMMINISTRATORE</button>
                 <button class="inventario-btn" onclick="apriInventarioModal(); chiudiMenuTendina();">INVENTARIO</button>
                 <button class="anagrafica-btn" onclick="apriAnagraficaModal(); chiudiMenuTendina();">ANAGRAFICA CLIENTI</button>
                 <button class="report-btn" onclick="document.getElementById('reportModal').style.display='flex'; chiudiMenuTendina();">REPORT</button>
@@ -1590,6 +1717,8 @@ function apriModifica(id) {
     const p = pacchi.find(x => x.id === id);
     const container = document.getElementById('editFields');
     const haNote = !!(p.noteAggiuntive && p.noteAggiuntive.trim() !== '');
+    const dimensioneAttuale = p.grandezza || 'M';
+
     container.innerHTML = `
         <div>
             <label>Cognome</label>
@@ -1613,13 +1742,21 @@ function apriModifica(id) {
         <div>
             <label>Corriere</label>
             <select id="editCorriere">
-                ${corrieri.map(c => `<option value="${c}" ${c === p.corriere ? 'selected' : ''}>${c}</option>`).join('')}
+                ${listaCorrieriDinamica.map(c => `<option value="${c}" ${c === p.corriere ? 'selected' : ''}>${c}</option>`).join('')}
             </select>
         </div>
         <div>
             <label>Scaffale</label>
             <select id="editScaffale">
-                ${Array.from({length:12}, (_,i)=>i+1).map(i => `<option value="Scaffale ${i}" ${p.scaffale === 'Scaffale '+i ? 'selected' : ''}>Scaffale ${i}</option>`).join('')}
+                ${listaScaffaliDinamica.map(s => `<option value="${s}" ${p.scaffale === s ? 'selected' : ''}>${s}</option>`).join('')}
+            </select>
+        </div>
+        <div>
+            <label>Dimensione Pacco</label>
+            <select id="editGrandezza">
+                <option value="P" ${dimensioneAttuale === 'P' ? 'selected' : ''}>P</option>
+                <option value="M" ${dimensioneAttuale === 'M' ? 'selected' : ''}>M</option>
+                <option value="G" ${dimensioneAttuale === 'G' ? 'selected' : ''}>G</option>
             </select>
         </div>
         <div class="contrassegno-box">
@@ -1643,7 +1780,9 @@ function apriModifica(id) {
             </div>
         </div>
     `;
+
     document.getElementById('editModal').style.display = 'flex';
+
     document.getElementById('saveEditBtn').onclick = () => {
         p.cognome = document.getElementById('editCognome').value.trim().toUpperCase();
         p.nome = document.getElementById('editNome').value.trim().toUpperCase();
@@ -1651,6 +1790,7 @@ function apriModifica(id) {
         p.codiceTracciabilita = document.getElementById('editTrk').value.trim().toUpperCase();
         p.corriere = document.getElementById('editCorriere').value;
         p.scaffale = document.getElementById('editScaffale').value;
+        p.grandezza = document.getElementById('editGrandezza').value;
         p.isContrassegno = document.getElementById('editIsContrassegno').checked;
         p.importoContrassegno = p.isContrassegno ? document.getElementById('editImportoContrassegno').value.trim() : '';
         
@@ -2503,7 +2643,163 @@ function terminaInventarioConReport() {
 
 document.getElementById('inventarioSearchInput').addEventListener('change', function() {
     gestisciScansioneInventario();
-});    
+});
+
+let listaCorrieriDinamica = [...corrieri];
+let listaScaffaliDinamica = [];
+for(let i=1; i<=12; i++) listaScaffaliDinamica.push(`Scaffale ${i}`);
+
+db.ref('impostazioni/corrieri').on('value', (snap) => {
+    if(snap.exists()) { listaCorrieriDinamica = snap.val(); } 
+    else { db.ref('impostazioni/corrieri').set(listaCorrieriDinamica); }
+    aggiornaSelettoriMenu();
+});
+
+db.ref('impostazioni/scaffali').on('value', (snap) => {
+    if(snap.exists()) { listaScaffaliDinamica = snap.val(); } 
+    else { db.ref('impostazioni/scaffali').set(listaScaffaliDinamica); }
+    aggiornaSelettoriMenu();
+});
+
+function aggiornaSelettoriMenu() {
+    const cSel = document.getElementById('corriereSelect');
+    const sSel = document.getElementById('scaffaleSelect');
+    const iCSel = document.getElementById('inventarioCorriereSelect');
+    
+    if(cSel) {
+        cSel.innerHTML = listaCorrieriDinamica.map(c => `<option value="${c}">${c}</option>`).join('');
+    }
+    if(iCSel) {
+        iCSel.innerHTML = listaCorrieriDinamica.map(c => `<option value="${c}">${c}</option>`).join('');
+    }
+    if(sSel) {
+        sSel.innerHTML = `<option value="">Scaffale...</option>` + listaScaffaliDinamica.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
+}
+
+function richiediAccessoAdmin() {
+    document.getElementById('inputPasswordAdmin').value = "";
+    document.getElementById('adminPasswordModal').style.display = 'flex';
+}
+
+function verificaPasswordAdmin() {
+    const pass = document.getElementById('inputPasswordAdmin').value;
+    if (pass === "2026") {
+        document.getElementById('adminPasswordModal').style.display = 'none';
+        apriAreaAmministratore();
+    } else {
+        alert("Password errata!");
+    }
+}
+
+function apriAreaAmministratore() {
+    document.getElementById('adminAreaModal').style.display = 'flex';
+    renderCorrieriAdmin();
+    renderScaffaliAdmin();
+}
+
+function renderCorrieriAdmin() {
+    const tbody = document.getElementById('tabellaCorrieriAdmin');
+    tbody.innerHTML = listaCorrieriDinamica.map((c, index) => `
+        <tr>
+            <td><input type="text" value="${c}" id="currCorriere_${index}" onchange="modificaCorriereAdmin(${index}, this.value)" style="padding:5px; border-radius:5px; text-transform:uppercase;"></td>
+            <td style="text-align:center;"><button onclick="eliminaCorriereAdmin(${index})" style="background:#ff4757; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Elimina</button></td>
+        </tr>
+    `).join('');
+}
+
+function aggiungiNuovoCorriereAdmin() {
+    const nomeInput = document.getElementById('nuovoCorriereNome');
+    const nome = nomeInput.value.trim();
+    if(nome === "") return;
+    listaCorrieriDinamica.push(nome);
+    db.ref('impostazioni/corrieri').set(listaCorrieriDinamica).then(() => {
+        nomeInput.value = "";
+        renderCorrieriAdmin();
+    });
+}
+
+function modificaCorriereAdmin(index, nuovoValore) {
+    if(nuovoValore.trim() === "") return;
+    listaCorrieriDinamica[index] = nuovoValore.trim();
+    db.ref('impostazioni/corrieri').set(listaCorrieriDinamica);
+}
+
+function eliminaCorriereAdmin(index) {
+    if(confirm("Vuoi davvero eliminare questo corriere?")) {
+        listaCorrieriDinamica.splice(index, 1);
+        db.ref('impostazioni/corrieri').set(listaCorrieriDinamica).then(() => {
+            renderCorrieriAdmin();
+        });
+    }
+}
+
+function renderScaffaliAdmin() {
+    const tbody = document.getElementById('tabellaScaffaliAdmin');
+    tbody.innerHTML = listaScaffaliDinamica.map((s, index) => `
+        <tr>
+            <td><input type="text" value="${s}" id="currScaffale_${index}" onchange="modificaScaffaleAdmin(${index}, this.value)" style="padding:5px; border-radius:5px; text-transform:uppercase;"></td>
+            <td style="text-align:center;"><button onclick="eliminaScaffaleAdmin(${index})" style="background:#ff4757; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Elimina</button></td>
+        </tr>
+    `).join('');
+}
+
+function aggiungiNuovoScaffaleAdmin() {
+    const nomeInput = document.getElementById('nuovoScaffaleNome');
+    const nome = nomeInput.value.trim();
+    if(nome === "") return;
+    listaScaffaliDinamica.push(nome);
+    db.ref('impostazioni/scaffali').set(listaScaffaliDinamica).then(() => {
+        nomeInput.value = "";
+        renderScaffaliAdmin();
+    });
+}
+
+function modificaScaffaleAdmin(index, nuovoValore) {
+    if(nuovoValore.trim() === "") return;
+    listaScaffaliDinamica[index] = nuovoValore.trim();
+    db.ref('impostazioni/scaffali').set(listaScaffaliDinamica);
+}
+
+function eliminaScaffaleAdmin(index) {
+    if(confirm("Vuoi davvero eliminare questo scaffale?")) {
+        listaScaffaliDinamica.splice(index, 1);
+        db.ref('impostazioni/scaffali').set(listaScaffaliDinamica).then(() => {
+            renderScaffaliAdmin();
+        });
+    }
+}
+
+function calcolaStatisticheNonPudo() {
+    const inizioInput = document.getElementById('statDataInizio').value;
+    const fineInput = document.getElementById('statDataFine').value;
+    
+    if(!inizioInput || !fineInput) {
+        alert("Seleziona sia la data iniziale che la data finale.");
+        return;
+    }
+    
+    const dataInizio = new Date(inizioInput);
+    dataInizio.setHours(0,0,0,0);
+    const dataFine = new Date(fineInput);
+    dataFine.setHours(23,59,59,999);
+    
+    let conteggioPacchi = 0;
+    
+    pacchi.forEach(pacco => {
+        if (pacco && pacco.corriere === "Corrieri No Pudo" && pacco.dataInserimento) {
+            const dataPacco = new Date(pacco.dataInserimento);
+            if (dataPacco >= dataInizio && dataPacco <= dataFine) {
+                conteggioPacchi++;
+            }
+        }
+    });
+    
+    const compenso = conteggioPacchi * 0.50;
+    
+    document.getElementById('resTotalePacchi').innerText = conteggioPacchi;
+    document.getElementById('resCompensoMaturato').innerText = `€ ${compenso.toFixed(2)}`;
+}
 </script>
 </body>
 </html>
