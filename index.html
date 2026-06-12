@@ -1485,6 +1485,7 @@ firebase.auth().onAuthStateChanged((user) => {
         document.getElementById('mainPage').style.display = 'block';
         document.querySelector('.container').style.display = 'block';
         document.body.style.overflow = 'auto';
+        document.getElementById('btnScrollTop').style.display = 'flex';
         
         // Avvia la sincronizzazione unificata dell'anagrafica e dei pacchi storici
         inizializzaSincronizzazioneAnagrafica();
@@ -2843,10 +2844,14 @@ window.addEventListener('scroll', function() {
 });
 
 function tornaInAlto() {
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth' // Ritorno fluido e morbido verso l'alto
-    });
+    // Riporta in alto la pagina globale
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Riporta in alto l'eventuale contenitore interno dei pacchi
+    const container = document.querySelector('.container, main, body');
+    if (container) {
+        container.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 }
     
 </script>
