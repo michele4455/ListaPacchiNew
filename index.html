@@ -2195,7 +2195,33 @@ document.getElementById('cognome').addEventListener('focus', function() {
 });
 
 // Array locale temporaneo per tenere traccia dei codici tracciamento effettivamente scansionati nell'inventario in corso
+// ==========================================================================
+// LOGICA INTEGRATA PER LA GESTIONE DELL'INVENTARIO (CON BEEP AUDIO E FILTRO CORRETTO)
+// ==========================================================================
+
+// Array locale temporaccia per tenere traccia dei codici tracciamento effettivamente scansionati nell'inventario in corso
 let trkScansionatiInventario = [];
+
+// Funzione nativa per riprodurre un Beep elettronico di conferma via codice (non richiede file mp3 esterni)
+function riproduciBeepSuccesso() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // Frequenza acuta (Nota La5)
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Volume moderato
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.12); // Durata del beep: 120 millisecondi
+    } catch (e) {
+        console.log("AudioContext non ancora abilitato dall'utente:", e);
+    }
+}
 
 // Funzione che apre la schermata dell'inventario e inizializza il selettore dei corrieri nativi
 function apriInventarioModal() {
@@ -2230,12 +2256,14 @@ function caricaPacchiInventario() {
     const container = document.getElementById('inventarioPacchiContainer');
     container.innerHTML = ""; // Svuota contenitore precedente
     
-    // FILTRO RIGIDO: Prende SOLO i pacchi del corriere selezionato che NON sono usciti (tipoUscita non impostato)
+    // FILTRO NATIVO CORRETTO: Prende SOLO i pacchi del corriere che NON sono usciti (no p.uscito e no p.dataUscita)
     const listaPacchiAttivi = Object.values(pacchi).filter(p => 
         p !== null && 
         typeof p === 'object' && 
         p.corriere === corriereSelezionato && 
-        (!p.tipoUscita || p.tipoUscita === "")
+        p.uscito !== true && 
+        p.uscito !== "true" &&
+        (!p.dataUscita || p.dataUscita === "")
     );
 
     if (listaPacchiAttivi.length === 0) {
@@ -2274,18 +2302,23 @@ function gestisciScansioneInventario() {
 
     const corriereSelezionato = document.getElementById('inventarioCorriereSelect').value;
     
-    // FILTRO RIGIDO: Identico al caricamento. Esclude categoricamente i pacchi con tipoUscita valorizzato
+    // FILTRO NATIVO CORRETTO: Identico al caricamento. Esclude categoricamente i pacchi contrassegnati come usciti
     const listaPacchiAttivi = Object.values(pacchi).filter(p => 
         p !== null && 
         typeof p === 'object' && 
         p.corriere === corriereSelezionato && 
-        (!p.tipoUscita || p.tipoUscita === "")
+        p.uscito !== true && 
+        p.uscito !== "true" &&
+        (!p.dataUscita || p.dataUscita === "")
     );
 
     // Verifica se il codice inserito corrisponde ESATTAMENTE ad un tracciamento presente SOLO tra quelli attivi in giacenza
     const trovato = listaPacchiAttivi.some(p => (p.codiceTracciabilita || "").trim().toUpperCase() === codiceLetto);
 
     if (trovato) {
+        // Riproduce il Beep sonoro di riscontro positivo richiesto (funziona solo nella schermata Inventario)
+        riproduciBeepSuccesso();
+
         // Se non era già stato aggiunto ai letti in questa sessione, lo inserisce
         if (!trkScansionatiInventario.includes(codiceLetto)) {
             trkScansionatiInventario.push(codiceLetto);
@@ -2341,8 +2374,7 @@ function aggiornaRiepiloghiInventario(listaPacchiAttivi) {
 // Estensione del comportamento dell'ascoltatore di eventi per intercettare l'aggiornamento automatico dello scanner se l'inventario è aperto
 document.getElementById('inventarioSearchInput').addEventListener('change', function() {
     gestisciScansioneInventario();
-});
-    
+});    
 </script>
 </body>
 </html>
