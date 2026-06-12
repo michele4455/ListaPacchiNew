@@ -2230,15 +2230,23 @@ function caricaPacchiInventario() {
     const container = document.getElementById('inventarioPacchiContainer');
     container.innerHTML = ""; // Svuota contenitore precedente
     
-    // Filtra i soli pacchi NON ancora ritirati/scaduti (quindi attivi a gestionale) appartenenti al corriere scelto
-    // Gestisce il fatto che 'pacchi' può essere un oggetto o un array
-    const listaPacchiAttivi = Object.values(pacchi).filter(p => p && p.corriere === corriereSelezionato && p.stato !== 'ritirato' && p.stato !== 'scaduto');
+    // FILTRO RIGIDO: Trasforma in array (sia se oggetto che array Firebase con indici vuoti), rimuove i nulli 
+    // e prende SOLO quelli del corriere il cui stato NON è 'ritirato' e NON è 'scaduto'
+    const listaPacchiAttivi = Object.values(pacchi).filter(p => 
+        p !== null && 
+        typeof p === 'object' && 
+        p.corriere === corriereSelezionato && 
+        p.stato !== 'ritirato' && 
+        p.stato !== 'scaduto'
+    );
 
     if (listaPacchiAttivi.length === 0) {
         container.innerHTML = "<div style='text-align:center; color:#777; font-weight:bold; padding:15px;'>Nessun pacco in giacenza per questo corriere.</div>";
     } else {
         listaPacchiAttivi.forEach(p => {
             const trkUpper = (p.codiceTracciabilita || "").trim().toUpperCase();
+            if (trkUpper === "") return; // Salta se non ha tracciamento valido
+
             const divPacco = document.createElement('div');
             divPacco.className = 'pacco-inventario-item';
             divPacco.id = `inv-pacco-${trkUpper}`;
@@ -2256,7 +2264,7 @@ function caricaPacchiInventario() {
         });
     }
 
-    // Aggiorna immediatamente il calcolo dei riepiloghi numerici
+    // Aggiorna immediatamente il calcolo dei riepiloghi numerici passandogli la lista pulita dei soli presenti a scaffale
     aggiornaRiepiloghiInventario(listaPacchiAttivi);
 }
 
@@ -2268,9 +2276,10 @@ function gestisciScansioneInventario() {
 
     const corriereSelezionato = document.getElementById('inventarioCorriereSelect').value;
     
-    // FILTRO RIGIDO: Considera SOLO i pacchi del corriere selezionato che NON sono ritirati e NON sono scaduti
+    // FILTRO RIGIDO: Identico al caricamento. Esclude categoricamente i pacchi ritirati o scaduti
     const listaPacchiAttivi = Object.values(pacchi).filter(p => 
-        p && 
+        p !== null && 
+        typeof p === 'object' && 
         p.corriere === corriereSelezionato && 
         p.stato !== 'ritirato' && 
         p.stato !== 'scaduto'
@@ -2301,14 +2310,14 @@ function gestisciScansioneInventario() {
 
 // Calcola ed aggiorna i tre parametri richiesti: Totali, Scansionati e Mancanti con elenco dettagliato
 function aggiornaRiepiloghiInventario(listaPacchiAttivi) {
-    // 1. Pacchi in inventario complessivi su gestionale
+    // 1. Pacchi in inventario complessivi su gestionale (già filtrati a monte)
     const totaleGiacenza = listaPacchiAttivi.length;
     
-    // 2. Pacchi effettivamente scansionati che trovano corrispondenza sul gestionale
+    // 2. Pacchi effettivamente scansionati che trovano corrispondenza sulla lista attiva
     const scansionatiEInGiacenza = listaPacchiAttivi.filter(p => trkScansionatiInventario.includes((p.codiceTracciabilita || "").trim().toUpperCase()));
     const totaleScansionati = scansionatiEInGiacenza.length;
     
-    // 3. Pacchi mancanti (presenti a sistema ma non ancora passati sotto lettura)
+    // 3. Pacchi mancanti (presenti attivi a sistema ma non ancora passati sotto lettura)
     const pacchiMancanti = listaPacchiAttivi.filter(p => !trkScansionatiInventario.includes((p.codiceTracciabilita || "").trim().toUpperCase()));
     const totaleMancanti = pacchiMancanti.length;
 
