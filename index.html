@@ -2194,7 +2194,6 @@ document.getElementById('cognome').addEventListener('focus', function() {
     bloccoSuggerimentiAttivo = false;
 });
 
-// Array locale temporaneo per tenere traccia dei codici tracciamento effettivamente scansionati nell'inventario in corso
 let trkScansionatiInventario = [];
 
 // Funzione nativa per riprodurre un Beep elettronico ad ALTISSIMO VOLUME (Onda Quadra ad altissimo guadagno)
@@ -2378,7 +2377,132 @@ function aggiornaRiepiloghiInventario(listaPacchiAttivi) {
     }
 }
 
-// Estensione del comportamento dell'ascoltatore di eventi per intercettare l'aggiornamento automatico dello scanner se l'inventario è aperto
+// Genera e scarica automaticamente il PDF di riepilogo dell'inventario corrente
+function scaricaPDFInventario() {
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        const corriereSelezionato = document.getElementById('inventarioCorriereSelect').value;
+        const dataOggi = new Date().toLocaleDateString('it-IT') + ' ' + new Date().toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'});
+        
+        const listaPacchiAttivi = Object.values(pacchi).filter(p => {
+            if (!p || typeof p !== 'object') return false;
+            return p.corriere === corriereSelezionato && p.ritirato !== true && p.ritirato !== "true";
+        });
+        
+        const scansionati = listaPacchiAttivi.filter(p => trkScansionatiInventario.includes((p.codiceTracciabilita || "").trim().toUpperCase()));
+        const mancanti = listaPacchiAttivi.filter(p => !trkScansionatiInventario.includes((p.codiceTracciabilita || "").trim().toUpperCase()));
+
+        // Intestazione PDF Professionale Blu
+        doc.setFillColor(0, 51, 153); 
+        doc.rect(0, 0, 210, 40, 'F');
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(22);
+        doc.text("REPORT INVENTARIO GIACENZA", 15, 20);
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text("Centro Post@ Anaclerio — Sistema Gestionale", 15, 30);
+        doc.text("Data Elaborazione: " + dataOggi, 130, 30);
+
+        // Sezione Statistiche
+        doc.setTextColor(26, 26, 26);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text("Dettagli e Statistiche Corriere: " + corriereSelezionato, 15, 55);
+        
+        doc.setLineWidth(0.5);
+        doc.setDrawColor(200, 200, 200);
+        doc.line(15, 58, 195, 58);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(11);
+        doc.text(`• Totale Pacchi Attesi a Sistema: ${listaPacchiAttivi.length}`, 15, 68);
+        doc.text(`• Pacchi Effettivamente Trovati (Scansionati): ${scansionati.length}`, 15, 75);
+        
+        if (mancanti.length > 0) {
+            doc.setTextColor(220, 53, 69); // Rosso
+            doc.setFont("helvetica", "bold");
+        } else {
+            doc.setTextColor(40, 167, 69); // Verde
+            doc.setFont("helvetica", "bold");
+        }
+        doc.text(`• Pacchi Mancanti all'Appello: ${mancanti.length}`, 15, 82);
+
+        doc.setTextColor(26, 26, 26);
+        let yPos = 98;
+
+        // Sezione Elenco Pacchi Mancanti
+        if (mancanti.length > 0) {
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(13);
+            doc.text("ELENCO DETTAGLIATO PACCHI MANCANTI", 15, yPos);
+            doc.line(15, yPos + 2, 195, yPos + 2);
+            yPos += 10;
+
+            doc.setFontSize(10);
+            doc.setFillColor(240, 242, 245);
+            doc.rect(15, yPos, 180, 7, 'F');
+            doc.text("ID PACCO", 17, yPos + 5);
+            doc.text("CODICE TRACCIABILITÀ (TRK)", 50, yPos + 5);
+            doc.text("DESTINATARIO", 130, yPos + 5);
+            yPos += 12;
+
+            doc.setFont("helvetica", "normal");
+            mancanti.forEach((p, index) => {
+                if (yPos > 275) {
+                    doc.addPage();
+                    yPos = 20;
+                    doc.setFont("helvetica", "bold");
+                    doc.setFillColor(240, 242, 245);
+                    doc.rect(15, yPos, 180, 7, 'F');
+                    doc.text("ID PACCO", 17, yPos + 5);
+                    doc.text("CODICE TRACCIABILITÀ (TRK)", 50, yPos + 5);
+                    doc.text("DESTINATARIO", 130, yPos + 5);
+                    yPos += 12;
+                    doc.setFont("helvetica", "normal");
+                }
+
+                if (index % 2 === 0) {
+                    doc.setFillColor(248, 249, 250);
+                    doc.rect(15, yPos - 4, 180, 6, 'F');
+                }
+
+                const idStr = String(p.riconoscimento || '-');
+                const trkStr = String(p.codiceTracciabilita || '').toUpperCase();
+                const destStr = `${p.cognome || ''} ${p.nome || ''}`.substring(0, 35);
+
+                doc.text(idStr, 17, yPos);
+                doc.text(trkStr, 50, yPos);
+                doc.text(destStr, 130, yPos);
+                yPos += 7;
+            });
+        } else {
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(40, 167, 69);
+            doc.text("🎉 ECCELLENTE! Tutti i pacchi sono presenti. Nessuna anomalia riscontrata.", 15, yPos);
+        }
+
+        const filename = `Inventario_${corriereSelezionato}_${new Date().toISOString().slice(0,10)}.pdf`;
+        doc.save(filename);
+    } catch (err) {
+        console.error("Errore durante la generazione del PDF:", err);
+        alert("Errore nella generazione del report.");
+    }
+}
+
+// Funzione legata al bottone "Termina Inventario" che scarica il report e chiude il pannello
+function terminaInventarioConReport() {
+    if (confirm("Vuoi terminare l'inventario corrente e scaricare il report PDF dei pacchi mancanti?")) {
+        scaricaPDFInventario();
+        chiudiInventarioModal();
+    }
+}
+
+// Ascoltatore evento scanner per l'input continuo
 document.getElementById('inventarioSearchInput').addEventListener('change', function() {
     gestisciScansioneInventario();
 });
