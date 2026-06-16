@@ -3095,7 +3095,30 @@ function chiudiPopupAvvisoGrafico() {
     if(popup) popup.style.display = 'none';
     clearTimeout(timerChiusuraAutomaticaAvviso);
     clearInterval(intervalloCountdownAvviso);
-}    
+}
+
+// Funzioni per la gestione dei Corrieri e Scaffali nell'Area Amministratore (Ripristino)
+function renderCorrieriAdmin() {
+    const tbody = document.getElementById('tabellaCorrieriAdmin');
+    if (!tbody) return;
+    tbody.innerHTML = listaCorrieriDinamica.map((c, index) => `
+        <tr>
+            <td><input type="text" value="${c}" onchange="modificaCorriereAdmin(${index}, this.value)" style="padding:5px; border-radius:5px; width:100%;"></td>
+            <td style="text-align:center;"><button onclick="eliminaCorriereAdmin(${index})" style="background:#ff4757; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Elimina</button></td>
+        </tr>
+    `).join('');
+}
+
+function renderScaffaliAdmin() {
+    const tbody = document.getElementById('tabellaScaffaliAdmin');
+    if (!tbody) return;
+    tbody.innerHTML = listaScaffaliDinamica.map((s, index) => `
+        <tr>
+            <td><input type="text" value="${s}" id="currScaffale_${index}" onchange="modificaScaffaleAdmin(${index}, this.value)" style="padding:5px; border-radius:5px; width:100%;"></td>
+            <td style="text-align:center;"><button onclick="eliminaScaffaleAdmin(${index})" style="background:#ff4757; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Elimina</button></td>
+        </tr>
+    `).join('');
+}
 </script>
 </body>
 </html>
