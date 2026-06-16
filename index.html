@@ -1534,30 +1534,24 @@ firebase.auth().onAuthStateChanged((user) => {
         }
     }
 });
-
-function aggiungerePacco(){
-    const trk = document.getElementById('codiceTracciabilita').value.trim().toUpperCase();
-    const c = document.getElementById('cognome').value.trim().toUpperCase();
-    const corr = document.getElementById('corriereSelect').value;
-    if(!c || !corr) return showAlert("Mancano dati (Cognome e Corriere sono obbligatori)!");
-
-    if (trk && trk !== '-') {
-        const esiste = pacchi.find(p => p.codiceTracciabilita === trk);
-        if (esiste) { mostraConfermaDuplicato(trk); return; }
-    }
-    finalizzaInserimentoPacco();
-}
     
 function aggiungiPacco(){
     const trk = document.getElementById('codiceTracciabilita').value.trim().toUpperCase();
     const c = document.getElementById('cognome').value.trim().toUpperCase();
     const corr = document.getElementById('corriereSelect').value;
-    if(!c || !corr) return showAlert("Mancano dati (Cognome e Corriere sono obbligatori)!");
-
+    
+    if(!c || !corr) {
+        return showAlert("Mancano dati (Cognome e Corriere sono obbligatori)!");
+    }
+    
     if (trk && trk !== '-') {
         const esiste = pacchi.find(p => p.codiceTracciabilita === trk);
-        if (esiste) { mostraConfermaDuplicato(trk); return; }
+        if (esiste) {
+            mostraConfermaDuplicato(trk);
+            return;
+        }
     }
+    
     finalizzaInserimentoPacco();
 }
 
