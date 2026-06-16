@@ -843,40 +843,54 @@
                     <div>Compenso Maturato:<br><span id="resCompensoMaturato" style="font-size:1.3rem; color:#d9480f;">€ 0.00</span></div>
                 </div>
             </div>
-            <div class="admin-section">
-                <h4>⚙️ Configurazione Avvisi Piattaforma</h4>
+            <div class="admin-section" style="margin-top:20px; border-top:2px dashed #ccc; padding-top:15px;">
+                <h4 style="color:var(--primary); margin-bottom:12px;">⚙️ Configurazione Avvisi Piattaforma</h4>
                 <div style="display:flex; flex-direction:column; gap:12px;">
                     <div>
                         <label style="font-size:0.8rem; font-weight:bold; color:var(--primary);">Testo dell'Avviso</label>
-                        <input type="text" id="nuovoAvvisoTesto" placeholder="Scrivi qui il messaggio da mostrare a schermo...">
+                        <input type="text" id="nuovoAvvisoTesto" placeholder="Scrivi qui il messaggio da mostrare a schermo..." style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
                     </div>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                         <div>
                             <label style="font-size:0.8rem; font-weight:bold; color:var(--primary);">Modalità di Uscita</label>
-                            <select id="nuovoAvvisoTipo" onchange="toggleTipoPianificazione(this.value)">
+                            <select id="nuovoAvvisoTipo" onchange="toggleTipoPianificazione(this.value)" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
                                 <option value="orario">Ad un Orario Specifico</option>
                                 <option value="intervallo">Ad Intervalli Regolari (Minuti)</option>
                             </select>
                         </div>
                         <div id="boxAvvisoOrario">
                             <label style="font-size:0.8rem; font-weight:bold; color:var(--primary);">Orario di Uscita (HH:MM)</label>
-                            <input type="time" id="nuovoAvvisoOrario">
+                            <input type="time" id="nuovoAvvisoOrario" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
                         </div>
                         <div id="boxAvvisoIntervallo" style="display:none;">
                             <label style="font-size:0.8rem; font-weight:bold; color:var(--primary);">Ogni quanti minuti?</label>
-                            <input type="number" id="nuovoAvvisoMinuti" min="1" placeholder="Es. 15">
+                            <input type="number" id="nuovoAvvisoMinuti" min="1" placeholder="Es. 15" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
                         </div>
                     </div>
-                    <button onclick="salvaConfigurazioneAvviso()" class="action-btn-green" style="background:#6c5ce7; margin-top:5px;">📢 ATTIVA E SALVA AVVISO</button>
+
+                    <div id="boxAvvisoGiorni">
+                        <label style="font-size:0.8rem; font-weight:bold; color:var(--primary); display:block; margin-bottom:5px;">Giorni di Ripetizione</label>
+                        <div style="display:flex; gap:5px; flex-wrap:wrap;">
+                            <label style="background:#eee; padding:5px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer;"><input type="checkbox" class="giorno-avviso" value="1" checked> Lun</label>
+                            <label style="background:#eee; padding:5px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer;"><input type="checkbox" class="giorno-avviso" value="2" checked> Mar</label>
+                            <label style="background:#eee; padding:5px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer;"><input type="checkbox" class="giorno-avviso" value="3" checked> Mer</label>
+                            <label style="background:#eee; padding:5px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer;"><input type="checkbox" class="giorno-avviso" value="4" checked> Gio</label>
+                            <label style="background:#eee; padding:5px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer;"><input type="checkbox" class="giorno-avviso" value="5" checked> Ven</label>
+                            <label style="background:#eee; padding:5px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer;"><input type="checkbox" class="giorno-avviso" value="6" checked> Sab</label>
+                            <label style="background:#eee; padding:5px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer;"><input type="checkbox" class="giorno-avviso" value="0"> Dom</label>
+                        </div>
+                    </div>
+
+                    <button onclick="salvaConfigurazioneAvviso()" class="action-btn-green" style="background:#6c5ce7; color:white; border:none; padding:10px; border-radius:4px; cursor:pointer; font-weight:bold; margin-top:5px;">📢 ATTIVA E SALVA AVVISO</button>
                 </div>
                 
-                <div style="margin-top:15px; background:#e8f4fd; padding:10px; border-radius:8px; font-size:0.85rem; border:1px solid #003399;">
-                    <strong>Avviso Attivo nel Database:</strong> <span id="infoAvvisoCorrente">Nessun avviso configurato</span>
-                    <button onclick="disattivaAvviso()" id="btnDisattivaAvviso" style="display:none; background:#ff4757; color:white; border:none; padding:4px 8px; border-radius:4px; margin-left:10px; cursor:pointer; font-weight:bold; font-size:0.75rem;">DISATTIVA</button>
+                <div style="margin-top:15px; background:#e8f4fd; padding:10px; border-radius:8px; font-size:0.85rem; border:1px solid #003399; display:flex; justify-content:between; align-items:center;">
+                    <div>
+                        <strong>Stato:</strong> <span id="infoAvvisoCorrente">Caricamento...</span>
+                    </div>
+                    <button onclick="disattivaAvviso()" id="btnDisattivaAvviso" style="display:none; background:#ff4757; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.75rem; margin-left:auto;">ELIMINA</button>
                 </div>
             </div>
-
-        </div>
 
         <div style="margin-top:20px;">
             <button onclick="document.getElementById('adminAreaModal').style.display='none'" class="modal-btn" style="background:#e0e0e0; color:#333;">CHIUDI AREA AMMINISTRATORE</button>
@@ -2918,23 +2932,25 @@ function tornaSu() {
         behavior: 'smooth'
     });
 }
+// Variabili globali per gli avvisi temporizzati
 let tracciamentoAvvisoAttivo = null;
 let timerChiusuraAutomaticaAvviso = null;
 let intervalloCountdownAvviso = null;
 let ultimoMinutoEseguitoOrario = ""; 
 
-// Funzione ausiliaria per mostrare/nascondere i campi nell'area amministratore
 function toggleTipoPianificazione(tipo) {
     if(tipo === 'orario') {
         document.getElementById('boxAvvisoOrario').style.display = 'block';
+        document.getElementById('boxAvvisoGiorni').style.display = 'block';
         document.getElementById('boxAvvisoIntervallo').style.display = 'none';
     } else {
         document.getElementById('boxAvvisoOrario').style.display = 'none';
+        document.getElementById('boxAvvisoGiorni').style.display = 'none';
         document.getElementById('boxAvvisoIntervallo').style.display = 'block';
     }
 }
 
-// Salva la configurazione dell'avviso su Firebase
+// Salva su Firebase includendo l'array dei giorni scelti
 function salvaConfigurazioneAvviso() {
     const testo = document.getElementById('nuovoAvvisoTesto').value.trim();
     const tipo = document.getElementById('nuovoAvvisoTipo').value;
@@ -2942,6 +2958,11 @@ function salvaConfigurazioneAvviso() {
     const minuti = parseInt(document.getElementById('nuovoAvvisoMinuti').value);
     
     if(!testo) return showAlert("Inserisci il testo dell'avviso!");
+    
+    let giorniSelezionati = [];
+    document.querySelectorAll('.giorno-avviso:checked').forEach(cb => {
+        giorniSelezionati.push(parseInt(cb.value));
+    });
     
     let datiAvviso = {
         testo: testo,
@@ -2951,30 +2972,30 @@ function salvaConfigurazioneAvviso() {
     
     if(tipo === 'orario') {
         if(!orario) return showAlert("Seleziona un orario valido!");
+        if(giorniSelezionati.length === 0) return showAlert("Seleziona almeno un giorno della settimana!");
         datiAvviso.orario = orario;
+        datiAvviso.giorni = giorniSelezionati;
     } else {
-        if(!minuti || minuti < 1) return showAlert("Inserisci un numero di minuti valido!");
+        if(!minuti || minutes < 1) return showAlert("Inserisci un numero di minuti valido!");
         datiAvviso.minuti = minuti;
     }
     
     db.ref('impostazioni/avvisoPiattaforma').set(datiAvviso).then(() => {
         document.getElementById('nuovoAvvisoTesto').value = "";
-        document.getElementById('nuovoAvvisoOrario').value = "";
-        document.getElementById('nuovoAvvisoMinuti').value = "";
-        showAlert("Avviso configurato e attivato con successo!", "Successo");
+        showAlert("Avviso configurato e attivato!", "Successo");
+    }).catch(error => {
+        showAlert("Errore durante il salvataggio: " + error.message);
     });
 }
 
-// Disattiva l'avviso corrente rimuovendolo da Firebase
 function disattivaAvviso() {
-    if(confirm("Vuoi disattivare l'avviso configurato?")) {
+    if(confirm("Vuoi disattivare e rimuovere l'avviso corrente?")) {
         db.ref('impostazioni/avvisoPiattaforma').remove().then(() => {
-            showAlert("Avviso rimosso dal sistema.");
+            showAlert("Avviso disattivato.");
         });
     }
 }
 
-// Inizializza l'ascolto dei dati dell'avviso (da richiamare quando l'utente è autenticato)
 function inizializzaVerificaAvvisi() {
     db.ref('impostazioni/avvisoPiattaforma').on('value', (snapshot) => {
         const data = snapshot.val();
@@ -2983,40 +3004,50 @@ function inizializzaVerificaAvvisi() {
         
         if(data) {
             tracciamentoAvvisoAttivo = data;
-            if(infoSpan) infoSpan.innerHTML = `"${data.testo}" [Modalità: ${data.tipo === 'orario' ? 'Orario ' + data.orario : 'Ogni ' + data.minuti + ' min'}]`;
+            if(infoSpan) {
+                if(data.tipo === 'orario') {
+                    const nomiGiorni = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+                    let stringGiorni = data.giorni ? data.giorni.map(g => nomiGiorni[g]).join(', ') : 'Tutti';
+                    infoSpan.innerHTML = `<span style="color:green; font-weight:bold;">ATTIVO</span>: "${data.testo}" alle ore ${data.orario} nei giorni [ ${stringGiorni} ]`;
+                } else {
+                    infoSpan.innerHTML = `<span style="color:green; font-weight:bold;">ATTIVO</span>: "${data.testo}" ogni ${data.minuti} min`;
+                }
+            }
             if(btnDisattiva) btnDisattiva.style.display = 'inline-block';
         } else {
             tracciamentoAvvisoAttivo = null;
-            if(infoSpan) infoSpan.innerText = "Nessun avviso configurato";
+            if(infoSpan) infoSpan.innerHTML = "<span style='color:gray;'>Nessun avviso programmato</span>";
             if(btnDisattiva) btnDisattiva.style.display = 'none';
         }
     });
     
-    // Avvia il loop di controllo temporale centralizzato (scatta ogni secondo)
+    // Avvia il timer di controllo (1 volta al secondo)
     setInterval(controllaScadenzaPianificazioneAvviso, 1000);
 }
 
-// Controlla se le condizioni temporali per l'avviso sono soddisfatte
 function controllaScadenzaPianificazioneAvviso() {
-    if (!tracciamentoAvvisoAttivo || !firebase.auth().currentUser) return;
+    if (!tracciamentoAvvisoAttivo) return;
     
     const adesso = new Date();
+    const giornoDellaSettimana = adesso.getDay(); // 0 = Domenica, 1 = Lunedì, ecc.
     const ore = String(adesso.getHours()).padStart(2, '0');
     const minuti = String(adesso.getMinutes()).padStart(2, '0');
     const oraAttualeStringa = `${ore}:${minuti}`;
     
     if (tracciamentoAvvisoAttivo.tipo === 'orario') {
-        // Controlla se l'orario coincide e se non è già stato mostrato in questo esatto minuto
-        if (tracciamentoAvvisoAttivo.orario === oraAttualeStringa && ultimoMinutoEseguitoOrario !== oraAttualeStringa) {
-            ultimoMinutoEseguitoOrario = oraAttualeStringa;
-            mostraPopupAvvisoGrafico(tracciamentoAvvisoAttivo.testo);
+        // Controlla se oggi è tra i giorni scelti dall'amministratore
+        const giorniAbilitati = tracciamentoAvvisoAttivo.giorni || [];
+        if (giorniAbilitati.includes(giornoDellaSettimana)) {
+            if (tracciamentoAvvisoAttivo.orario === oraAttualeStringa && ultimoMinutoEseguitoOrario !== oraAttualeStringa) {
+                ultimoMinutoEseguitoOrario = oraAttualeStringa;
+                mostraPopupAvvisoGrafico(tracciamentoAvvisoAttivo.testo);
+            }
         }
     } else if (tracciamentoAvvisoAttivo.tipo === 'intervallo') {
         const millisecondiPassati = Date.now() - tracciamentoAvvisoAttivo.timestampConfigurazione;
         const minutiPassati = Math.floor(millisecondiPassati / 60000);
         
         if (minutiPassati > 0 && minutiPassati % tracciamentoAvvisoAttivo.minuti === 0) {
-            // Aggiorna il timestamp per evitare che ricompaia continuamente nello stesso minuto
             tracciamentoAvvisoAttivo.timestampConfigurazione = Date.now();
             db.ref('impostazioni/avvisoPiattaforma/timestampConfigurazione').set(tracciamentoAvvisoAttivo.timestampConfigurazione);
             mostraPopupAvvisoGrafico(tracciamentoAvvisoAttivo.testo);
@@ -3024,9 +3055,7 @@ function controllaScadenzaPianificazioneAvviso() {
     }
 }
 
-// Mostra il modale dell'avviso al centro dello schermo con gestione dei 15 secondi
 function mostraPopupAvvisoGrafico(messaggio) {
-    // Pulisce preventivamente vecchi timer attivi per evitare accelerazioni grafiche
     clearTimeout(timerChiusuraAutomaticaAvviso);
     clearInterval(intervalloCountdownAvviso);
     
@@ -3035,13 +3064,14 @@ function mostraPopupAvvisoGrafico(messaggio) {
     const contatoreNotifica = document.getElementById('popupAvvisoTimerContatore');
     const btnOk = document.getElementById('btnChiudiPopupAvviso');
     
+    if(!popup) return;
+    
     corpoTesto.innerText = messaggio;
-    popup.style.display = 'flex';
+    popup.style.setProperty('display', 'flex', 'important'); // Forza la visualizzazione sopra ad altri elementi
     
     let secondiRimanenti = 15;
     contatoreNotifica.innerText = `Questo avviso si chiuderà tra ${secondiRimanenti} secondi`;
     
-    // Gestione del testo dinamico del countdown dei secondi
     intervalloCountdownAvviso = setInterval(() => {
         secondiRimanenti--;
         if(secondiRimanenti <= 0) {
@@ -3051,19 +3081,18 @@ function mostraPopupAvvisoGrafico(messaggio) {
         }
     }, 1000);
     
-    // Chiusura automatica allo scadere dei 15 secondi
     timerChiusuraAutomaticaAvviso = setTimeout(() => {
         chiudiPopupAvvisoGrafico();
     }, 15000);
     
-    // Chiusura immediata al clic su OK
     btnOk.onclick = function() {
         chiudiPopupAvvisoGrafico();
     };
 }
 
 function chiudiPopupAvvisoGrafico() {
-    document.getElementById('popupAvvisoAmministratore').style.display = 'none';
+    const popup = document.getElementById('popupAvvisoAmministratore');
+    if(popup) popup.style.display = 'none';
     clearTimeout(timerChiusuraAutomaticaAvviso);
     clearInterval(intervalloCountdownAvviso);
 }
