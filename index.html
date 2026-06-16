@@ -2769,6 +2769,15 @@ db.ref('impostazioni/scaffali').on('value', (snap) => {
     else { db.ref('impostazioni/scaffali').set(listaScaffaliDinamica); }
     aggiornaSelettoriMenu();
 });
+   
+db.ref('impostazioni/avvisi').on('value', (snapshot) => {
+        listaAvvisiDinamica = snapshot.val() ? snapshot.val() : {};
+        renderAvvisiAdmin();
+        controllaAvvisiAttivi();
+    });
+
+    // AVVIA IL TIMER DI CONTROLLO OGNI 5 SECONDI
+    setInterval(controllaAvvisiAttivi, 5000);
 
 function aggiornaSelettoriMenu() {
     const cSel = document.getElementById('corriereSelect');
