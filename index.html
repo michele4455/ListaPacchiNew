@@ -2920,9 +2920,7 @@ function verificaPasswordAdmin() {
     if (pass === "2026") {
         document.getElementById('adminPasswordModal').style.display = 'none';
         apriAreaAmministratore();
-        
-        // AGGIUNGI QUESTA RIGA QUI:
-        renderAvvisiAdmin();
+        renderAvvisiAdmin(); 
     } else {
         alert("Password errata!");
     }
