@@ -1579,7 +1579,7 @@ firebase.auth().onAuthStateChanged((user) => {
         
         startClock();
         
-        // AGGIUNTA: Avvia l'ascolto e il controllo automatico degli avvisi amministratore
+        // CORREZIONE: Avvia l'ascolto e il controllo automatico degli avvisi amministratore
         inizializzaVerificaAvvisi();
     } else {
         document.getElementById('loginPage').style.display = 'flex';
@@ -1590,7 +1590,7 @@ firebase.auth().onAuthStateChanged((user) => {
             html5QrcodeScanner.clear();
         }
         
-        // AGGIUNTA SIFONE DI SICUREZZA: Spegne l'ascolto degli avvisi se l'utente si disconnette
+        // Spegne l'ascolto degli avvisi se l'utente si disconnette
         db.ref('impostazioni/avvisoPiattaforma').off();
     }
 });
@@ -2976,13 +2976,14 @@ function salvaConfigurazioneAvviso() {
         datiAvviso.orario = orario;
         datiAvviso.giorni = giorniSelezionati;
     } else {
-        if(!minuti || minutes < 1) return showAlert("Inserisci un numero di minuti valido!");
+        // CORRETTO: Sostituito 'minutes' errato con 'minuti'
+        if(!minuti || minuti < 1) return showAlert("Inserisci un numero di minuti valido!");
         datiAvviso.minuti = minuti;
     }
     
     db.ref('impostazioni/avvisoPiattaforma').set(datiAvviso).then(() => {
         document.getElementById('nuovoAvvisoTesto').value = "";
-        showAlert("Avviso configurato e attivato!", "Successo");
+        showAlert("Avviso configurato e attivato con successo!", "Successo");
     }).catch(error => {
         showAlert("Errore durante il salvataggio: " + error.message);
     });
@@ -3021,7 +3022,7 @@ function inizializzaVerificaAvvisi() {
         }
     });
     
-    // Avvia il timer di controllo (1 volta al secondo)
+    // Avvia il timer di controllo continuo (1 volta al secondo)
     setInterval(controllaScadenzaPianificazioneAvviso, 1000);
 }
 
@@ -3035,7 +3036,6 @@ function controllaScadenzaPianificazioneAvviso() {
     const oraAttualeStringa = `${ore}:${minuti}`;
     
     if (tracciamentoAvvisoAttivo.tipo === 'orario') {
-        // Controlla se oggi è tra i giorni scelti dall'amministratore
         const giorniAbilitati = tracciamentoAvvisoAttivo.giorni || [];
         if (giorniAbilitati.includes(giornoDellaSettimana)) {
             if (tracciamentoAvvisoAttivo.orario === oraAttualeStringa && ultimoMinutoEseguitoOrario !== oraAttualeStringa) {
@@ -3067,7 +3067,7 @@ function mostraPopupAvvisoGrafico(messaggio) {
     if(!popup) return;
     
     corpoTesto.innerText = messaggio;
-    popup.style.setProperty('display', 'flex', 'important'); // Forza la visualizzazione sopra ad altri elementi
+    popup.style.setProperty('display', 'flex', 'important'); 
     
     let secondiRimanenti = 15;
     contatoreNotifica.innerText = `Questo avviso si chiuderà tra ${secondiRimanenti} secondi`;
@@ -3095,8 +3095,7 @@ function chiudiPopupAvvisoGrafico() {
     if(popup) popup.style.display = 'none';
     clearTimeout(timerChiusuraAutomaticaAvviso);
     clearInterval(intervalloCountdownAvviso);
-}
-    
+}    
 </script>
 </body>
 </html>
