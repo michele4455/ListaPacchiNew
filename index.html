@@ -3153,20 +3153,20 @@ function controlloSchedulerAvvisi() {
     listaAvvisiGlobali.forEach(avviso => {
         if (!avviso.attivo) return;
 
-        // Controllo del Giorno della settimana
+        // 1. Controllo del Giorno della settimana
         if (avviso.giorni && !avviso.giorni.includes(giornoSettimana)) return;
 
         let scatta = false;
 
-        // Controllo degli orari specifici (rimuove spazi bianchi superflui prima del confronto)
-        if (avviso.orari && avviso.orari.length > 0) {
-            const orariPuliti = avviso.orari.map(o => o.trim());
+        // 2. Controllo degli orari specifici sicuro (Risolve il problema del mancato scatto)
+        if (avviso.orari && Array.isArray(avviso.orari) && avviso.orari.length > 0) {
+            const orariPuliti = avviso.orari.filter(o => o).map(o => o.trim());
             if (orariPuliti.includes(oraAttualeTesto)) {
                 scatta = true;
             }
         }
 
-        // Controllo della frequenza oraria
+        // 3. Controllo della frequenza oraria
         if (avviso.frequenza && avviso.frequenza !== 'orari') {
             const oreIntervallo = parseInt(avviso.frequenza);
             if (adesso.getMinutes() === 0 && (adesso.getHours() % oreIntervallo === 0)) {
