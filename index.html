@@ -3366,8 +3366,11 @@ function pulisciFormAvviso() {
     document.getElementById('nuovoAvvisoTesto').value = "";
     document.getElementById('nuovoAvvisoFrequenza').value = "orari";
     document.getElementById('nuovoAvvisoOrari').value = "";
+    
+    // Deseleziona tutte le checkbox dei giorni
     ['chkLun', 'chkMar', 'chkMer', 'chkGio', 'chkVen', 'chkSab', 'chkDom'].forEach(chkId => {
-        document.getElementById(chkId).checked = false;
+        const el = document.getElementById(chkId);
+        if(el) el.checked = false;
     });
 }
 inizializzaSincronizzazioneAvvisi();
