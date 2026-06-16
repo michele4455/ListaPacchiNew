@@ -3065,11 +3065,21 @@ function inizializzaSincronizzazioneAvvisi() {
                 listaAvvisiGlobali.push({ id, ...data[id] });
             });
         }
-        // Se l'area amministratore è aperta, aggiorna la tabella interna
         if(document.getElementById('adminAreaModal').style.display === 'flex') {
             renderAvvisiAdmin();
         }
     });
+
+    document.getElementById('sezioneCampanella').style.display = 'block';
+    aggiornaBadgeCampanella();
+
+    // Esegue subito un controllo immediato all'avvio senza attendere il primo minuto del timer
+    ultimoControlloOra = ""; 
+    controlloSchedulerAvvisi();
+
+    // Loop di controllo ogni 30 secondi per essere certi di intercettare il cambio del minuto sul server
+    setInterval(controlloSchedulerAvvisi, 30000);
+}
 
     // Mostra la campanella solo se l'utente si trova nella pagina principale
     document.getElementById('sezioneCampanella').style.display = 'block';
@@ -3122,28 +3132,28 @@ function controlloSchedulerAvvisi() {
     const minuti = String(adesso.getMinutes()).padStart(2, '0');
     const oraAttualeTesto = `${ore}:${minuti}`;
 
-    if (oraAttualeTesto === ultimoControlloOra) return; // Evita ripetizioni nello stesso minuto
+    if (oraAttualeTesto === ultimoControlloOra) return; 
     ultimoControlloOra = oraAttualeTesto;
 
     listaAvvisiGlobali.forEach(avviso => {
         if (!avviso.attivo) return;
 
-        // 1. Controllo del Giorno della settimana
+        // Controllo del Giorno della settimana
         if (avviso.giorni && !avviso.giorni.includes(giornoSettimana)) return;
 
         let scatta = false;
 
-        // 2. Controllo degli orari specifici
+        // Controllo degli orari specifici (rimuove spazi bianchi superflui prima del confronto)
         if (avviso.orari && avviso.orari.length > 0) {
-            if (avviso.orari.includes(oraAttualeTesto)) {
+            const orariPuliti = avviso.orari.map(o => o.trim());
+            if (orariPuliti.includes(oraAttualeTesto)) {
                 scatta = true;
             }
         }
 
-        // 3. Controllo della frequenza oraria ripetuta
+        // Controllo della frequenza oraria
         if (avviso.frequenza && avviso.frequenza !== 'orari') {
             const oreIntervallo = parseInt(avviso.frequenza);
-            // Verifica se l'ora attuale è un multiplo esatto impostato partendo dalla mezzanotte ai minuti concordati (es. :00)
             if (adesso.getMinutes() === 0 && (adesso.getHours() % oreIntervallo === 0)) {
                 scatta = true;
             }
@@ -3205,6 +3215,12 @@ function aggiornaBadgeCampanella() {
 function apriCronologiaAvvisi() {
     const container = document.getElementById('cronologiaContainer');
     container.innerHTML = "";
+    
+    // Spegne il puntino rosso nascondendo il badge grafico
+    const badge = document.getElementById('badgeContatoreAvvisi');
+    if (badge) {
+        badge.style.display = 'none';
+    }
     
     if (cronologiaAvvisiRicevuti.length === 0) {
         container.innerHTML = "<p style='text-align:center; color:#777; font-weight:bold; padding:20px;'>Nessun avviso memorizzato nella bacheca.</p>";
