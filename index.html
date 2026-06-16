@@ -708,6 +708,16 @@
     </div>
 </div>
 
+<div id="popupAvvisoAmministratore" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); align-items: center; justify-content: center;">
+    <div class="modal-content" style="max-width: 450px; border-top: 10px solid #ffcc00; box-shadow: 0 10px 30px rgba(0,0,0,0.5); padding: 30px 20px;">
+        <div style="font-size: 3.5rem; margin-bottom: 10px;">📢</div>
+        <h3 style="color: var(--primary); margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: 1px;">Avviso di Servizio</h3>
+        <p id="popupAvvisoTestoCorpo" style="font-size: 1.1rem; font-weight: bold; color: #1a1a1a; line-height: 1.5; margin-bottom: 20px; white-space: pre-wrap;"></p>
+        <div style="font-size: 0.8rem; color: #777; margin-bottom: 15px;" id="popupAvvisoTimerContatore">Questo avviso si chiuderà tra 15 secondi</div>
+        <button id="btnChiudiPopupAvviso" class="modal-btn" style="background: var(--primary); color: var(--accent); font-size: 1rem; border: 2px solid var(--primary); text-transform: uppercase;">HO CAPITO (OK)</button>
+    </div>
+</div>
+
 <div id="reportModal">
     <div class="modal-content" style="max-width: 400px;">
         <h3 style="color:var(--primary); margin-bottom:15px;">Genera Report Giornaliero</h3>
@@ -833,8 +843,54 @@
                     <div>Compenso Maturato:<br><span id="resCompensoMaturato" style="font-size:1.3rem; color:#d9480f;">€ 0.00</span></div>
                 </div>
             </div>
+            <div class="admin-section" style="margin-top:20px; border-top:2px dashed #ccc; padding-top:15px;">
+                <h4 style="color:var(--primary); margin-bottom:12px;">⚙️ Configurazione Avvisi Piattaforma</h4>
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                    <div>
+                        <label style="font-size:0.8rem; font-weight:bold; color:var(--primary);">Testo dell'Avviso</label>
+                        <input type="text" id="nuovoAvvisoTesto" placeholder="Scrivi qui il messaggio da mostrare a schermo..." style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <div>
+                            <label style="font-size:0.8rem; font-weight:bold; color:var(--primary);">Modalità di Uscita</label>
+                            <select id="nuovoAvvisoTipo" onchange="toggleTipoPianificazione(this.value)" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                                <option value="orario">Ad un Orario Specifico</option>
+                                <option value="intervallo">Ad Intervalli Regolari (Minuti)</option>
+                            </select>
+                        </div>
+                        <div id="boxAvvisoOrario">
+                            <label style="font-size:0.8rem; font-weight:bold; color:var(--primary);">Orario di Uscita (HH:MM)</label>
+                            <input type="time" id="nuovoAvvisoOrario" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                        </div>
+                        <div id="boxAvvisoIntervallo" style="display:none;">
+                            <label style="font-size:0.8rem; font-weight:bold; color:var(--primary);">Ogni quanti minuti?</label>
+                            <input type="number" id="nuovoAvvisoMinuti" min="1" placeholder="Es. 15" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+                        </div>
+                    </div>
 
-        </div>
+                    <div id="boxAvvisoGiorni">
+                        <label style="font-size:0.8rem; font-weight:bold; color:var(--primary); display:block; margin-bottom:5px;">Giorni di Ripetizione</label>
+                        <div style="display:flex; gap:5px; flex-wrap:wrap;">
+                            <label style="background:#eee; padding:5px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer;"><input type="checkbox" class="giorno-avviso" value="1" checked> Lun</label>
+                            <label style="background:#eee; padding:5px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer;"><input type="checkbox" class="giorno-avviso" value="2" checked> Mar</label>
+                            <label style="background:#eee; padding:5px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer;"><input type="checkbox" class="giorno-avviso" value="3" checked> Mer</label>
+                            <label style="background:#eee; padding:5px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer;"><input type="checkbox" class="giorno-avviso" value="4" checked> Gio</label>
+                            <label style="background:#eee; padding:5px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer;"><input type="checkbox" class="giorno-avviso" value="5" checked> Ven</label>
+                            <label style="background:#eee; padding:5px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer;"><input type="checkbox" class="giorno-avviso" value="6" checked> Sab</label>
+                            <label style="background:#eee; padding:5px 10px; border-radius:4px; font-size:0.8rem; cursor:pointer;"><input type="checkbox" class="giorno-avviso" value="0"> Dom</label>
+                        </div>
+                    </div>
+
+                    <button onclick="salvaConfigurazioneAvviso()" class="action-btn-green" style="background:#6c5ce7; color:white; border:none; padding:10px; border-radius:4px; cursor:pointer; font-weight:bold; margin-top:5px;">📢 ATTIVA E SALVA AVVISO</button>
+                </div>
+                
+                <div style="margin-top:15px; background:#e8f4fd; padding:10px; border-radius:8px; font-size:0.85rem; border:1px solid #003399; display:flex; justify-content:between; align-items:center;">
+                    <div>
+                        <strong>Stato:</strong> <span id="infoAvvisoCorrente">Caricamento...</span>
+                    </div>
+                    <button onclick="disattivaAvviso()" id="btnDisattivaAvviso" style="display:none; background:#ff4757; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:0.75rem; margin-left:auto;">ELIMINA</button>
+                </div>
+            </div>
 
         <div style="margin-top:20px;">
             <button onclick="document.getElementById('adminAreaModal').style.display='none'" class="modal-btn" style="background:#e0e0e0; color:#333;">CHIUDI AREA AMMINISTRATORE</button>
@@ -1426,17 +1482,16 @@ function selezionaSuggerimento(cog, nom) {
 
 function gestisciInvioNuacco(e) {
     if (e.key === 'Enter') {
-        const target = e.target;
-        if (target.tagName === 'INPUT' || target.tagName === 'SELECT') {
-            if (document.getElementById('suggestionsBox').style.display === 'block') {
-                return;
-            }
-            e.preventDefault();
-            if (target.id === 'codiceTracciabilita') {
-                document.getElementById('codiceRiconoscimento').focus();
-            } else {
-                aggiungiPacco();
-            }
+        if (document.getElementById('suggestionsBox').style.display === 'block') {
+            return;
+        }
+        e.preventDefault();
+        // Se siamo sul codice tracciabilità passa al codice riconoscimento
+        if (e.target.id === 'codiceTracciabilita') {
+            document.getElementById('codiceRiconoscimento').focus();
+        } else {
+            // Esegue direttamente l'inserimento immediato al primo colpo
+            aggiungiPacco();
         }
     }
 }
@@ -1503,7 +1558,6 @@ function logout() {
         showAlert("Errore durante il logout: " + error.message);
     });
 }
-
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         document.getElementById('loginPage').style.display = 'none';
@@ -1524,6 +1578,9 @@ firebase.auth().onAuthStateChanged((user) => {
         });
         
         startClock();
+        
+        // CORREZIONE: Avvia l'ascolto e il controllo automatico degli avvisi amministratore
+        inizializzaVerificaAvvisi();
     } else {
         document.getElementById('loginPage').style.display = 'flex';
         document.getElementById('mainPage').style.display = 'none';
@@ -1532,31 +1589,26 @@ firebase.auth().onAuthStateChanged((user) => {
         if (typeof html5QrcodeScanner !== 'undefined' && html5QrcodeScanner) {
             html5QrcodeScanner.clear();
         }
+        
+        // Spegne l'ascolto degli avvisi se l'utente si disconnette
+        db.ref('impostazioni/avvisoPiattaforma').off();
     }
 });
 
-function aggiungerePacco(){
-    const trk = document.getElementById('codiceTracciabilita').value.trim().toUpperCase();
-    const c = document.getElementById('cognome').value.trim().toUpperCase();
-    const corr = document.getElementById('corriereSelect').value;
-    if(!c || !corr) return showAlert("Mancano dati (Cognome e Corriere sono obbligatori)!");
-
-    if (trk && trk !== '-') {
-        const esiste = pacchi.find(p => p.codiceTracciabilita === trk);
-        if (esiste) { mostraConfermaDuplicato(trk); return; }
-    }
-    finalizzaInserimentoPacco();
-}
     
 function aggiungiPacco(){
     const trk = document.getElementById('codiceTracciabilita').value.trim().toUpperCase();
     const c = document.getElementById('cognome').value.trim().toUpperCase();
     const corr = document.getElementById('corriereSelect').value;
+    
     if(!c || !corr) return showAlert("Mancano dati (Cognome e Corriere sono obbligatori)!");
-
+    
     if (trk && trk !== '-') {
         const esiste = pacchi.find(p => p.codiceTracciabilita === trk);
-        if (esiste) { mostraConfermaDuplicato(trk); return; }
+        if (esiste) {
+            mostraConfermaDuplicato(trk);
+            return;
+        }
     }
     finalizzaInserimentoPacco();
 }
@@ -2880,6 +2932,170 @@ function tornaSu() {
         behavior: 'smooth'
     });
 }
+// Variabili globali per gli avvisi temporizzati
+let tracciamentoAvvisoAttivo = null;
+let timerChiusuraAutomaticaAvviso = null;
+let intervalloCountdownAvviso = null;
+let ultimoMinutoEseguitoOrario = ""; 
+
+function toggleTipoPianificazione(tipo) {
+    if(tipo === 'orario') {
+        document.getElementById('boxAvvisoOrario').style.display = 'block';
+        document.getElementById('boxAvvisoGiorni').style.display = 'block';
+        document.getElementById('boxAvvisoIntervallo').style.display = 'none';
+    } else {
+        document.getElementById('boxAvvisoOrario').style.display = 'none';
+        document.getElementById('boxAvvisoGiorni').style.display = 'none';
+        document.getElementById('boxAvvisoIntervallo').style.display = 'block';
+    }
+}
+
+// Salva su Firebase includendo l'array dei giorni scelti
+function salvaConfigurazioneAvviso() {
+    const testo = document.getElementById('nuovoAvvisoTesto').value.trim();
+    const tipo = document.getElementById('nuovoAvvisoTipo').value;
+    const orario = document.getElementById('nuovoAvvisoOrario').value;
+    const minuti = parseInt(document.getElementById('nuovoAvvisoMinuti').value);
+    
+    if(!testo) return showAlert("Inserisci il testo dell'avviso!");
+    
+    let giorniSelezionati = [];
+    document.querySelectorAll('.giorno-avviso:checked').forEach(cb => {
+        giorniSelezionati.push(parseInt(cb.value));
+    });
+    
+    let datiAvviso = {
+        testo: testo,
+        tipo: tipo,
+        timestampConfigurazione: Date.now()
+    };
+    
+    if(tipo === 'orario') {
+        if(!orario) return showAlert("Seleziona un orario valido!");
+        if(giorniSelezionati.length === 0) return showAlert("Seleziona almeno un giorno della settimana!");
+        datiAvviso.orario = orario;
+        datiAvviso.giorni = giorniSelezionati;
+    } else {
+        // CORRETTO: Sostituito 'minutes' errato con 'minuti'
+        if(!minuti || minuti < 1) return showAlert("Inserisci un numero di minuti valido!");
+        datiAvviso.minuti = minuti;
+    }
+    
+    db.ref('impostazioni/avvisoPiattaforma').set(datiAvviso).then(() => {
+        document.getElementById('nuovoAvvisoTesto').value = "";
+        showAlert("Avviso configurato e attivato con successo!", "Successo");
+    }).catch(error => {
+        showAlert("Errore durante il salvataggio: " + error.message);
+    });
+}
+
+function disattivaAvviso() {
+    if(confirm("Vuoi disattivare e rimuovere l'avviso corrente?")) {
+        db.ref('impostazioni/avvisoPiattaforma').remove().then(() => {
+            showAlert("Avviso disattivato.");
+        });
+    }
+}
+
+function inizializzaVerificaAvvisi() {
+    db.ref('impostazioni/avvisoPiattaforma').on('value', (snapshot) => {
+        const data = snapshot.val();
+        const infoSpan = document.getElementById('infoAvvisoCorrente');
+        const btnDisattiva = document.getElementById('btnDisattivaAvviso');
+        
+        if(data) {
+            tracciamentoAvvisoAttivo = data;
+            if(infoSpan) {
+                if(data.tipo === 'orario') {
+                    const nomiGiorni = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+                    let stringGiorni = data.giorni ? data.giorni.map(g => nomiGiorni[g]).join(', ') : 'Tutti';
+                    infoSpan.innerHTML = `<span style="color:green; font-weight:bold;">ATTIVO</span>: "${data.testo}" alle ore ${data.orario} nei giorni [ ${stringGiorni} ]`;
+                } else {
+                    infoSpan.innerHTML = `<span style="color:green; font-weight:bold;">ATTIVO</span>: "${data.testo}" ogni ${data.minuti} min`;
+                }
+            }
+            if(btnDisattiva) btnDisattiva.style.display = 'inline-block';
+        } else {
+            tracciamentoAvvisoAttivo = null;
+            if(infoSpan) infoSpan.innerHTML = "<span style='color:gray;'>Nessun avviso programmato</span>";
+            if(btnDisattiva) btnDisattiva.style.display = 'none';
+        }
+    });
+    
+    // Avvia il timer di controllo continuo (1 volta al secondo)
+    setInterval(controllaScadenzaPianificazioneAvviso, 1000);
+}
+
+function controllaScadenzaPianificazioneAvviso() {
+    if (!tracciamentoAvvisoAttivo) return;
+    
+    const adesso = new Date();
+    const giornoDellaSettimana = adesso.getDay(); // 0 = Domenica, 1 = Lunedì, ecc.
+    const ore = String(adesso.getHours()).padStart(2, '0');
+    const minuti = String(adesso.getMinutes()).padStart(2, '0');
+    const oraAttualeStringa = `${ore}:${minuti}`;
+    
+    if (tracciamentoAvvisoAttivo.tipo === 'orario') {
+        const giorniAbilitati = tracciamentoAvvisoAttivo.giorni || [];
+        if (giorniAbilitati.includes(giornoDellaSettimana)) {
+            if (tracciamentoAvvisoAttivo.orario === oraAttualeStringa && ultimoMinutoEseguitoOrario !== oraAttualeStringa) {
+                ultimoMinutoEseguitoOrario = oraAttualeStringa;
+                mostraPopupAvvisoGrafico(tracciamentoAvvisoAttivo.testo);
+            }
+        }
+    } else if (tracciamentoAvvisoAttivo.tipo === 'intervallo') {
+        const millisecondiPassati = Date.now() - tracciamentoAvvisoAttivo.timestampConfigurazione;
+        const minutiPassati = Math.floor(millisecondiPassati / 60000);
+        
+        if (minutiPassati > 0 && minutiPassati % tracciamentoAvvisoAttivo.minuti === 0) {
+            tracciamentoAvvisoAttivo.timestampConfigurazione = Date.now();
+            db.ref('impostazioni/avvisoPiattaforma/timestampConfigurazione').set(tracciamentoAvvisoAttivo.timestampConfigurazione);
+            mostraPopupAvvisoGrafico(tracciamentoAvvisoAttivo.testo);
+        }
+    }
+}
+
+function mostraPopupAvvisoGrafico(messaggio) {
+    clearTimeout(timerChiusuraAutomaticaAvviso);
+    clearInterval(intervalloCountdownAvviso);
+    
+    const popup = document.getElementById('popupAvvisoAmministratore');
+    const corpoTesto = document.getElementById('popupAvvisoTestoCorpo');
+    const contatoreNotifica = document.getElementById('popupAvvisoTimerContatore');
+    const btnOk = document.getElementById('btnChiudiPopupAvviso');
+    
+    if(!popup) return;
+    
+    corpoTesto.innerText = messaggio;
+    popup.style.setProperty('display', 'flex', 'important'); 
+    
+    let secondiRimanenti = 15;
+    contatoreNotifica.innerText = `Questo avviso si chiuderà tra ${secondiRimanenti} secondi`;
+    
+    intervalloCountdownAvviso = setInterval(() => {
+        secondiRimanenti--;
+        if(secondiRimanenti <= 0) {
+            clearInterval(intervalloCountdownAvviso);
+        } else {
+            contatoreNotifica.innerText = `Questo avviso si chiuderà tra ${secondiRimanenti} secondi`;
+        }
+    }, 1000);
+    
+    timerChiusuraAutomaticaAvviso = setTimeout(() => {
+        chiudiPopupAvvisoGrafico();
+    }, 15000);
+    
+    btnOk.onclick = function() {
+        chiudiPopupAvvisoGrafico();
+    };
+}
+
+function chiudiPopupAvvisoGrafico() {
+    const popup = document.getElementById('popupAvvisoAmministratore');
+    if(popup) popup.style.display = 'none';
+    clearTimeout(timerChiusuraAutomaticaAvviso);
+    clearInterval(intervalloCountdownAvviso);
+}    
 </script>
 </body>
 </html>
