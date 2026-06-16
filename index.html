@@ -1056,7 +1056,7 @@
         <h2 style="color: var(--primary);">Gestionale Pacchi</h2>
         <input type="email" id="loginEmail" placeholder="Email" style="margin-bottom:10px; width:100%">
         <input type="password" id="loginPassword" placeholder="Password" style="margin-bottom:20px; width:100%">
-        <button onclick="login()">Login</button>
+        <button onclick="">Login</button>
         
         <div style="margin-top: 10px; font-size: 0.8rem; color: #666; line-height: 1.4;">
             Questa Web App è stata realizzata da<br>
@@ -1642,7 +1642,7 @@ window.addEventListener('mouseup', () => drawing = false);
 canvas.addEventListener('touchstart', (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
 canvas.addEventListener('touchmove', (e) => { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
 
-unction login() {
+function login() {
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value.trim();
 
