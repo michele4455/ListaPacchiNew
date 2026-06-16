@@ -945,9 +945,9 @@
                     <div>Compenso Maturato:<br><span id="resCompensoMaturato" style="font-size:1.3rem; color:#d9480f;">€ 0.00</span></div>
                 </div>
             </div>
+        </div> 
 
-        </div>
-        <div class="admin-section">
+            <div class="admin-section">
                 <h4>Pannello Avvisi & Notifiche</h4>
                 <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:15px; background:#fff; padding:15px; border:1px solid #ddd; border-radius:8px;">
                     <input type="hidden" id="adminAvvisoId">
@@ -979,7 +979,7 @@
                             </select>
                         </div>
                         <div>
-                            <label style="font-size:0.8rem; font-weight:bold; color:var(--primary);">Orari Specifici (separati da virgola, es. 09:00,15:30):</label>
+                            <label style="font-size:0.8rem; font-weight:bold; color:var(--primary);">Orari Specifici (es. 09:00,15:30):</label>
                             <input type="text" id="nuovoAvvisoOrari" placeholder="09:00, 18:15">
                         </div>
                     </div>
@@ -1003,9 +1003,7 @@
                     </table>
                 </div>
             </div>
-
-        <div style="margin-top:20px;">
-            <button onclick="document.getElementById('adminAreaModal').style.display='none'" class="modal-btn" style="background:#e0e0e0; color:#333;">CHIUDI AREA AMMINISTRATORE</button>
+            <button onclick="document.getElementById('adminAreaModal').style.display='none'" class="modal-btn" style="background:#ff4757; color:white; margin-top:20px;">CHIUDI AREA AMMINISTRATORE</button>
         </div>
     </div>
 </div>
@@ -2907,6 +2905,9 @@ function verificaPasswordAdmin() {
     if (pass === "2026") {
         document.getElementById('adminPasswordModal').style.display = 'none';
         apriAreaAmministratore();
+        
+        // AGGIUNGI QUESTA RIGA QUI:
+        renderAvvisiAdmin();
     } else {
         alert("Password errata!");
     }
@@ -3339,6 +3340,7 @@ function pulisciFormAvviso() {
         document.getElementById(chkId).checked = false;
     });
 }
+inizializzaSincronizzazioneAvvisi();
 </script>
 </body>
 </html>
