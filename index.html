@@ -3368,12 +3368,13 @@ function pulisciFormAvviso() {
     document.getElementById('nuovoAvvisoFrequenza').value = "orari";
     document.getElementById('nuovoAvvisoOrari').value = "";
     
-    // Deseleziona tutte le checkbox dei giorni
+    // Deseleziona tutte le checkbox dei giorni (Sistemato e Chiuso)
     ['chkLun', 'chkMar', 'chkMer', 'chkGio', 'chkVen', 'chkSab', 'chkDom'].forEach(chkId => {
         const el = document.getElementById(chkId);
-        if(el) el.checked = false;
+        if (el) el.checked = false;
     });
 }
+    
 inizializzaSincronizzazioneAvvisi();
 </script>
 </body>
