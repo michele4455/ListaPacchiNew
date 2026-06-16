@@ -835,6 +835,59 @@
             </div>
 
         </div>
+        <div class="admin-section" style="border-color: #ff4757;">
+                <h4 style="color: #ff4757; border-bottom-color: #ff4757;">📢 Pianificazione Avvisi e Notifiche</h4>
+                <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:15px; background:#fff; padding:15px; border:1px solid #ddd; border-radius:8px;">
+                    <input type="hidden" id="avvisoEditKey">
+                    <div>
+                        <label style="font-size:0.8rem; font-weight:bold; color:var(--primary);">Testo dell'Avviso</label>
+                        <textarea id="avvisoTesto" placeholder="Scrivi qui il messaggio da mostrare agli utenti..." style="width:100%; padding:10px; border-radius:8px; border:2px solid var(--border-color); font-family:inherit; box-sizing:border-box; min-height:60px;"></textarea>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <div>
+                            <label style="font-size:0.8rem; font-weight:bold; color:var(--primary);">Orario Specifico (Es: 10:30 o vuoto)</label>
+                            <input type="time" id="avvisoOrario">
+                        </div>
+                        <div>
+                            <label style="font-size:0.8rem; font-weight:bold; color:var(--primary);">Ripetizione Frequente</label>
+                            <select id="avvisoFrequenza">
+                                <option value="sempre">Mostra sempre nei giorni scelti</option>
+                                <option value="1h">Ogni Ora</option>
+                                <option value="24h">Ogni 24 Ore</option>
+                                <option value="1w">Ogni Settimana</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label style="font-size:0.8rem; font-weight:bold; color:var(--primary); display:block; margin-bottom:5px;">Giorni di Attivazione</label>
+                        <div style="display:flex; flex-wrap:wrap; gap:10px; background:#f0f2f5; padding:8px; border-radius:8px;">
+                            <label><input type="checkbox" class="chk-avviso-giorno" value="1"> Lun</label>
+                            <label><input type="checkbox" class="chk-avviso-giorno" value="2"> Mar</label>
+                            <label><input type="checkbox" class="chk-avviso-giorno" value="3"> Mer</label>
+                            <label><input type="checkbox" class="chk-avviso-giorno" value="4"> Gio</label>
+                            <label><input type="checkbox" class="chk-avviso-giorno" value="5"> Ven</label>
+                            <label><input type="checkbox" class="chk-avviso-giorno" value="6"> Sab</label>
+                            <label><input type="checkbox" class="chk-avviso-giorno" value="0"> Dom</label>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top:5px;">
+                        <button onclick="salvaAvvisoAdmin()" class="action-btn-green" style="background:#ff4757; flex:1;">SALVA AVVISO</button>
+                        <button onclick="pulisciFormAvvisi()" class="modal-btn" style="background:#e0e0e0; color:#333; width:auto; padding:10px 15px;">ANNULLA</button>
+                    </div>
+                </div>
+                <div style="max-height: 200px; overflow-y: auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Testo Messaggio</th>
+                                <th>Programmazione</th>
+                                <th style="width:160px; text-align:center;">Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabellaAvvisiAdmin"></tbody>
+                    </table>
+                </div>
+            </div>
 
         <div style="margin-top:20px;">
             <button onclick="document.getElementById('adminAreaModal').style.display='none'" class="modal-btn" style="background:#e0e0e0; color:#333;">CHIUDI AREA AMMINISTRATORE</button>
@@ -980,7 +1033,7 @@
                 <option value="P">P</option><option value="M">M</option><option value="G">G</option>
             </select>
             
-            <button id="btnAggiungiPacco" onclick="aggiungiPacco()">AGGIUNGI</button>
+            <button id="btnAggiungiPacco" type="button" onclick="this.disabled=true; aggiungiPacco(); setTimeout(()=>{this.disabled=false;},1000);">AGGIUNGI</button>
         </div>
 
         <div class="status-bar" id="counter">Caricamento...</div>
@@ -1535,30 +1588,30 @@ firebase.auth().onAuthStateChanged((user) => {
     }
 });
 
-function aggiungerePacco(){
-    const trk = document.getElementById('codiceTracciabilita').value.trim().toUpperCase();
-    const c = document.getElementById('cognome').value.trim().toUpperCase();
-    const corr = document.getElementById('corriereSelect').value;
-    if(!c || !corr) return showAlert("Mancano dati (Cognome e Corriere sono obbligatori)!");
-
-    if (trk && trk !== '-') {
-        const esiste = pacchi.find(p => p.codiceTracciabilita === trk);
-        if (esiste) { mostraConfermaDuplicato(trk); return; }
-    }
-    finalizzaInserimentoPacco();
-}
     
-function aggiungiPacco(){
+function aggiungiPacco() {
     const trk = document.getElementById('codiceTracciabilita').value.trim().toUpperCase();
     const c = document.getElementById('cognome').value.trim().toUpperCase();
     const corr = document.getElementById('corriereSelect').value;
-    if(!c || !corr) return showAlert("Mancano dati (Cognome e Corriere sono obbligatori)!");
+    const btn = document.getElementById('btnAggiungiPacco');
+
+    if(!c || !corr) {
+        if(btn) btn.disabled = false;
+        return showAlert("Mancano dati (Cognome e Corriere sono obbligatori)!");
+    }
 
     if (trk && trk !== '-') {
         const esiste = pacchi.find(p => p.codiceTracciabilita === trk);
-        if (esiste) { mostraConfermaDuplicato(trk); return; }
+        if (esiste) {
+            mostraConfermaDuplicato(trk);
+            if(btn) btn.disabled = false;
+            return;
+        }
     }
+    
+    // Esegue direttamente la registrazione senza rinvii o doppi click
     finalizzaInserimentoPacco();
+    if(btn) setTimeout(() => { btn.disabled = false; }, 1000);
 }
 
 function finalizzaInserimentoPacco() {
@@ -2716,6 +2769,15 @@ db.ref('impostazioni/scaffali').on('value', (snap) => {
     else { db.ref('impostazioni/scaffali').set(listaScaffaliDinamica); }
     aggiornaSelettoriMenu();
 });
+   
+db.ref('impostazioni/avvisi').on('value', (snapshot) => {
+        listaAvvisiDinamica = snapshot.val() ? snapshot.val() : {};
+        renderAvvisiAdmin();
+        controllaAvvisiAttivi();
+    });
+
+    // AVVIA IL TIMER DI CONTROLLO OGNI 5 SECONDI
+    setInterval(controllaAvvisiAttivi, 5000);
 
 function aggiornaSelettoriMenu() {
     const cSel = document.getElementById('corriereSelect');
@@ -2856,6 +2918,226 @@ function calcolaStatisticheNonPudo() {
     document.getElementById('resTotalePacchi').innerText = conteggioPacchi;
     document.getElementById('resCompensoMaturato').innerText = `€ ${compenso.toFixed(2)}`;
 }
+
+// =================================================================
+// INIZIO LOGICA DI SINCRONIZZAZIONE E VERIFICA TEMPORALE (NOTIFICHE)
+// =================================================================
+let listaAvvisiDinamica = {};
+let timerAutochiusuraAvviso = null;
+let avvisoCorrenteMostratoId = null;
+
+function renderAvvisiAdmin() {
+    const tbody = document.getElementById('tabellaAvvisiAdmin');
+    if(!tbody) return;
+    tbody.innerHTML = '';
+    
+    Object.keys(listaAvvisiDinamica).forEach(key => {
+        const avv = listaAvvisiDinamica[key];
+        const giorniMappa = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+        let stringaGiorni = avv.giorni ? avv.giorni.map(g => giorniMappa[g]).join(', ') : 'Nessuno';
+        let stringaProg = `<b>Giorni:</b> ${stringaGiorni}<br><b>Ora:</b> ${avv.orario || 'Sempre'}<br><b>Frequenza:</b> ${avv.frequenza}`;
+        
+        let statoColore = avv.attivo ? 'var(--success)' : '#999';
+        let statoTesto = avv.attivo ? 'ATTIVO' : 'DISATTIVATO';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="max-width:250px; word-break:break-word;"><b>${avv.testo}</b></td>
+            <td style="font-size:0.8rem;">${stringaProg}</td>
+            <td style="text-align:center;">
+                <button onclick="caricaAvvisoInForm('${key}')" style="background:var(--accent); color:var(--primary); border:none; padding:5px 8px; border-radius:4px; font-weight:bold; cursor:pointer; margin-right:4px;">✏️</button>
+                <button onclick="toggleStatoAvviso('${key}')" style="background:${statoColore}; color:white; border:none; padding:5px 8px; border-radius:4px; font-weight:bold; cursor:pointer; margin-right:4px; font-size:0.75rem;">${statoTesto}</button>
+                <button onclick="eliminaAvvisoAdmin('${key}')" style="background:#ff4757; color:white; border:none; padding:5px 8px; border-radius:4px; font-weight:bold; cursor:pointer;">❌</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function salvaAvvisoAdmin() {
+    const key = document.getElementById('avvisoEditKey').value;
+    const testo = document.getElementById('avvisoTesto').value.trim();
+    const orario = document.getElementById('avvisoOrario').value;
+    const frequenza = document.getElementById('avvisoFrequenza').value;
+    
+    const giorni = [];
+    document.querySelectorAll('.chk-avviso-giorno:checked').forEach(chk => {
+        giorni.push(parseInt(chk.value));
+    });
+
+    if(testo === "") return alert("Inserisci il testo del messaggio!");
+    if(giorni.length === 0) return alert("Seleziona almeno un giorno di attivazione!");
+
+    const refAvvisi = db.ref('impostazioni/avvisi');
+    const nuovoAvviso = {
+        testo: testo,
+        orario: orario || "",
+        frequenza: frequenza,
+        giorni: giorni,
+        attivo: true,
+        timestampModifica: Date.now()
+    };
+
+    if(key) {
+        db.ref(`impostazioni/avvisi/${key}`).update(nuovoAvviso).then(() => {
+            pulisciFormAvvisi();
+        });
+    } else {
+        refAvvisi.push(nuovoAvviso).then(() => {
+            pulisciFormAvvisi();
+        });
+    }
+}
+
+function caricaAvvisoInForm(key) {
+    const avv = listaAvvisiDinamica[key];
+    document.getElementById('avvisoEditKey').value = key;
+    document.getElementById('avvisoTesto').value = avv.testo;
+    document.getElementById('avvisoOrario').value = avv.orario || "";
+    document.getElementById('avvisoFrequenza').value = avv.frequenza;
+    
+    document.querySelectorAll('.chk-avviso-giorno').forEach(chk => {
+        chk.checked = avv.giorni && avv.giorni.includes(parseInt(chk.value));
+    });
+}
+
+function toggleStatoAvviso(key) {
+    const statoAttuale = listaAvvisiDinamica[key].attivo;
+    db.ref(`impostazioni/avvisi/${key}`).update({ attivo: !statoAttuale });
+}
+
+function物理eliminaAvvisoAdmin(key) { // Chiamata standard
+    if(confirm("Vuoi davvero eliminare questo avviso programmato?")) {
+        db.ref(`impostazioni/avvisi/${key}`).remove();
+    }
+}
+function eliminaAvvisoAdmin(key) {
+    if(confirm("Vuoi davvero eliminare questo avviso programmato?")) {
+        db.ref(`impostazioni/avvisi/${key}`).remove();
+    }
+}
+
+function pulisciFormAvvisi() {
+    document.getElementById('avvisoEditKey').value = "";
+    document.getElementById('avvisoTesto').value = "";
+    document.getElementById('avvisoOrario').value = "";
+    document.getElementById('avvisoFrequenza').value = "sempre";
+    document.querySelectorAll('.chk-avviso-giorno').forEach(chk => chk.checked = false);
+}
+
+function controllaAvvisiAttivi() {
+    if(document.getElementById('loginPage') && document.getElementById('loginPage').style.display === 'flex') return;
+    if(document.getElementById('popupAvvisoNotifica') && document.getElementById('popupAvvisoNotifica').style.display === 'flex') return;
+
+    const adesso = new Date();
+    const giornoCorrente = adesso.getDay();
+    const oraCorrenteStr = adesso.toTimeString().substring(0, 5);
+    const timestampAdesso = adesso.getTime();
+
+    let storicoLocaliMostrati = JSON.parse(localStorage.getItem('gestionale_avvisi_mostrati')) || {};
+
+    Object.keys(listaAvvisiDinamica).forEach(key => {
+        const avv = listaAvvisiDinamica[key];
+        if(!avv.attivo) return;
+        if(!avv.giorni || !avv.giorni.includes(giornoCorrente)) return;
+        if(avv.orario && avv.orario !== oraCorrenteStr) return;
+
+        const ultimoTimestamp = storicoLocaliMostrati[key] || 0;
+        let intervalloNecessario = 0;
+
+        if (avv.frequenza === '1h') intervalloNecessario = 60 * 60 * 1000;
+        else if (avv.frequenza === '24h') intervalloNecessario = 24 * 60 * 60 * 1000;
+        else if (avv.frequenza === '1w') intervalloNecessario = 7 * 24 * 60 * 60 * 1000;
+        else if (avv.frequenza === 'sempre') {
+            intervalloNecessario = avv.orario ? 65000 : 12 * 60 * 60 * 1000; 
+        }
+
+        if(timestampAdesso - ultimoTimestamp < intervalloNecessario) return;
+
+        mostraPopupAvviso(key, avv.testo);
+    });
+    
+    aggiornaBadgeNotifiche();
+}
+
+function mostraPopupAvviso(id, testo) {
+    avvisoCorrenteMostratoId = id;
+    document.getElementById('popupAvvisoTesto').innerText = testo;
+    document.getElementById('popupAvvisoNotifica').style.display = 'flex';
+
+    let salvatiInBacheca = JSON.parse(localStorage.getItem('gestionale_bacheca_avvisi')) || [];
+    if(!salvatiInBacheca.find(x => x.id === id && x.testo === testo)) {
+        salvatiInBacheca.unshift({
+            id: id,
+            testo: testo,
+            data: new Date().toLocaleString('it-IT')
+        });
+        localStorage.setItem('gestionale_bacheca_avvisi', JSON.stringify(salvatiInBacheca));
+    }
+
+    let storicoLocaliMostrati = JSON.parse(localStorage.getItem('gestionale_avvisi_mostrati')) || {};
+    storicoLocaliMostrati[id] = Date.now();
+    localStorage.setItem('gestionale_avvisi_mostrati', JSON.stringify(storicoLocaliMostrati));
+
+    clearTimeout(timerAutochiusuraAvviso);
+    timerAutochiusuraAvviso = setTimeout(() => {
+        chiudiPopupAvvisoNotifica();
+    }, 15000);
+}
+
+function chiudiPopupAvvisoManuale() {
+    clearTimeout(timerAutochiusuraAvviso);
+    chiudiPopupAvvisoNotifica();
+}
+
+function chiudiPopupAvvisoNotifica() {
+    document.getElementById('popupAvvisoNotifica').style.display = 'none';
+    avvisoCorrenteMostratoId = null;
+    aggiornaBadgeNotifiche();
+}
+
+function apriStoricoAvvisi() {
+    const container = document.getElementById('storicoAvvisiContainer');
+    container.innerHTML = '';
+    
+    let salvatiInBacheca = JSON.parse(localStorage.getItem('gestionale_bacheca_avvisi')) || [];
+    
+    if(salvatiInBacheca.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#666; font-weight:bold; padding:15px;">Nessun avviso ricevuto di recente nella bacheca.</p>';
+    } else {
+        salvatiInBacheca.forEach(avv => {
+            const item = document.createElement('div');
+            item.style.cssText = "background:#f9f9f9; border-left:5px solid var(--primary); padding:12px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.05);";
+            item.innerHTML = `
+                <div style="font-size:0.75rem; color:#888; margin-bottom:5px; font-weight:bold;">🕒 Ricevuto il: ${avv.data}</div>
+                <div style="font-size:0.95rem; font-weight:600; color:var(--text); white-space:pre-wrap;">${avv.testo}</div>
+            `;
+            container.appendChild(item);
+        });
+    }
+    
+    localStorage.setItem('gestionale_avvisi_letti_count', salvatiInBacheca.length);
+    aggiornaBadgeNotifiche();
+    
+    document.getElementById('storicoAvvisiModal').style.display = 'flex';
+}
+
+function aggiornaBadgeNotifiche() {
+    let salvatiInBacheca = JSON.parse(localStorage.getItem('gestionale_bacheca_avvisi')) || [];
+    let lettiCount = parseInt(localStorage.getItem('gestionale_avvisi_letti_count')) || 0;
+    const badge = document.getElementById('badgeNuoviAvvisi');
+    if(!badge) return;
+    if(salvatiInBacheca.length > lettiCount) {
+        badge.style.display = 'block';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+// =================================================================
+// FINE LOGICA DI SINCRONIZZAZIONE E VERIFICA TEMPORALE
+// =================================================================
+
+// Funzione per mostrare/nascondere il pulsante in base allo scorrimento (RIGA VECCHIA GIÀ ESISTENTE)
 // Funzione per mostrare/nascondere il pulsante in base allo scorrimento
 window.onscroll = function() {
     gestisciPulsanteScroll();
@@ -2881,5 +3163,33 @@ function tornaSu() {
     });
 }
 </script>
+    <button id="btnStoricoNotifiche" onclick="apriStoricoAvvisi()" style="position: fixed; top: 20px; left: 20px; z-index: 1002; background: var(--white); border: 2px solid var(--primary); font-size: 1.5rem; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: transform 0.2s;">🔔<span id="badgeNuoviAvvisi" style="display:none; position:absolute; top:-3px; right:-3px; background:#ff4757; color:white; font-size:0.7rem; font-weight:bold; padding:2px 6px; border-radius:50%;">!</span></button>
+
+    <div id="popupAvvisoNotifica" style="display: none; position: fixed; z-index: 4000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; backdrop-filter: blur(3px);">
+        <div class="modal-content" style="max-width: 450px; border-top: 10px solid #ff4757; box-shadow: 0 15px 35px rgba(0,0,0,0.3); animation: slideIn 0.3s ease-out;">
+            <div style="font-size: 3rem; margin-bottom: 10px;">📢</div>
+            <h3 style="color:#ff4757; margin: 0 0 15px 0; font-size: 1.4rem; text-transform: uppercase; letter-spacing: 1px;">Avviso di Sistema</h3>
+            <p id="popupAvvisoTesto" style="margin-bottom: 25px; font-weight: 600; font-size: 1.05rem; color: #2c3e50; line-height: 1.5; white-space: pre-wrap; text-align: left; background: #fff5f5; padding: 15px; border-radius: 10px; border-left: 5px solid #ff4757;"></p>
+            <button onclick="chiudiPopupAvvisoManuale()" class="modal-btn" style="background:#ff4757; color:white; font-size: 1.1rem; letter-spacing: 1px; text-transform: uppercase; box-shadow: 0 4px 10px rgba(255, 71, 87, 0.3);">OK</button>
+            <div style="margin-top: 10px; font-size: 0.75rem; color: #999;">Questo avviso si chiuderà automaticamente tra poco</div>
+        </div>
+    </div>
+
+    <div id="storicoAvvisiModal" style="display: none; position: fixed; z-index: 3500; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center;">
+        <div class="modal-content" style="max-width: 500px; border-top: 10px solid var(--primary);">
+            <h3 style="color:var(--primary); margin: 0 0 15px 0;">🔔 Bacheca Avvisi Ricevuti</h3>
+            <div id="storicoAvvisiContainer" style="max-height: 350px; overflow-y: auto; text-align: left; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding: 5px;"></div>
+            <button onclick="document.getElementById('storicoAvvisiModal').style.display='none'" class="modal-btn" style="background:#e0e0e0; color:#333;">CHIUDI BACHECA</button>
+        </div>
+    </div>
+
+    <style>
+    @keyframes slideIn {
+        from { transform: scale(0.8); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+    </style>
+    </body>
+</html>
 </body>
 </html>
