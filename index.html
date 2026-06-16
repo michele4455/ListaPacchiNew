@@ -1643,24 +1643,24 @@ window.addEventListener('mouseup', () => drawing = false);
 canvas.addEventListener('touchstart', (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
 canvas.addEventListener('touchmove', (e) => { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
 
-function login() {
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value.trim();
-
-    if (!email || !password) {
-        return showAlert("Inserisci email e password!");
-    }
-
-    firebase.auth().signInWithEmailAndPassword(email, password)
-        .then(() => {
-            // Il cambio di stato viene intercettato da onAuthStateChanged automaticamente
-            document.getElementById('loginEmail').value = "";
-            document.getElementById('loginPassword').value = "";
-        })
-        .catch((error) => {
-            console.error("Errore durante il login:", error);
-            showAlert("Email o password errate!");
-        });
+function login() { 
+    const email = document.getElementById('loginEmail').value.trim(); 
+    const password = document.getElementById('loginPassword').value.trim(); 
+    
+    if (!email || !password) { 
+        return showAlert("Inserisci email e password!"); 
+    } 
+    
+    firebase.auth().signInWithEmailAndPassword(email, password) 
+        .then(() => { 
+            // Il cambio di stato viene intercettato da onAuthStateChanged automaticamente 
+            document.getElementById('loginEmail').value = ""; 
+            document.getElementById('loginPassword').value = ""; 
+        }) 
+        .catch((error) => { 
+            console.error("Errore durante il login:", error); 
+            showAlert("Email o password errate!"); 
+        }); 
 }
 
 let timerInattivita;
