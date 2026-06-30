@@ -1796,9 +1796,10 @@ function generateHtml(p) {
     📍 ${p.scaffale} • 🔍 TRK: 
     <div class="barcode-popup-container" 
          onmouseenter="window.barcodeTimeout = setTimeout(() => { this.querySelector('.barcode-popup').classList.add('show'); }, 3000);" 
-         onmouseleave="clearTimeout(window.barcodeTimeout); this.querySelector('.barcode-popup').classList.remove('show');"
-         oncontextmenu="if(event.ctrlKey) { event.preventDefault(); stampaEtichettaPacco(${JSON.stringify(p).replace(/"/g, '&quot;')}); }">
-        <span class="highlight-trk" onclick="copiaTracking('${p.codiceTracciabilita}')">${p.codiceTracciabilita}</span>
+         onmouseleave="clearTimeout(window.barcodeTimeout); this.querySelector('.barcode-popup').classList.remove('show');">
+        <span class="highlight-trk" onclick="if(event.ctrlKey) { event.preventDefault(); event.stopPropagation(); stampaEtichettaPacco(${JSON.stringify(p).replace(/"/g, '&quot;')}); } else { copiaTracking('${p.codiceTracciabilita}'); }">
+            ${p.codiceTracciabilita}
+        </span>
         <div class="barcode-popup">
             <img src="https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(p.codiceTracciabilita)}&code=Code128&translate-esc=true" alt="Barcode">
             <span>${p.codiceTracciabilita}</span>
@@ -3004,7 +3005,7 @@ function stampaEtichettaPacco(p) {
                     <strong>👤 DESTINATARIO:</strong> ${p.cognome || ''} ${p.nome || ''}<br>
                     <strong>📍 SCAFFALE:</strong> ${p.scaffale || '-'}<br>
                     <strong>📦 CORRIERE:</strong> ${p.corriere || '-'}<br>
-                    <strong>🆔 ID PACCO:</strong> ${p.codiceRiconoscimento || '-'}<br>
+                    <strong>🆔 ID PACCO:</strong> ${p.id || '-'}<br>
                     <strong>📅 ARRIVATO IL:</strong> ${p.dataTestoInserimento || '-'}
                     ${p.note ? `<br><strong>📝 NOTE:</strong> ${p.note}` : ''}
                     ${p.contrassegno ? `<br><strong>💰 CONTRASSEGNO:</strong> € ${p.valoreContrassegno}` : ''}
