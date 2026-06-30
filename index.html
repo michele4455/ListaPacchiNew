@@ -2929,6 +2929,7 @@ function tornaSu() {
     });
 }
     // Funzione per stampare l'etichetta del pacco con codice a barre e dettagli
+// Funzione per stampare l'etichetta del pacco con codice a barre e dettagli
 function stampaEtichettaPacco(p) {
     const tracking = p.codiceTracciabilita || '';
     const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(tracking)}&code=Code128&translate-esc=true`;
@@ -3005,7 +3006,7 @@ function stampaEtichettaPacco(p) {
                     <strong>👤 DESTINATARIO:</strong> ${p.cognome || ''} ${p.nome || ''}<br>
                     <strong>📍 SCAFFALE:</strong> ${p.scaffale || '-'}<br>
                     <strong>📦 CORRIERE:</strong> ${p.corriere || '-'}<br>
-                    <strong>🆔 ID PACCO:</strong> ${p.id || '-'}<br>
+                    <strong>🆔 ID PACCO:</strong> ${p.codiceRiconoscimento || '-'}<br>
                     <strong>📅 ARRIVATO IL:</strong> ${p.dataTestoInserimento || '-'}
                     ${p.note ? `<br><strong>📝 NOTE:</strong> ${p.note}` : ''}
                     ${p.contrassegno ? `<br><strong>💰 CONTRASSEGNO:</strong> € ${p.valoreContrassegno}` : ''}
