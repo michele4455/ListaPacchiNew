@@ -1797,7 +1797,7 @@ function generateHtml(p) {
     <div class="barcode-popup-container" 
          onmouseenter="window.barcodeTimeout = setTimeout(() => { this.querySelector('.barcode-popup').classList.add('show'); }, 3000);" 
          onmouseleave="clearTimeout(window.barcodeTimeout); this.querySelector('.barcode-popup').classList.remove('show');">
-        <span class="highlight-trk" onclick="if(event.ctrlKey) { event.preventDefault(); event.stopPropagation(); stampaEtichettaPacco(${JSON.stringify(p).replace(/"/g, '&quot;')}); } else { copiaTracking('${p.codiceTracciabilita}'); }">
+        <span class="highlight-trk" onclick="if(event.ctrlKey) { event.preventDefault(); event.stopPropagation(); stampaEtichettaPacco('${p.codiceTracciabilita || ''}', '${p.codiceRiconoscimento || p.id || ''}', '${p.cognome || ''}', '${p.nome || ''}', '${p.scaffale || ''}', '${p.corriere || ''}', '${p.dataTestoInserimento || ''}'); } else { copiaTracking('${p.codiceTracciabilita}'); }">
             ${p.codiceTracciabilita}
         </span>
         <div class="barcode-popup">
@@ -2928,10 +2928,8 @@ function tornaSu() {
         behavior: 'smooth'
     });
 }
-    // Funzione per stampare l'etichetta del pacco con codice a barre e dettagli
-// Funzione per stampare l'etichetta del pacco con codice a barre e dettagli
-function stampaEtichettaPacco(p) {
-    const tracking = p.codiceTracciabilita || '';
+
+function stampaEtichettaPacco(tracking, idPacco, cognome, nome, scaffale, corriere, dataArrivo) {
     const barcodeUrl = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(tracking)}&code=Code128&translate-esc=true`;
     
     // Crea una nuova finestra temporanea per la stampa
@@ -3003,17 +3001,14 @@ function stampaEtichettaPacco(p) {
                 <div class="tracking-testo">${tracking}</div>
                 
                 <div class="dettagli">
-                    <strong>👤 DESTINATARIO:</strong> ${p.cognome || ''} ${p.nome || ''}<br>
-                    <strong>📍 SCAFFALE:</strong> ${p.scaffale || '-'}<br>
-                    <strong>📦 CORRIERE:</strong> ${p.corriere || '-'}<br>
-                    <strong>🆔 ID PACCO:</strong> ${p.codiceRiconoscimento || '-'}<br>
-                    <strong>📅 ARRIVATO IL:</strong> ${p.dataTestoInserimento || '-'}
-                    ${p.note ? `<br><strong>📝 NOTE:</strong> ${p.note}` : ''}
-                    ${p.contrassegno ? `<br><strong>💰 CONTRASSEGNO:</strong> € ${p.valoreContrassegno}` : ''}
+                    <strong>👤 DESTINATARIO:</strong> ${cognome} ${nome}<br>
+                    <strong>📍 SCAFFALE:</strong> ${scaffale || '-'}<br>
+                    <strong>📦 CORRIERE:</strong> ${corriere || '-'}<br>
+                    <strong>🆔 ID PACCO:</strong> ${idPacco || '-'}<br>
+                    <strong>📅 ARRIVATO IL:</strong> ${dataArrivo || '-'}
                 </div>
             </div>
             <script>
-                // Avvia la stampa automaticamente non appena l'immagine del barcode è caricata
                 window.onload = function() {
                     window.print();
                     setTimeout(function() { window.close(); }, 500);
