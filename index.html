@@ -660,44 +660,44 @@
             transform: scale(1.1);
         }
         .barcode-popup-container {
-            position: relative;
-            display: inline-block;
-        }
-        
-        .barcode-popup {
-            display: none;
-            position: absolute;
-            bottom: 125%; /* Posiziona il popup sopra il testo */
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: white;
-            border: 2px solid var(--primary);
-            padding: 10px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            z-index: 1000;
-            text-align: center;
-            white-space: nowrap;
-        }
-        
-        .barcode-popup img {
-            max-width: 220px;
-            height: auto;
-            display: block;
-            margin: 0 auto 5px auto;
-        }
-        
-        .barcode-popup span {
-            font-size: 0.75rem;
-            color: #333;
-            display: block;
-            font-family: monospace;
-        }
-        
-        /* Mostra il popup quando passi sopra con il mouse */
-        .barcode-popup-container:hover .barcode-popup {
-            display: block;
-        }
+    position: relative;
+    display: inline-block;
+}
+
+.barcode-popup {
+    display: none;
+    position: absolute;
+    bottom: 135%; /* Posiziona il popup sopra il testo */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: white;
+    border: 2px solid var(--primary);
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    z-index: 9999; /* Resta sopra a tutto */
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Mostra il popup solo quando JavaScript aggiunge la classe .show */
+.barcode-popup.show {
+    display: block;
+}
+
+.barcode-popup img {
+    max-width: 200px;
+    height: auto;
+    display: block;
+    margin: 0 auto 5px auto;
+}
+
+.barcode-popup span {
+    font-size: 12px !important;
+    color: #333 !important;
+    display: block !important;
+    font-family: monospace !important;
+}
         
     </style>
     <script>
@@ -1793,18 +1793,20 @@ function generateHtml(p) {
             <div>
                 <span class="tag-grandezza">${p.grandezza}</span><span class="tag-corriere">${p.corriere}</span>${badgeContrassegno}<strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome.toUpperCase()}
                 <br><small style="display:block; margin-top:5px; color:#666;">
-                📍 ${p.scaffale} • 🔍 TRK: 
-                <div class="barcode-popup-container">
-                    <span class="highlight-trk" onclick="copiaTracking('${p.codiceTracciabilita}')">${p.codiceTracciabilita}</span>
-                    <div class="barcode-popup">
-                        <img src="https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(p.codiceTracciabilita)}&code=Code128&translate-esc=true" alt="Barcode">
-                        <span>${p.codiceTracciabilita}</span>
-                    </div>
-                </div>
-                ${telContatto}<br>
-                📅 Arrivato il: ${p.dataTestoInserimento || '-'}
-            </small>
-            ${statoTesto}
+    📍 ${p.scaffale} • 🔍 TRK: 
+    <div class="barcode-popup-container" 
+         onmouseenter="window.barcodeTimeout = setTimeout(() => { this.querySelector('.barcode-popup').classList.add('show'); }, 3000);" 
+         onmouseleave="clearTimeout(window.barcodeTimeout); this.querySelector('.barcode-popup').classList.remove('show');">
+        <span class="highlight-trk" onclick="copiaTracking('${p.codiceTracciabilita}')">${p.codiceTracciabilita}</span>
+        <div class="barcode-popup">
+            <img src="https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(p.codiceTracciabilita)}&code=Code128&translate-esc=true" alt="Barcode">
+            <span>${p.codiceTracciabilita}</span>
+        </div>
+    </div>
+    ${telContatto}<br>
+    📅 Arrivato il: ${p.dataTestoInserimento || '-'}
+</small>
+${statoTesto}
             </div>
         </div>
         <div style="display:flex; align-items:center;">${alertScadenza} ${indicatoreNote} ${azione}</div>
