@@ -2299,7 +2299,17 @@ function toggleCampiUscita() {
     }
 }
 
-function closeModal() { document.getElementById('customModal').style.display = 'none'; }
+function closeModal() {
+    document.getElementById('customModal').style.display = 'none';
+    if (typeof clearCanvas === 'function') clearCanvas();
+    
+    // === INTEGRAZIONE DI SICUREZZA RESET ===
+    modalitaAggiuntaAttiva = false;
+    pacchiSelezionatiNelRitiro = [];
+    if (document.getElementById('badgeFlottanteRitiro')) {
+        document.getElementById('badgeFlottanteRitiro').style.display = 'none';
+    }
+}
 function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 function toggleSezioneRitirati() { const s = document.getElementById('sezioneRitirati'); s.style.display = s.style.display === 'none' ? 'block' : 'none'; }
 function setTab(t){ tabAttiva = t; aggiornaVista(); }
@@ -3067,7 +3077,7 @@ let modalitaAggiuntaAttiva = false;
 let pacchiSelezionatiNelRitiro = []; // Conterrà gli ID di tutti i pacchi bloccati nel ritiro corrente
 
 function avviaModalitaAggiuntaRitiro() {
-    // 1. Salviamo lo stato dei pacchi correntemente selezionati nel modal
+    // 1. Raccogliamo i pacchi attualmente spuntati nel modal
     const checkboxSelezionati = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked'));
     checkboxSelezionati.forEach(cb => {
         const idPacco = parseInt(cb.dataset.id);
@@ -3076,23 +3086,23 @@ function avviaModalitaAggiuntaRitiro() {
         }
     });
 
-    // 2. Attiviamo la modalità globale e aggiorniamo il badge grafico flottante
+    // 2. Attiviamo la modalità ed aggiorniamo la grafica del badge
     modalitaAggiuntaAttiva = true;
     aggiornaBadgeFlottante();
 
-    // 3. Chiudiamo temporaneamente il modal per permettere all'utente di consultare l'intera lista o cercare
-    closeModal();
+    // 3. Chiudiamo solo visivamente il modal per permettere la ricerca libera
+    document.getElementById('customModal').style.display = 'none';
     
-    // 4. Reimpostiamo la barra di ricerca o mostriamo un alert non invasivo per guidare l'operatore
+    // 4. Puliamo il campo ricerca così puoi digitare qualsiasi cognome
     document.getElementById('search').value = "";
-    aggiornaVista(); // Riesegue il render della lista principale dei pacchi in giacenza
+    aggiornaVista();
 }
 
 function aggiornaBadgeFlottante() {
     const badge = document.getElementById('badgeFlottanteRitiro');
     const contatore = document.getElementById('badgeContatorePacchi');
     
-    // Calcoliamo quanti pacchi sono inclusi (quelli memorizzati + quelli correntemente spuntati nel modal se aperto)
+    // Uniamo i pacchi accumulati con quelli eventualmente selezionati a schermo
     const temporaneiModal = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked')).map(cb => parseInt(cb.dataset.id));
     const setUnico = new Set([...pacchiSelezionatiNelRitiro, ...temporaneiModal]);
     
@@ -3105,7 +3115,7 @@ function aggiornaBadgeFlottante() {
 }
 
 function riapriModalRitiroAvanzato() {
-    // 1. Salviamo eventuali checkbox che l'utente aveva spuntato nel modal prima di chiuderlo
+    // Se l'utente ha spuntato nuovi elementi prima di ricliccare il badge, li memorizziamo
     const checkboxSelezionati = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked'));
     checkboxSelezionati.forEach(cb => {
         const idPacco = parseInt(cb.dataset.id);
@@ -3116,47 +3126,86 @@ function riapriModalRitiroAvanzato() {
 
     if (pacchiSelezionatiNelRitiro.length === 0) return;
 
-    // 2. Troviamo nel database locale tutti i dati dei pacchi inclusi nella sessione di ritiro
+    // Recuperiamo i dati dei pacchi dall'array globale dell'app
     const pacchiDaMostrare = pacchi.filter(p => pacchiSelezionatiNelRitiro.includes(p.id));
 
-    // 3. Generiamo l'HTML della lista riutilizzando la stessa identica struttura del tuo applicativo
-    let htmlLista = '<div style="text-align:left; max-height:250px; overflow-y:auto; border:1px solid #ccc; padding:10px; margin-bottom:15px; background:#fff;">';
-    
+    // Generiamo la lista HTML mantenendo le classi grafiche native del progetto (.item-selezione)
+    let htmlLista = '';
+    let haContrassegno = false;
+    let testoAlertContrassegno = '';
+
     pacchiDaMostrare.forEach(p => {
-        // Genera la stringa dei dettagli (puoi personalizzarla se nel tuo codice mostrava anche contrassegno, scaffale ecc.)
-        let dettagli = `${p.cognome} ${p.nome} - ${p.corriere || 'No Corriere'}`;
-        if(p.codiceTracciabilita) dettagli += ` (${p.codiceTracciabilita})`;
+        let dettagli = `${p.cognome} ${p.nome} - Scaffale: ${p.scaffale || '-'} (${p.corriere || 'No Corriere'})`;
+        if (p.contrassegno && parseFloat(p.contrassegno) > 0) {
+            haContrassegno = true;
+            testoAlertContrassegno += `⚠️ CONTRASEGNO SU PACCO DI ${p.cognome}: € ${p.contrassegno}<br>`;
+            dettagli += ` [CONTRASS.: €${p.contrassegno}]`;
+        }
         
         htmlLista += `
-            <div style="margin-bottom:8px;">
-                <label style="cursor:pointer; display:block;">
-                    <input type="checkbox" class="chk-multi-ritiro" data-id="${p.id}" checked onchange="aggiornaBadgeFlottante()"> 
-                    ${dettagli}
-                </label>
+            <div class="item-selezione">
+                <input type="checkbox" class="chk-multi-ritiro" data-id="${p.id}" checked onchange="aggiornaBadgeFlottante()">
+                <span>${dettagli}</span>
             </div>
         `;
     });
-    htmlLista += '</div>';
 
-    // 4. Prepariamo e apriamo il customModal usando gli elementi nativi del tuo progetto
-    document.getElementById('modalTitle').innerText = "RITIRO MULTIPLO ACCUMULATO";
+    // Inseriamo la lista nell'elemento nativo dell'applicazione
+    document.getElementById('modalTitle').innerText = "Ritiro Multiplo Accumulato";
     document.getElementById('modalText').innerHTML = htmlLista;
-    
-    // Mostriamo i campi firma e input destinatario (prendendo come riferimento il primo pacco della lista)
-    document.getElementById('modalInputDiv').style.display = 'block';
-    document.getElementById('modalFirmaDiv').style.display = 'block';
-    document.getElementById('ritiratoDa').value = pacchiDaMostrare[0].cognome; 
-    
-    // Configura il tasto di conferma del tuo modal per passare gli ID alla funzione eseguiRitiroPacchi che abbiamo modificato prima
-    document.getElementById('customModal').querySelector('button[onclick*="eseguiRitiroPacchi"]').setAttribute(
-        'onclick', 
-        `if(!document.getElementById('ritiratoDa').value.trim()){ alert('Inserire il nome di chi ritira!'); return; } const ids = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked')).map(cb => parseInt(cb.dataset.id)); eseguiRitiroPacchi(ids, 'cliente', document.getElementById('ritiratoDa').value, false, '', pad.toDataURL(), ottieniDataOraCorrente())`
-    );
 
-    // Mostriamo il modal a schermo
-    document.getElementById('customModal').style.display = 'block';
+    // Gestiamo il box contrassegno nativo dell'app
+    const boxAlert = document.getElementById('boxAlertContrassegno');
+    if (haContrassegno) {
+        boxAlert.innerHTML = testoAlertContrassegno;
+        boxAlert.style.display = 'block';
+    } else {
+        boxAlert.style.display = 'none';
+    }
+
+    // Configura e resetta i campi del modulo di ritiro cliente standard
+    document.getElementById('tipoUscita').value = 'cliente';
+    document.getElementById('boxRitiroDettagli').style.display = 'block';
+    document.getElementById('boxScadutoDettagli').style.display = 'none';
+    document.getElementById('firmaSide').style.display = 'block';
     
-    // Aggiorna il contatore grafico
+    // Preimposta il nome di chi ritira col cognome del primo pacco della lista
+    if (!document.getElementById('modalInput').value) {
+        document.getElementById('modalInput').value = pacchiDaMostrare[0].cognome;
+    }
+
+    // Colleghiamo l'azione al tasto di salvataggio del tuo modal principale (#modalConfirmBtn)
+    document.getElementById('modalConfirmBtn').onclick = function() {
+        const ritiratoDa = document.getElementById('modalInput').value.trim();
+        if (!ritiratoDa) {
+            alert("Inserire il nome di chi effettua il ritiro!");
+            return;
+        }
+        if (signaturePad.isEmpty()) {
+            alert("È richiesta la firma per procedere al ritiro del cliente!");
+            return;
+        }
+
+        // Raccogliamo tutti gli ID correntemente spuntati
+        const ids = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked')).map(cb => parseInt(cb.dataset.id));
+        if (ids.length === 0) {
+            alert("Seleziona almeno un pacco da ritirare!");
+            return;
+        }
+
+        // Calcoliamo la data attuale con la funzione nativa del tuo gestionale
+        const dataAttuale = ottieniDataOraCorrente();
+        
+        // Eseguiamo la tua funzione eseguiRitiroPacchi modificata precedentemente
+        eseguiRitiroPacchi(ids, 'cliente', ritiratoDa, false, '', signaturePad.toDataURL(), dataAttuale);
+    };
+
+    // Apriamo il modal a schermo
+    document.getElementById('customModal').style.display = 'flex';
+    
+    // Ripuliamo il canvas della firma se necessario per farlo ridisegnare
+    if (typeof clearCanvas === 'function') clearCanvas();
+    
     aggiornaBadgeFlottante();
 }
 </script>
