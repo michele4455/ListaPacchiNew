@@ -1928,30 +1928,53 @@ function closeEditModal() { document.getElementById('editModal').style.display =
 
 function handleRitira(id, forzaScaduto = false) {
     const p = pacchi.find(x => x.id === id);
-    const stessiPacchi = pacchi.filter(px => 
-        !px.ritirato && 
-        px.cognome.toLowerCase() === p.cognome.toLowerCase() &&
-        px.nome.toLowerCase() === p.nome.toLowerCase()
-    );
+    
+    // Controlliamo se stiamo ritirando un gruppo di pacchi salvati nel carrello coesivo flottante
+    let stessiPacchi = [];
+    if (typeof pacchiSelezionatiRitiroCoesivo !== 'undefined' && pacchiSelezionatiRitiroCoesivo.length > 0) {
+        // Raccoglie tutti i pacchi memorizzati nel carrello
+        pacchiSelezionatiRitiroCoesivo.forEach(sid => {
+            let px = pacchi.find(x => x.id === sid && !x.ritirato);
+            if (px && !stessiPacchi.some(ex => ex.id === px.id)) {
+                stessiPacchi.push(px);
+            }
+        });
+        // Include anche il pacco corrente cliccato se non era già presente
+        if (p && !p.ritirato && !stessiPacchi.some(ex => ex.id === p.id)) {
+            stessiPacchi.push(p);
+            pacchiSelezionatiRitiroCoesivo.push(p.id);
+        }
+    } else {
+        // Logica nativa originale: filtra per stesso cognome e nome
+        stessiPacchi = pacchi.filter(px => 
+            !px.ritirato && 
+            px.cognome.toLowerCase() === p.cognome.toLowerCase() &&
+            px.nome.toLowerCase() === p.nome.toLowerCase()
+        );
+    }
+
     document.getElementById('customModal').style.display = 'flex';
     document.getElementById('tipoUscita').value = forzaScaduto ? 'scaduto' : 'cliente';
     
     let htmlLista = `<p style="margin-top:0;"><b>Seleziona i pacchi da ritirare:</b></p>`;
-stessiPacchi.forEach(sp => {
-    const isTarget = sp.id === id;
-    let infoContr = sp.isContrassegno ? `<b style="color:#ff4757;"> [CONTRASSEGNO € ${sp.importoContrassegno}]</b>` : '';
-    let infoNote = (sp.noteAggiuntive && sp.noteAggiuntive.trim() !== '') ? ` <span style="color:var(--primary); font-weight:bold;">[ℹ️ ${sp.noteAggiuntive}]</span>` : '';
-    htmlLista += `
-        <label class="item-selezione">
-            <input type="checkbox" class="chk-multi-ritiro" data-id="${sp.id}" data-corriere="${sp.corriere}" ${isTarget ? 'checked' : ''}>
-            <div>
-                <strong>#${sp.riconoscimento}</strong> 
-                - ${sp.corriere}${infoContr}${infoNote}<br>
-                <small>TRK: <span class="highlight-trk" onclick="event.preventDefault(); event.stopPropagation(); copiaTracking('${sp.codiceTracciabilita}');">${sp.codiceTracciabilita}</span> | Arrivato: ${sp.dataTestoInserimento || '-'}</small>
-            </div>
-        </label>
-    `;
-});
+    stessiPacchi.forEach(sp => {
+        // Il pacco è selezionato di default se è quello cliccato o se è presente nel carrello coesivo
+        const isTarget = sp.id === id || (typeof pacchiSelezionatiRitiroCoesivo !== 'undefined' && pacchiSelezionatiRitiroCoesivo.includes(sp.id));
+        let infoContr = sp.isContrassegno ? `<b style="color:#ff4757;"> [CONTRASSEGNO € ${sp.importoContrassegno}]</b>` : '';
+        let infoNote = (sp.noteAggiuntive && sp.noteAggiuntive.trim() !== '') ? ` <span style="color:var(--primary); font-weight:bold;">[ℹ️ ${sp.noteAggiuntive}]</span>` : '';
+        
+        // Aggiunto l'attributo onchange per tenere aggiornato in tempo reale il carrello se l'utente deseleziona un pacco nel modal
+        htmlLista += `
+            <label class="item-selezione">
+                <input type="checkbox" class="chk-multi-ritiro" data-id="${sp.id}" data-corriere="${sp.corriere}" ${isTarget ? 'checked' : ''} onchange="if(typeof aggiornaStatoCarrelloCheck === 'function') aggiornaStatoCarrelloCheck(this)">
+                <div>
+                    <strong>#${sp.riconoscimento}</strong> (${sp.cognome.toUpperCase()} ${sp.nome.toUpperCase()})
+                    - ${sp.corriere}${infoContr}${infoNote}<br>
+                    <small>TRK: <span class="highlight-trk" onclick="event.preventDefault(); event.stopPropagation(); copiaTracking('${sp.codiceTracciabilita}');">${sp.codiceTracciabilita}</span> | Arrivato: ${sp.dataTestoInserimento || '-'}</small>
+                </div>
+            </label>
+        `;
+    });
     document.getElementById('modalText').innerHTML = htmlLista;
 
     const updatePudoBox = () => {
@@ -2131,7 +2154,9 @@ function generaReport() {
         if (typeof p.dataRitiro === 'number') {
             return p.dataRitiro >= inizioTimestamp && p.dataRitiro <= fineTimestamp;
         } else {
-            const parti = p.dataRitiro.split('/');
+            // FIX: Isola solo la componente data escludendo l'orario (es. "09/07/2026, 18:00:00" -> "09/07/2026")
+            const stringaData = p.dataRitiro.split(',')[0].trim();
+            const parti = stringaData.split('/');
             if(parti.length === 3) {
                 const dataPaccoRitiro = new Date(parti[2], parti[1] - 1, parti[0]).getTime();
                 return dataPaccoRitiro >= inizioTimestamp && dataPaccoRitiro <= fineTimestamp;
