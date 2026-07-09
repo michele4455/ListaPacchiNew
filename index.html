@@ -2042,6 +2042,24 @@ function handleRitira(id, forzaScaduto = false) {
     };
 }
 
+function aggiornaStatoCarrelloCheck(cb) {
+    if (typeof pacchiSelezionatiRitiroCoesivo === 'undefined') return;
+    const pid = parseInt(cb.dataset.id);
+    if (!cb.checked) {
+        pacchiSelezionatiRitiroCoesivo = pacchiSelezionatiRitiroCoesivo.filter(id => id !== pid);
+    } else if (!pacchiSelezionatiRitiroCoesivo.includes(pid)) {
+        pacchiSelezionatiRitiroCoesivo.push(pid);
+    }
+    
+    // Aggiorna visivamente il badge flottante
+    const badge = document.getElementById('badgeMultiRitiro');
+    const contatore = document.getElementById('badgeMultiRitiroContatore');
+    if (badge && contatore) {
+        contatore.innerText = pacchiSelezionatiRitiroCoesivo.length + (pacchiSelezionatiRitiroCoesivo.length === 1 ? " pacco nel ritiro" : " pacchi nel ritiro");
+        badge.style.display = pacchiSelezionatiRitiroCoesivo.length > 0 ? 'flex' : 'none';
+    }
+}
+
 function mostraConfermaContrassegnoGrafica(totale, callbackSuccesso) {
     const modal = document.getElementById('beautifyAlert');
     const titolo = document.getElementById('alertTitle');
