@@ -1103,8 +1103,9 @@ let tabAttiva = 'Tutti';
 let timeoutInattivita;
 let html5QrCode;
 let torciaAttiva = false;
-let isRitiroMultiploMode = false; // Indica se l'utente ha premuto "Aggiungi al ritiro"
-let pacchiSelezionatiMultipli = [];
+isRitiroMultiploMode = false;
+pacchiSelezionatiMultipli = [];
+document.getElementById("flottanteRitiroMultiplo").style.display = "none";
 
 // Sincronizzazione automatica dei Pacchi da Firebase
 function inizializzaSincronizzazioneFirebase() {
@@ -1962,6 +1963,7 @@ function handleRitira(id, forzaScaduto = false) {
         px.nome.toLowerCase() === p.nome.toLowerCase()
     );
     document.getElementById('customModal').style.display = 'flex';
+    document.getElementById("btnAggiungiAlRitiro").style.display = isRitiroMultiploMode ? "none" : "block";
     document.getElementById('tipoUscita').value = forzaScaduto ? 'scaduto' : 'cliente';
     
     let htmlLista = `<p style="margin-top:0;"><b>Seleziona i pacchi da ritirare:</b></p>`;
@@ -3109,41 +3111,55 @@ function stampaEtichettaPacco(tracking, idPacco, cognome, nome, scaffale, corrie
     finestraStampa.document.close();
 }
 function attivaRitiroMultiploModo() {
-    // 1. Prendi i pacchi correntemente selezionati nella modale aperta (usando la logica nativa del tuo codice)
-    // Se non lo fa già in automatico, inserisci i pacchi correnti dentro l'array `pacchiSelezionatiMultipli`
-    
-    // Evita duplicati controllando l'idPacco o la chiave Firebase
-    pacchiAttualiSelezionati.forEach(pacco => {
+    // 1. Accumula i pacchi attualmente spuntati nell'elenco cumulativo evitando duplicati
+    selectedPackages.forEach(pacco => {
         if (!pacchiSelezionatiMultipli.some(p => p.id === pacco.id)) {
             pacchiSelezionatiMultipli.push(pacco);
         }
     });
 
+    // 2. Attiva la modalità multipla globale
     isRitiroMultiploMode = true;
     
-    // 2. Aggiorna il contatore grafico del riquadro flottante
+    // 3. Aggiorna graficamente il contatore del riquadro flottante
     document.getElementById("contatorePacchiMultipli").innerText = pacchiSelezionatiMultipli.length;
     document.getElementById("flottanteRitiroMultiplo").style.display = "flex";
     
-    // 3. Chiudi la modale senza resettare i dati di ritiro cumulativi
-    // Chiamando la funzione nativa che nasconde la modale (es. closeModal() o modificando il display direttamente)
-    document.getElementById("customModal").style.display = "none";
+    // 4. Ripristina lo stato delle checkbox grafiche e svuota la selezione temporanea nativa
+    const checkboxes = document.querySelectorAll('.item-selezione input[type="checkbox"], input[type="checkbox"]');
+    checkboxes.forEach(cb => cb.checked = false);
+    selectedPackages = [];
+    
+    // 5. Chiude la modale corrente per permettere di continuare la scelta nella lista
+    closeModal();
+    
+    // 6. Aggiorna graficamente il pulsante di ritiro principale a schermo (se presente nel tuo layout)
+    if (typeof aggiornaPulsanteRitiro === "function") {
+        aggiornaPulsanteRitiro();
+    }
 }
 function apriFinestraRitiroCumulativa() {
-    // 1. Richiama l'interfaccia nativa della modale esistente
+    if (pacchiSelezionatiMultipli.length === 0) return;
+    
+    // Passa tutti i pacchi accumulati all'array nativo in modo che "Conferma e Salva" agisca su tutti
+    selectedPackages = [...pacchiSelezionatiMultipli];
+    
+    // Riutilizza la modale nativa dell'applicazione
     document.getElementById("customModal").style.display = "flex";
     
-    // 2. Nascondi il pulsante "Aggiungi al ritiro" perché siamo già nella modale di riepilogo finale
+    // In questa finestra nascondiamo il pulsante di accumulo
     document.getElementById("btnAggiungiAlRitiro").style.display = "none";
     
-    // 3. Genera il testo riepilogativo dentro '#modalText' ciclando su 'pacchiSelezionatiMultipli'
+    // Genera l'elenco testuale di riepilogo da mostrare dentro la modale
     let htmlRiepilogo = "<b>Ritiro Multiplo Combinato:</b><br><br>";
     pacchiSelezionatiMultipli.forEach((p, index) => {
-        htmlRiepilogo += `${index + 1}) 📦 ${p.cognome} ${p.nome} - TRK: ${p.codiceTracciabilita || p.trk || ''}<br>`;
+        htmlRiepilogo += `${index + 1}) 📦 <b>${p.cognome || ''} ${p.nome || ''}</b> - Scaffale: ${p.scaffale || '-'}<br>`;
     });
+    
     document.getElementById("modalText").innerHTML = htmlRiepilogo;
     
-    // Il resto della logica (Firma, pulsante Conferma e Salva) rimane invariato e agirà su tutti gli elementi di pacchiSelezionatiMultipli.
+    // Inizializza o pulisce la firma nativa se necessario
+    if (typeof resizeCanvas === "function") resizeCanvas();
 }
 </script>
 </body>
