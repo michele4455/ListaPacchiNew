@@ -748,17 +748,27 @@
 </div>
 
 <div id="reportModal">
-    <div class="modal-content" style="max-width: 400px;">
-        <h3 style="color:var(--primary); margin-bottom:15px;">Genera Report Giornaliero</h3>
-        <p>Scegli la data di interesse:</p>
-        <input type="date" id="dataReport" style="margin-bottom:20px;">
+    <div class="modal-content" style="max-width: 450px;">
+        <h3 style="color:var(--primary); margin-bottom:15px;">Genera Report Periodico</h3>
+        <p>Scegli l'intervallo di date di interesse:</p>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; text-align: left;">
+            <div style="flex: 1;">
+                <label style="font-size: 0.85rem; font-weight: bold; color: var(--primary);">Da data:</label>
+                <input type="date" id="reportDataInizio" style="margin-top: 5px; width: 100%;">
+            </div>
+            <div style="flex: 1;">
+                <label style="font-size: 0.85rem; font-weight: bold; color: var(--primary);">A data:</label>
+                <input type="date" id="reportDataFine" style="margin-top: 5px; width: 100%;">
+            </div>
+        </div>
+
         <div style="display:flex; gap:10px;">
             <button onclick="document.getElementById('reportModal').style.display='none'" class="modal-btn" style="background:#e0e0e0; color:#333;">ANNULLA</button>
             <button onclick="generaReport()" class="modal-btn" style="background:var(--primary); color:var(--accent);">GENERA E STAMPA</button>
         </div>
     </div>
 </div>
-
 <div id="anagraficaModal">
     <div class="modal-content" style="max-width: 750px;">
         <h3 style="color:var(--primary); margin-bottom:15px;">📋 Anagrafica Clienti Separata</h3>
@@ -2085,33 +2095,79 @@ function ripristinaPacco(id) {
 }
 
 function generaReport() {
-    const dataScelta = document.getElementById('dataReport').value;
-    if(!dataScelta) return showAlert("Seleziona una data!");
-    const dObj = new Date(dataScelta).toLocaleDateString('it-IT');
+    const inizioInput = document.getElementById('reportDataInizio').value;
+    const fineInput = document.getElementById('reportDataFine').value;
     
-    const arrivati = pacchi.filter(p => p.dataTestoInserimento && p.dataTestoInserimento.startsWith(dObj)).sort((a, b) => a.dataInserimento - b.dataInserimento);
-    const ritirati = pacchi.filter(p => p.ritirato && p.dataRitiro && p.dataRitiro.startsWith(dObj)).sort((a, b) => {
+    if(!inizioInput || !fineInput) {
+        return showAlert("Seleziona sia la data di inizio che la data di fine!");
+    }
+    
+    // Imposta l'inizio del primo giorno (00:00:00) e la fine dell'ultimo giorno (23:59:59)
+    const dataInizio = new Date(inizioInput);
+    dataInizio.setHours(0,0,0,0);
+    
+    const dataFine = new Date(fineInput);
+    dataFine.setHours(23,59,59,999);
+
+    if(dataInizio > dataFine) {
+        return showAlert("La data d'inizio non può essere successiva alla data di fine!");
+    }
+    
+    // Testo per il titolo (Es: "10/07/2026" oppure "10/07/2026 - 17/07/2026")
+    const dInizioTesto = dataInizio.toLocaleDateString('it-IT');
+    const dFineTesto = dataFine.toLocaleDateString('it-IT');
+    const periodoTesto = dInizioTesto === dFineTesto ? dInizioTesto : `${dInizioTesto} - ${dFineTesto}`;
+    
+    // 1. Filtra i pacchi CARICATI nell'intervallo
+    const arrivati = pacchi.filter(p => {
+        if (!p.dataInserimento) return false;
+        const dataPacco = new Date(p.dataInserimento);
+        return dataPacco >= dataInizio && dataPacco <= dataFine;
+    }).sort((a, b) => a.dataInserimento - b.dataInserimento);
+
+    // 2. Filtra i pacchi USCITI nell'intervallo
+    const ritirati = pacchi.filter(p => {
+        if (!p.ritirato || !p.dataRitiro) return false;
+        
+        // Estrae la parte della data eliminando l'orario (es. da "10/07/2026, 11:30" prende "10/07/2026")
+        const dataPuraStr = p.dataRitiro.split(", ")[0].split(" ")[0];
+        const partiData = dataPuraStr.split("/");
+        if (partiData.length !== 3) return false;
+        
+        // Crea un oggetto data valido (Anno, Mese - 1, Giorno)
+        const dataRitiroOggetto = new Date(partiData[2], partiData[1] - 1, partiData[0]);
+        dataRitiroOggetto.setHours(12,0,0,0); // Ora neutrale per evitare problemi di fuso orario
+        
+        return dataRitiroOggetto >= dataInizio && dataRitiroOggetto <= dataFine;
+    }).sort((a, b) => {
         const oraA = a.dataRitiro.split(", ")[1] || "";
         const oraB = b.dataRitiro.split(", ")[1] || "";
         return oraA.localeCompare(oraB);
     });
 
     const win = window.open("", "Report", "width=900,height=800");
+    
     let htmlArrivati = arrivati.map(p => {
-        const ora = p.dataTestoInserimento.includes(" ") ? p.dataTestoInserimento.split(" ")[1] : "--:--";
-        return `<tr><td>${p.riconoscimento}</td><td>${p.cognome.toUpperCase()} ${p.nome.toUpperCase()}</td><td>${p.corriere}</td><td>${p.codiceTracciabilita.toUpperCase()}</td><td>${ora}</td></tr>`;
+        // Se visualizziamo più giorni, mostriamo sia la data che l'ora dell'arrivo
+        const infoDataOra = dInizioTesto === dFineTesto ? 
+            (p.dataTestoInserimento.includes(" ") ? p.dataTestoInserimento.split(" ")[1] : "--:--") : 
+            p.dataTestoInserimento;
+        return `<tr><td>${p.riconoscimento}</td><td>${p.cognome.toUpperCase()} ${p.nome.toUpperCase()}</td><td>${p.corriere}</td><td>${p.codiceTracciabilita.toUpperCase()}</td><td>${infoDataOra}</td></tr>`;
     }).join('');
 
     let htmlRitirati = ritirati.map(p => {
-        const ora = p.dataRitiro.includes(", ") ? p.dataRitiro.split(", ")[1] : (p.dataRitiro.includes(" ") ? p.dataRitiro.split(" ")[1] : "--:--");
+        // Se visualizziamo più giorni, manteniamo l'intera data di uscita, altrimenti solo l'ora
+        const infoDataOra = dInizioTesto === dFineTesto ? 
+            (p.dataRitiro.includes(", ") ? p.dataRitiro.split(", ")[1] : (p.dataRitiro.includes(" ") ? p.dataRitiro.split(" ")[1] : "--:--")) : 
+            p.dataRitiro;
         let extraContr = (p.isContrassegno && p.importoContrassegno) ? ` [CONTR. € ${p.importoContrassegno}]` : '';
-        return `<tr><td>${p.riconoscimento}</td><td>${p.ritiratoDa.toUpperCase()} ${p.isScaduto ? '(RESO)' : ''}${extraContr}</td><td>${p.corriere}</td><td>${p.codiceTracciabilita.toUpperCase()}</td><td>${ora}</td></tr>`;
+        return `<tr><td>${p.riconoscimento}</td><td>${p.ritiratoDa.toUpperCase()} ${p.isScaduto ? '(RESO)' : ''}${extraContr}</td><td>${p.corriere}</td><td>${p.codiceTracciabilita.toUpperCase()}</td><td>${infoDataOra}</td></tr>`;
     }).join('');
 
     win.document.write(`
         <html>
         <head>
-            <title>Report Giornaliero ${dObj}</title>
+            <title>Report Attività ${periodoTesto}</title>
             <style>
                 body { font-family: 'Segoe UI', sans-serif; padding: 30px; color: #333; }
                 h1 { color: #003399; text-align: center; margin-bottom: 30px; text-transform: uppercase; border-bottom: 4px solid #ffcc00; padding-bottom: 10px; }
@@ -2127,21 +2183,19 @@ function generaReport() {
             </style>
         </head>
         <body>
-            <h1>Report Giornaliero - ${dObj}</h1>
+            <h1>Report Attività: ${periodoTesto}</h1>
             <button class="btn-print" onclick="window.print()">🖨️ STAMPA REPORT</button>
-            <h2>1. PACCHI CARICATI <span class="count-badge">${arrivati.length} pacchi</span></h2>
+            <h2>1. PACCHI CARICATI NEL PERIODO <span class="count-badge">${arrivati.length} pacchi</span></h2>
             <table>
-                <thead><tr><th>ID</th><th>Intestatario</th><th>Corriere</th><th>Tracking</th><th>Ora Arrivo</th></tr></thead>
-                <tbody>${htmlArrivati || '<tr><td colspan="5" style="text-align:center">Nessun pacco caricato in questa data</td></tr>'}</tbody>
+                <thead><tr><th>ID</th><th>Intestatario</th><th>Corriere</th><th>Tracking</th><th>Data / Ora Arrivo</th></tr></thead>
+                <tbody>${htmlArrivati || '<tr><td colspan="5" style="text-align:center">Nessun pacco caricato in questo intervallo di date</td></tr>'}</tbody>
             </table>
-            <h2>2. PACCHI USCITI (RITIRATI / RESI) <span class="count-badge">${ritirati.length} pacchi</span></h2>
+            <h2>2. PACCHI USCITI (RITIRATI / RESI) NEL PERIODO <span class="count-badge">${ritirati.length} pacchi</span></h2>
             <table>
-                <thead><tr><th>ID</th><th>Ritirato Da / Stato</th><th>Corriere</th><th>Tracking</th><th>Ora Uscita</th></tr></thead>
-                <tbody>${htmlRitirati || '<tr><td colspan="5" style="text-align:center">Nessun pacco uscito in questa data</td></tr>'}</tbody>
+                <thead><tr><th>ID</th><th>Ritirato Da / Stato</th><th>Corriere</th><th>Tracking</th><th>Data / Ora Uscita</th></tr></thead>
+                <tbody>${htmlRitirati || '<tr><td colspan="5" style="text-align:center">Nessun pacco uscito in questo intervallo di date</td></tr>'}</tbody>
             </table>
-            <button id="scrollToTopBtn" class="scroll-top-btn" onclick="tornaSu()" title="Torna all'inizio">↑</button>
             <div class="footer">Centro Post@ Anaclerio - Sistema Gestionale Interno</div>
-            
         </body>
         </html>
     `);
