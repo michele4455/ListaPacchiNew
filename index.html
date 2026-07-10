@@ -3161,6 +3161,58 @@ function apriFinestraRitiroCumulativa() {
     // Inizializza o pulisce la firma nativa se necessario
     if (typeof resizeCanvas === "function") resizeCanvas();
 }
+// MODIFICA 1: Funzione attivata dal pulsante "Aggiungi al ritiro"
+function attivaRitiroMultiploModo() {
+    // Accumula i pacchi correntemente selezionati nel riepilogo
+    selectedPackages.forEach(pacco => {
+        if (!pacchiSelezionatiMultipli.some(p => p.id === pacco.id)) {
+            pacchiSelezionatiMultipli.push(pacco);
+        }
+    });
+
+    isRitiroMultiploMode = true;
+    
+    // Aggiorna il contatore grafico dell'emoji 📦 flottante
+    document.getElementById("contatorePacchiMultipli").innerText = pacchiSelezionatiMultipli.length;
+    document.getElementById("flottanteRitiroMultiplo").style.display = "flex";
+    
+    // Deseleziona le checkbox visibili a schermo per una nuova selezione pulita
+    const checkboxes = document.querySelectorAll('input[type="checkbox"].pacco-checkbox, .item-selezione input[type="checkbox"]');
+    checkboxes.forEach(cb => cb.checked = false);
+    selectedPackages = [];
+    
+    // Chiude la finestra modale per consentire la nuova selezione
+    closeModal();
+    
+    // Forza il rinfresco grafico del pulsante nativo a schermo
+    if (typeof aggiornaPulsanteRitiro === "function") {
+        aggiornaPulsanteRitiro();
+    }
+}
+
+// MODIFICA 2: Funzione attivata dal click sul riquadro flottante 📦
+function apriFinestraRitiroCumulativa() {
+    if (pacchiSelezionatiMultipli.length === 0) return;
+    
+    // Riversa tutti i pacchi memorizzati nell'array nativo
+    selectedPackages = [...pacchiSelezionatiMultipli];
+    
+    // Mostra la modale nativa dell'applicazione
+    document.getElementById("customModal").style.display = "flex";
+    
+    // Nasconde il pulsante per evitare di cliccarlo nella modale finale
+    document.getElementById("btnAggiungiAlRitiro").style.display = "none";
+    
+    // Genera l'elenco riepilogativo di tutti i pacchi selezionati con i dettagli
+    let htmlRiepilogo = "<b>Ritiro Multiplo Combinato:</b><br><br>";
+    pacchiSelezionatiMultipli.forEach((p, index) => {
+        htmlRiepilogo += `${index + 1}) 📦 <b>${p.cognome || ''} ${p.nome || ''}</b> - Scaffale: ${p.scaffale || '-'}<br>`;
+    });
+    document.getElementById("modalText").innerHTML = htmlRiepilogo;
+    
+    // Adatta il canvas della firma
+    if (typeof resizeCanvas === "function") resizeCanvas();
+}
 </script>
 </body>
 </html>
