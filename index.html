@@ -698,30 +698,6 @@
     display: block !important;
     font-family: monospace !important;
 }
-    /* Riquadro flottante in basso a sinistra per il ritiro multiplo */
-.flottante-ritiro-multiplo {
-    position: fixed;
-    bottom: 25px;
-    left: 25px;
-    background-color: var(--primary);
-    color: var(--accent);
-    border: 2px solid var(--accent);
-    padding: 10px 18px;
-    border-radius: 50px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    z-index: 1002;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s ease-in-out;
-}
-.flottante-ritiro-multiplo:hover {
-    background-color: var(--primary-dark);
-    transform: scale(1.05);
-}
         
     </style>
     <script>
@@ -951,9 +927,8 @@
         </div>
 
         <div style="display:flex; gap:10px; margin-top:20px;">
-    <button onclick="closeModal()" class="modal-btn" style="background:#e0e0e0; color:#333;">ANNULLA</button>
-    <button id="btnAggiungiAlRitiro" onclick="attivaRitiroMultiploModo()" class="modal-btn" style="background:var(--accent); color:var(--primary); display:none;">AGGIUNGI AL RITIRO</button>
-    <button id="modalConfirmBtn" class="modal-btn" style="background:var(--primary); color:var(--accent);">CONFERMA E SALVA</button>
+            <button onclick="closeModal()" class="modal-btn" style="background:#e0e0e0; color:#333;">ANNULLA</button>
+            <button id="modalConfirmBtn" class="modal-btn" style="background:var(--primary); color:var(--accent);">CONFERMA E SALVA</button>
         </div>
     </div>
 </div>
@@ -973,9 +948,6 @@
         </div>
 </div>
 <button id="scrollToTopBtn" class="scroll-top-btn" onclick="tornaSu()" title="Torna all'inizio">↑</button>
-<div id="flottanteRitiroMultiplo" class="flottante-ritiro-multiplo" style="display: none;" onclick="apriFinestraRitiroCumulativa()">
-    📦 <span id="contatorePacchiMultipli">0</span> Pacchi in ritiro
-</div>
     
 <div id="inventarioModal">
     <div class="modal-content" style="max-width: 600px;">
@@ -1103,9 +1075,6 @@ let tabAttiva = 'Tutti';
 let timeoutInattivita;
 let html5QrCode;
 let torciaAttiva = false;
-isRitiroMultiploMode = false;
-pacchiSelezionatiMultipli = [];
-document.getElementById("flottanteRitiroMultiplo").style.display = "none";
 
 // Sincronizzazione automatica dei Pacchi da Firebase
 function inizializzaSincronizzazioneFirebase() {
@@ -1963,7 +1932,6 @@ function handleRitira(id, forzaScaduto = false) {
         px.nome.toLowerCase() === p.nome.toLowerCase()
     );
     document.getElementById('customModal').style.display = 'flex';
-    document.getElementById("btnAggiungiAlRitiro").style.display = isRitiroMultiploMode ? "none" : "block";
     document.getElementById('tipoUscita').value = forzaScaduto ? 'scaduto' : 'cliente';
     
     let htmlLista = `<p style="margin-top:0;"><b>Seleziona i pacchi da ritirare:</b></p>`;
@@ -2028,10 +1996,6 @@ stessiPacchi.forEach(sp => {
         const ritiratoDa = document.getElementById('modalInput').value.toUpperCase();
         const pagato = document.getElementById('checkPagamento').checked;
         const dataScad = document.getElementById('dataScadenzaRimozione').value.split("-").reverse().join("/");
-
-        isRitiroMultiploMode = false;
-        pacchiSelezionatiMultipli = [];
-        document.getElementById("flottanteRitiroMultiplo").style.display = "none";
 
         if (tipo === 'cliente') {
             let totaleContrassegno = 0;
@@ -3109,109 +3073,6 @@ function stampaEtichettaPacco(tracking, idPacco, cognome, nome, scaffale, corrie
     `);
     
     finestraStampa.document.close();
-}
-function attivaRitiroMultiploModo() {
-    // 1. Accumula i pacchi attualmente spuntati nell'elenco cumulativo evitando duplicati
-    selectedPackages.forEach(pacco => {
-        if (!pacchiSelezionatiMultipli.some(p => p.id === pacco.id)) {
-            pacchiSelezionatiMultipli.push(pacco);
-        }
-    });
-
-    // 2. Attiva la modalità multipla globale
-    isRitiroMultiploMode = true;
-    
-    // 3. Aggiorna graficamente il contatore del riquadro flottante
-    document.getElementById("contatorePacchiMultipli").innerText = pacchiSelezionatiMultipli.length;
-    document.getElementById("flottanteRitiroMultiplo").style.display = "flex";
-    
-    // 4. Ripristina lo stato delle checkbox grafiche e svuota la selezione temporanea nativa
-    const checkboxes = document.querySelectorAll('.item-selezione input[type="checkbox"], input[type="checkbox"]');
-    checkboxes.forEach(cb => cb.checked = false);
-    selectedPackages = [];
-    
-    // 5. Chiude la modale corrente per permettere di continuare la scelta nella lista
-    closeModal();
-    
-    // 6. Aggiorna graficamente il pulsante di ritiro principale a schermo (se presente nel tuo layout)
-    if (typeof aggiornaPulsanteRitiro === "function") {
-        aggiornaPulsanteRitiro();
-    }
-}
-function apriFinestraRitiroCumulativa() {
-    if (pacchiSelezionatiMultipli.length === 0) return;
-    
-    // Passa tutti i pacchi accumulati all'array nativo in modo che "Conferma e Salva" agisca su tutti
-    selectedPackages = [...pacchiSelezionatiMultipli];
-    
-    // Riutilizza la modale nativa dell'applicazione
-    document.getElementById("customModal").style.display = "flex";
-    
-    // In questa finestra nascondiamo il pulsante di accumulo
-    document.getElementById("btnAggiungiAlRitiro").style.display = "none";
-    
-    // Genera l'elenco testuale di riepilogo da mostrare dentro la modale
-    let htmlRiepilogo = "<b>Ritiro Multiplo Combinato:</b><br><br>";
-    pacchiSelezionatiMultipli.forEach((p, index) => {
-        htmlRiepilogo += `${index + 1}) 📦 <b>${p.cognome || ''} ${p.nome || ''}</b> - Scaffale: ${p.scaffale || '-'}<br>`;
-    });
-    
-    document.getElementById("modalText").innerHTML = htmlRiepilogo;
-    
-    // Inizializza o pulisce la firma nativa se necessario
-    if (typeof resizeCanvas === "function") resizeCanvas();
-}
-// MODIFICA 1: Funzione attivata dal pulsante "Aggiungi al ritiro"
-function attivaRitiroMultiploModo() {
-    // Accumula i pacchi correntemente selezionati nel riepilogo
-    selectedPackages.forEach(pacco => {
-        if (!pacchiSelezionatiMultipli.some(p => p.id === pacco.id)) {
-            pacchiSelezionatiMultipli.push(pacco);
-        }
-    });
-
-    isRitiroMultiploMode = true;
-    
-    // Aggiorna il contatore grafico dell'emoji 📦 flottante
-    document.getElementById("contatorePacchiMultipli").innerText = pacchiSelezionatiMultipli.length;
-    document.getElementById("flottanteRitiroMultiplo").style.display = "flex";
-    
-    // Deseleziona le checkbox visibili a schermo per una nuova selezione pulita
-    const checkboxes = document.querySelectorAll('input[type="checkbox"].pacco-checkbox, .item-selezione input[type="checkbox"]');
-    checkboxes.forEach(cb => cb.checked = false);
-    selectedPackages = [];
-    
-    // Chiude la finestra modale per consentire la nuova selezione
-    closeModal();
-    
-    // Forza il rinfresco grafico del pulsante nativo a schermo
-    if (typeof aggiornaPulsanteRitiro === "function") {
-        aggiornaPulsanteRitiro();
-    }
-}
-
-// MODIFICA 2: Funzione attivata dal click sul riquadro flottante 📦
-function apriFinestraRitiroCumulativa() {
-    if (pacchiSelezionatiMultipli.length === 0) return;
-    
-    // Riversa tutti i pacchi memorizzati nell'array nativo
-    selectedPackages = [...pacchiSelezionatiMultipli];
-    
-    // Mostra la modale nativa dell'applicazione
-    document.getElementById("customModal").style.display = "flex";
-    
-    // Nasconde il pulsante per evitare di cliccarlo nella modale finale
-    document.getElementById("btnAggiungiAlRitiro").style.display = "none";
-    
-    // Genera l'elenco riepilogativo di tutti i pacchi selezionati con i dettagli
-    let htmlRiepilogo = "<b>Ritiro Multiplo Combinato:</b><br><br>";
-    pacchiSelezionatiMultipli.forEach((p, index) => {
-        htmlRiepilogo += `${index + 1}) 📦 <b>${p.cognome || ''} ${p.nome || ''}</b> - Scaffale: ${p.scaffale || '-'}<br>`;
-    });
-    document.getElementById("modalText").innerHTML = htmlRiepilogo;
-    
-    // Adatta il canvas della firma
-    if (typeof resizeCanvas === "function") resizeCanvas();
 }
 </script>
 </body>
