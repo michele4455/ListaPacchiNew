@@ -635,6 +635,40 @@
             text-transform: uppercase;
         }
 
+        /* Stile del Badge Carrello in basso a sinistra */
+.cart-badge {
+    position: fixed;
+    bottom: 25px;
+    left: 25px;
+    background-color: var(--primary);
+    color: var(--accent);
+    border: 2px solid var(--accent);
+    padding: 12px 18px;
+    border-radius: 50px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    display: none; /* Nascondi di default */
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    z-index: 999;
+    transition: all 0.2s ease-in-out;
+}
+.cart-badge:hover {
+    background-color: var(--primary-dark);
+    transform: scale(1.05);
+}
+.btn-azione-carrello {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 5px;
+    margin-left: auto;
+}
+
         /* Pulsante Flottante Torna Su */
         .scroll-top-btn {
             position: fixed;
@@ -947,6 +981,7 @@
         </div>
         </div>
 </div>
+<button id="cartBadgeBtn" class="cart-badge" onclick="handleRitira(null, false, true)" title="Mostra pacchi selezionati">📦 <span id="cartCount">0</span></button>
 <button id="scrollToTopBtn" class="scroll-top-btn" onclick="tornaSu()" title="Torna all'inizio">↑</button>
     
 <div id="inventarioModal">
@@ -1075,6 +1110,31 @@ let tabAttiva = 'Tutti';
 let timeoutInattivita;
 let html5QrCode;
 let torciaAttiva = false;
+
+let listaTemporaneaRitiro = [];
+
+function gestisciCarrelloPacco(id, azione) {
+    if (azione === 'aggiungi') {
+        if (!listaTemporaneaRitiro.includes(id)) {
+            listaTemporaneaRitiro.push(id);
+        }
+    } else if (azione === 'rimuovi') {
+        listaTemporaneaRitiro = listaTemporaneaRitiro.filter(x => x !== id);
+    }
+    
+    // Aggiorna il contatore grafico del badge
+    const btn = document.getElementById("cartBadgeBtn");
+    const count = document.getElementById("cartCount");
+    if (btn && count) {
+        count.innerText = listaTemporaneaRitiro.length;
+        btn.style.display = listaTemporaneaRitiro.length > 0 ? "flex" : "none";
+    }
+
+    // Se siamo nella modalità carrello aperta, rinfresca dinamicamente il contenuto del modal
+    if (document.getElementById('customModal').style.display === 'flex' && !id == null) {
+        handleRitira(null, false, true);
+    }
+}
 
 // Sincronizzazione automatica dei Pacchi da Firebase
 function inizializzaSincronizzazioneFirebase() {
@@ -1924,32 +1984,54 @@ function toggleInputNote(checked) {
 
 function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
 
-function handleRitira(id, forzaScaduto = false) {
-    const p = pacchi.find(x => x.id === id);
-    const stessiPacchi = pacchi.filter(px => 
-        !px.ritirato && 
-        px.cognome.toLowerCase() === p.cognome.toLowerCase() &&
-        px.nome.toLowerCase() === p.nome.toLowerCase()
-    );
+function handleRitira(id, forzaScaduto = false, usaCarrello = false) {
+    let stessiPacchi;
+    
+    if (usaCarrello) {
+        stessiPacchi = pacchi.filter(px => !px.ritirato && listaTemporaneaRitiro.includes(px.id));
+        if (stessiPacchi.length === 0) {
+            closeModal();
+            return;
+        }
+    } else {
+        const p = pacchi.find(x => x.id === id);
+        stessiPacchi = pacchi.filter(px => 
+            !px.ritirato && 
+            px.cognome.toLowerCase() === p.cognome.toLowerCase() &&
+            px.nome.toLowerCase() === p.nome.toLowerCase()
+        );
+    }
+
     document.getElementById('customModal').style.display = 'flex';
     document.getElementById('tipoUscita').value = forzaScaduto ? 'scaduto' : 'cliente';
     
     let htmlLista = `<p style="margin-top:0;"><b>Seleziona i pacchi da ritirare:</b></p>`;
-stessiPacchi.forEach(sp => {
-    const isTarget = sp.id === id;
-    let infoContr = sp.isContrassegno ? `<b style="color:#ff4757;"> [CONTRASSEGNO € ${sp.importoContrassegno}]</b>` : '';
-    let infoNote = (sp.noteAggiuntive && sp.noteAggiuntive.trim() !== '') ? ` <span style="color:var(--primary); font-weight:bold;">[ℹ️ ${sp.noteAggiuntive}]</span>` : '';
-    htmlLista += `
-        <label class="item-selezione">
-            <input type="checkbox" class="chk-multi-ritiro" data-id="${sp.id}" data-corriere="${sp.corriere}" ${isTarget ? 'checked' : ''}>
-            <div>
-                <strong>#${sp.riconoscimento}</strong> 
-                - ${sp.corriere}${infoContr}${infoNote}<br>
-                <small>TRK: <span class="highlight-trk" onclick="event.preventDefault(); event.stopPropagation(); copiaTracking('${sp.codiceTracciabilita}');">${sp.codiceTracciabilita}</span> | Arrivato: ${sp.dataTestoInserimento || '-'}</small>
-            </div>
-        </label>
-    `;
-});
+    stessiPacchi.forEach(sp => {
+        const isTarget = usaCarrello ? true : (sp.id === id);
+        let infoContr = sp.isContrassegno ? `<b style="color:#ff4757;"> [CONTRASSEGNO € ${sp.importoContrassegno}]</b>` : '';
+        let infoNote = (sp.noteAggiuntive && sp.noteAggiuntive.trim() !== '') ? ` <span style="color:var(--primary); font-weight:bold;">[ℹ️ ${sp.noteAggiuntive}]</span>` : '';
+        
+        // Determina se mostrare il pulsante aggiungi (+) o rimuovi (❌)
+        let pulsanteCarrello = '';
+        if (usaCarrello) {
+            pulsanteCarrello = `<button class="btn-azione-carrello" onclick="event.preventDefault(); event.stopPropagation(); gestisciCarrelloPacco(${sp.id}, 'rimuovi'); handleRitira(null, false, true);" title="Rimuovi dalla lista">❌</button>`;
+        } else {
+            const inLista = listaTemporaneaRitiro.includes(sp.id);
+            pulsanteCarrello = `<button class="btn-azione-carrello" style="color: ${inLista ? '#00b894' : 'var(--primary)'}" onclick="event.preventDefault(); event.stopPropagation(); gestisciCarrelloPacco(${sp.id}, 'aggiungi'); this.style.color='#00b894'; this.innerText='✓';" title="Aggiungi alla lista">${inLista ? '✓' : '➕'}</button>`;
+        }
+
+        htmlLista += `
+            <label class="item-selezione" style="display:flex; align-items:center; width:100%; box-sizing:border-box;">
+                <input type="checkbox" class="chk-multi-ritiro" data-id="${sp.id}" data-corriere="${sp.corriere}" ${isTarget ? 'checked' : ''}>
+                <div style="flex-grow:1; margin-right:10px;">
+                    <strong>#${sp.riconoscimento}</strong> 
+                    - ${sp.cognome.toUpperCase()} ${sp.nome.toUpperCase()} (${sp.corriere})${infoContr}${infoNote}<br>
+                    <small>TRK: <span class="highlight-trk" onclick="event.preventDefault(); event.stopPropagation(); copiaTracking('${sp.codiceTracciabilita}');">${sp.codiceTracciabilita}</span> | Arrivato: ${sp.dataTestoInserimento || '-'}</small>
+                </div>
+                ${pulsanteCarrello}
+            </label>
+        `;
+    });
     document.getElementById('modalText').innerHTML = htmlLista;
 
     const updatePudoBox = () => {
@@ -1982,7 +2064,10 @@ stessiPacchi.forEach(sp => {
     toggleCampiUscita();
     updatePudoBox();
     
-    document.getElementById('modalInput').value = p.cognome.toUpperCase();
+    // Imposta l'intestatario basandosi sul primo pacco trovato
+    if (stessiPacchi.length > 0) {
+        document.getElementById('modalInput').value = stessiPacchi[0].cognome.toUpperCase();
+    }
     document.getElementById('dataScadenzaRimozione').valueAsDate = new Date();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -2076,7 +2161,19 @@ function eseguiRitiroPacchi(selectedIds, tipo, ritiratoDa, pagato, dataScad, fir
         px.firma = (tipo === 'cliente') ? firmaData : null;
         if(px.corriere === 'Corrieri No Pudo') px.pudoStatus = pagato ? 'pagato' : 'non_pagato';
         if(selectedIds.length > 1) px.sessioneRitiro = sessioneId;
+        
+        // Rimuove il pacco appena ritirato dalla lista temporanea se presente
+        listaTemporaneaRitiro = listaTemporaneaRitiro.filter(x => x !== sid);
     });
+    
+    // Reset grafico del contatore badge
+    const btn = document.getElementById("cartBadgeBtn");
+    const count = document.getElementById("cartCount");
+    if (btn && count) {
+        count.innerText = listaTemporaneaRitiro.length;
+        btn.style.display = listaTemporaneaRitiro.length > 0 ? "flex" : "none";
+    }
+
     salva();
     closeModal();
     showFeedback(tipo);
