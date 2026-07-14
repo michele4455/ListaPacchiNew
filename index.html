@@ -1114,6 +1114,8 @@ let torciaAttiva = false;
 let listaTemporaneaRitiro = [];
 
 function gestisciCarrelloPacco(id, azione) {
+    let paccoCorrente = pacchi.find(x => x.id === id);
+    
     if (azione === 'aggiungi') {
         if (!listaTemporaneaRitiro.includes(id)) {
             listaTemporaneaRitiro.push(id);
@@ -1130,12 +1132,33 @@ function gestisciCarrelloPacco(id, azione) {
         btn.style.display = listaTemporaneaRitiro.length > 0 ? "flex" : "none";
     }
 
-    // Se siamo nella modalità carrello aperta, rinfresca dinamicamente il contenuto del modal
-    if (document.getElementById('customModal').style.display === 'flex' && !id == null) {
-        handleRitira(null, false, true);
+    // --- LOGICA DI CHIUSURA AUTOMATICA ---
+    if (azione === 'aggiungi' && paccoCorrente) {
+        // Trova tutti i pacchi non ancora ritirati dello stesso cliente
+        let tuttiPacchiCliente = pacchi.filter(px => 
+            !px.ritirato && 
+            px.cognome.toLowerCase() === paccoCorrente.cognome.toLowerCase() &&
+            px.nome.toLowerCase() === paccoCorrente.nome.toLowerCase()
+        );
+
+        // Controlla se tutti i pacchi di questo cliente sono stati inseriti nel carrello
+        let tuttiSelezionati = tuttiPacchiCliente.every(px => listaTemporaneaRitiro.includes(px.id));
+
+        if (tuttiSelezionati) {
+            closeModal(); // Chiude il modal e torna alla lista principale
+            return; // Interrompe l'esecuzione così non ridisegna il modal inutilmente
+        }
+    }
+    // -------------------------------------
+
+    // Se siamo nella modalità carrello aperta (e non abbiamo chiuso sopra), rinfresca il contenuto del modal
+    if (document.getElementById('customModal').style.display === 'flex' && id !== null) {
+        // Se stavamo guardando il carrello globale (usaCarrello=true) passiamo true, altrimenti false
+        const isCarrelloAperto = document.getElementById('cartBadgeBtn').getAttribute('data-aperto') === 'true';
+        handleRitira(id, false, isCarrelloAperto);
     }
 }
-
+    
 // Sincronizzazione automatica dei Pacchi da Firebase
 function inizializzaSincronizzazioneFirebase() {
     db.ref('pacchi').on('value', (snapshot) => {
@@ -1982,11 +2005,11 @@ function toggleInputNote(checked) {
     document.getElementById('subBoxNote').style.display = checked ? 'block' : 'none';
 }
 
-function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
-
 function handleRitira(id, forzaScaduto = false, usaCarrello = false) {
+    // Registra se il modal è stato aperto dal carrello in basso a sinistra
+    document.getElementById('cartBadgeBtn').setAttribute('data-aperto', usaCarrello ? 'true' : 'false');
+
     let stessiPacchi;
-    
     if (usaCarrello) {
         stessiPacchi = pacchi.filter(px => !px.ritirato && listaTemporaneaRitiro.includes(px.id));
         if (stessiPacchi.length === 0) {
