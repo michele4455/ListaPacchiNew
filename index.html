@@ -2431,7 +2431,10 @@ function toggleCampiUscita() {
     }
 }
 
-function closeModal() { document.getElementById('customModal').style.display = 'none'; }
+function closeModal() {
+    document.getElementById('customModal').style.display = 'none';
+    document.getElementById('cartBadgeBtn').setAttribute('data-aperto', 'false'); // <-- Aggiungi questa riga
+}
 function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 function toggleSezioneRitirati() { const s = document.getElementById('sezioneRitirati'); s.style.display = s.style.display === 'none' ? 'block' : 'none'; }
 function setTab(t){ tabAttiva = t; aggiornaVista(); }
