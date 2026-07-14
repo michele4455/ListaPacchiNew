@@ -2315,11 +2315,156 @@ function closeModal() { document.getElementById('customModal').style.display = '
 function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 function toggleSezioneRitirati() { const s = document.getElementById('sezioneRitirati'); s.style.display = s.style.display === 'none' ? 'block' : 'none'; }
 function setTab(t){ tabAttiva = t; aggiornaVista(); }
-function cancellaRitirati(){
-    if(confirm(`Svuotare archivio di ${tabAttiva}?`)) {
-        pacchi = (tabAttiva === 'Tutti') ? pacchi.filter(p => !p.ritirato) : pacchi.filter(p => !(p.ritirato && p.corriere === tabAttiva));
-        salva();
+// Gestione Cestino / Backup temporaneo dei pacchi eliminati
+function inizializzaSincronizzazioneCestino() {
+    db.ref('cestinoPacchi').on('value', (snapshot) => {
+        const pacchiCestino = snapshot.val() || {};
+        renderCestinoVista(pacchiCestino);
+    });
+}
+
+function renderCestinoVista(pacchiCestino) {
+    let sezioneCestino = document.getElementById('sezioneCestinoRecupero');
+    if (!sezioneCestino) {
+        // Crea dinamicamente il contenitore grafico del Cestino se non esiste
+        const divCestino = document.createElement('div');
+        divCestino.id = 'sezioneCestinoRecupero';
+        divCestino.style = "margin-top:20px; background:#f1f3f5; padding:15px; border-radius:12px; border: 2px dashed #666;";
+        divCestino.innerHTML = `
+            <h4 style="margin-top:0; color:#495057;">🗑️ CESTINO / PACCHI ELIMINATI RECENTEMENTE</h4>
+            <div id="cestinoItemsContainer" style="max-height:200px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
+            <button onclick="svuotaCestinoDefinitivo()" style="background:#343a40; color:white; font-size:9px; margin-top:10px; padding:6px 12px; border:none; border-radius:4px; cursor:pointer;">SVUOTA CESTINO DEFINITIVAMENTE</button>
+        `;
+        const sezioneRitiratiEl = document.getElementById('sezioneRitirati');
+        if (sezioneRitiratiEl) sezioneRitiratiEl.appendChild(divCestino);
     }
+    
+    const containerItems = document.getElementById('cestinoItemsContainer');
+    if (!containerItems) return;
+    
+    const keys = Object.keys(pacchiCestino);
+    if (keys.length === 0) {
+        containerItems.innerHTML = '<p style="font-size:12px; color:#666; margin:0;">Il cestino è vuoto.</p>';
+        return;
+    }
+    
+    containerItems.innerHTML = keys.map(key => {
+        const p = pacchiCestino[key];
+        return `
+            <div style="background:white; padding:8px 12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 1px 3px rgba(0,0,0,0.05); font-size:12px;">
+                <div><strong>#${p.riconoscimento}</strong> - ${p.cognome} (${p.corriere}) <span style="color:#999; font-size:10px;">[Uscita: ${p.dataRitiro}]</span></div>
+                <button onclick="ripristinaDaCestino('${key}')" style="background:var(--success); color:white; border:none; padding:4px 8px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:10px;">RIPRISTINA</button>
+            </div>
+        `;
+    }).join('');
+}
+
+function ripristinaDaCestino(key) {
+    db.ref('cestinoPacchi/' + key).once('value', (snapshot) => {
+        const paccoRipristinato = snapshot.val();
+        if (paccoRipristinato) {
+            // Reinserisce il pacco nell'array locale e aggiorna Firebase
+            pacchi.push(paccoRipristinato);
+            salva();
+            // Lo rimuove dal cestino
+            db.ref('cestinoPacchi/' + key).remove();
+            showAlert("Pacco ripristinato nell'archivio storici con successo!", "Ripristino");
+        }
+    });
+}
+
+function svuotaCestinoDefinitivo() {
+    if (confirm("Sei sicuro di voler svuotare il cestino? I pacchi saranno eliminati definitivamente senza possibilità di recupero.")) {
+        db.ref('cestinoPacchi').remove();
+        showAlert("Cestino svuotato definitivamente.", "Eliminazione");
+    }
+}
+
+// Chiamata di inizializzazione da agganciare all'autenticazione
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        // Attiva la sincronizzazione in tempo reale del cestino
+        inizializzaSincronizzazioneCestino();
+    }
+});
+function cancellaRitirati() {
+    // 1. Verifica la scheda corriere attiva per eseguire la rimozione mirata
+    if (tabAttiva === 'Tutti') {
+        return showAlert("Seleziona prima un corriere specifico dalle schede (es. GLS, BRT, Amazon) per poter svuotare il suo archivio.");
+    }
+
+    // 2. Chiedi all'utente quale periodo desidera rimuovere
+    const sceltaPeriodo = prompt(
+        "Scegli il periodo di archiviazione da ELIMINARE per il corriere [" + tabAttiva + "]:\n\n" +
+        "1 - Mantieni gli ultimi 30 giorni (Elimina tutto ciò che è precedente)\n" +
+        "2 - Mantieni gli ultimi 2 mesi (Elimina tutto ciò che è precedente)\n" +
+        "3 - Scegli una data personalizzata (Elimina tutti i pacchi precedenti alla data indicata)\n\n" +
+        "Digita il numero corrispondente (1, 2 o 3):"
+    );
+
+    if (!sceltaPeriodo) return; // Annullato dall'utente
+
+    let dataLimite = new Date();
+
+    if (sceltaPeriodo === '1') {
+        dataLimite.setDate(dataLimite.getDate() - 30);
+    } else if (sceltaPeriodo === '2') {
+        dataLimite.setMonth(dataLimite.getMonth() - 2);
+    } else if (sceltaPeriodo === '3') {
+        const dataInput = prompt("Inserisci la data limite nel formato ANNO-MESE-GIORNO (Es: 2026-05-15).\nTutti i pacchi usciti PRIMA di questa data verranno eliminati:");
+        if (!dataInput) return;
+        dataLimite = new Date(dataInput);
+        if (isNaN(dataLimite.getTime())) {
+            return showAlert("Formato data non valido. Operazione annullata.");
+        }
+    } else {
+        return showAlert("Opzione non valida. Operazione annullata.");
+    }
+
+    // Imposta il marker orario standard a mezzanotte del giorno stabilito
+    dataLimite.setHours(0, 0, 0, 0);
+    const timestampLimite = dataLimite.getTime();
+
+    // 3. Isola i pacchi eleggibili per la rimozione basandosi sui tuoi parametri temporali
+    // Usiamo come riferimento la data di inserimento iniziale nel database o la data del ritiro stesso.
+    const pacchiDaEliminare = pacchi.filter(p => {
+        if (!p.ritirato || p.corriere !== tabAttiva) return false;
+        
+        // Estrazione e conversione della stringa dataRitiro italiana (GG/MM/AAAA) in timestamp
+        try {
+            const dataPuraStr = p.dataRitiro.split(", ")[0].split(" ")[0];
+            const partiData = dataPuraStr.split("/");
+            const dataRitiroOggetto = new Date(partiData[2], partiData[1] - 1, partiData[0]);
+            return dataRitiroOggetto.getTime() < timestampLimite;
+        } catch(e) {
+            // Configurazione di ripiego sul timestamp nativo di immissione se la stringa fallisce
+            return p.dataInserimento < timestampLimite;
+        }
+    });
+
+    if (pacchiDaEliminare.length === 0) {
+        return showAlert("Nessun pacco ritirato/scaduto per il corriere " + tabAttiva + " corrisponde ai criteri temporali selezionati.");
+    }
+
+    const conferma = confirm("Trovati " + pacchiDaEliminare.length + " pacchi da eliminare.\n\nVerranno spostati nel Cestino di Backup.\nVuoi procedere?");
+    if (!conferma) return;
+
+    // 4. Esecuzione Backup nel Cestino & Pulizia dall'array globale del gestionale
+    pacchiDaEliminare.forEach(p => {
+        // Sposta una copia dell'oggetto su Firebase nel Cestino Recupero
+        db.ref('cestinoPacchi').push(p);
+        
+        // Rimuove il pacco dall'array in memoria
+        const index = pacchi.findIndex(x => x.id === p.id);
+        if (index !== -1) {
+            pacchi.splice(index, 1);
+        }
+    });
+
+    // 5. Sincronizzazione finale delle modifiche su Firebase e aggiornamento delle schede
+    salva();
+    aggiornaVista();
+    showAlert("Archivio filtrato ripulito! " + pacchiDaEliminare.length + " pacchi archiviati nel Cestino.", "Successo");
 }
 
 function riproduciSuonoScanner() {
