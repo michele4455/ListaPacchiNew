@@ -732,6 +732,88 @@
     display: block !important;
     font-family: monospace !important;
 }
+
+    /* --- SISTEMA MESSAGGI AUTOMATICI --- */
+.alert-bell-btn {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1002;
+    background-color: var(--accent);
+    color: var(--primary);
+    border: 2px solid var(--primary);
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    font-size: 1.3rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    transition: transform 0.2s;
+}
+.alert-bell-btn:hover {
+    transform: scale(1.1);
+}
+.bell-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--warning);
+    color: white;
+    font-size: 0.7rem;
+    padding: 3px 7px;
+    border-radius: 50%;
+    font-weight: bold;
+}
+.auto-alert-popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 15px 50px rgba(0,0,0,0.4);
+    z-index: 4000;
+    width: 90%;
+    max-width: 450px;
+    text-align: center;
+    border-top: 10px solid var(--primary);
+    transition: all 0.3s ease-in-out;
+}
+.auto-alert-popup.show {
+    display: block;
+    transform: translate(-50%, -50%) scale(1);
+}
+.auto-alert-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #999;
+    cursor: pointer;
+    border: none;
+    background: none;
+}
+.auto-alert-close:hover {
+    color: var(--warning);
+}
+.storico-alert-item {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    font-size: 0.9rem;
+}
+.storico-alert-time {
+    font-size: 0.75rem;
+    color: #888;
+    display: block;
+    margin-top: 4px;
+}
         
     </style>
     <script>
@@ -880,7 +962,47 @@
                     </table>
                 </div>
             </div>
-
+            <div class="admin-section">
+    <h4>Messaggi Automatici</h4>
+    <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
+        <textarea id="msgAutoTesto" placeholder="Testo del messaggio..." rows="3" style="width:100%; padding: 10px; border-radius: 8px; border: 2px solid var(--border-color); box-sizing: border-box;"></textarea>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+                <label style="font-size:0.75rem; font-weight:bold; color:var(--primary);">Programmazione:</label>
+                <select id="msgAutoTipo" onchange="toggleProgrammazioneMsg(this.value)">
+                    <option value="subito">Dopo un ritardo (secondi)</option>
+                    <option value="orario">A un'ora precisa (HH:MM)</option>
+                </select>
+            </div>
+            <div>
+                <label id="msgAutoValoreLabel" style="font-size:0.75rem; font-weight:bold; color:var(--primary);">Ritardo (secondi):</label>
+                <input type="number" id="msgAutoValore" placeholder="Es. 10" min="0">
+                <input type="time" id="msgAutoOrario" style="display: none;">
+            </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+                <label style="font-size:0.75rem; font-weight:bold; color:var(--primary);">Ripetizione:</label>
+                <select id="msgAutoFrequenza">
+                    <option value="una">Una sola volta</option>
+                    <option value="60">Ogni ora</option>
+                    <option value="1440">Ogni giorno</option>
+                </select>
+            </div>
+            <div style="display:flex; align-items:flex-end;">
+                <button onclick="salvaNuovoMessaggioAdmin()" class="action-btn-green" style="width:100%; height:46px; background:#6c5ce7; padding:0;">+ ATTIVA AVVISO</button>
+            </div>
+        </div>
+    </div>
+    <div style="max-height: 150px; overflow-y: auto;">
+        <table class="admin-table">
+            <thead>
+                <tr><th>Messaggio</th><th>Programmazione / Ripetizione</th><th style="width:80px; text-align:center;">Azioni</th></tr>
+            </thead>
+            <tbody id="tabellaMessaggiAdmin"></tbody>
+        </table>
+    </div>
+</div>
             <div class="admin-section">
                 <h4>Gestione Scaffali</h4>
                 <div style="display:flex; gap:10px; margin-bottom:10px;">
@@ -1110,7 +1232,10 @@ let tabAttiva = 'Tutti';
 let timeoutInattivita;
 let html5QrCode;
 let torciaAttiva = false;
-
+let messaggiAuto = [];
+let storicoAlert = [];
+let timerAttivi = [];
+let popupTimer = null;
 let listaTemporaneaRitiro = [];
 
 function gestisciCarrelloPacco(id, azione) {
@@ -1646,6 +1771,9 @@ firebase.auth().onAuthStateChanged((user) => {
         // Avvia la sincronizzazione unificata dell'anagrafica e dei pacchi storici
         inizializzaSincronizzazioneAnagrafica();
         
+        // Avvia l'inizializzazione dei messaggi automatici e del loro storico
+        inizializzaMessaggiAutomatici();
+        
         resetInattivita();
         
         // Sincronizza i pacchi in tempo reale per la vista principale delle giacenze
@@ -1661,6 +1789,12 @@ firebase.auth().onAuthStateChanged((user) => {
         document.getElementById('mainPage').style.display = 'none';
         document.querySelector('.container').style.display = 'none';
         document.body.style.overflow = 'hidden';
+        
+        // Nasconde il pulsante della campanella in caso di logout
+        if (document.getElementById('bellBtn')) {
+            document.getElementById('bellBtn').style.display = 'none';
+        }
+        
         if (typeof html5QrcodeScanner !== 'undefined' && html5QrcodeScanner) {
             html5QrcodeScanner.clear();
         }
@@ -3342,6 +3476,263 @@ function stampaEtichettaPacco(tracking, idPacco, cognome, nome, scaffale, corrie
     
     finestraStampa.document.close();
 }
+function inizializzaMessaggiAutomatici() {
+    // 1. Legge e sincronizza in tempo reale lo storico degli alert (rimangono salvati)
+    db.ref('storicoAlert').on('value', (snapshot) => {
+        const dati = snapshot.val() || {};
+        const oraLimite = Date.now() - (2 * 60 * 60 * 1000); // Filtro automatico 2 ore
+        storicoAlert = [];
+        let daPulire = false;
+
+        Object.keys(dati).forEach(key => {
+            if (dati[key].timestamp < oraLimite) {
+                daPulire = true; 
+            } else {
+                storicoAlert.push({ id: key, ...dati[key] });
+            }
+        });
+
+        // Esegue la pulizia dei messaggi più vecchi di 2 ore su Firebase in background
+        if (daPulire) {
+            Object.keys(dati).forEach(key => {
+                if (dati[key].timestamp < oraLimite) {
+                    db.ref('storicoAlert/' + key).remove();
+                }
+            });
+        }
+
+        // Ordina lo storico dal più recente
+        storicoAlert.sort((a, b) => b.timestamp - a.timestamp);
+        aggiornaCampanellaGrafica();
+    });
+
+    // 2. Legge e sincronizza in tempo reale le pianificazioni degli avvisi (rimangono salvati)
+    db.ref('messaggiAuto').on('value', (snapshot) => {
+        const dati = snapshot.val() || {};
+        // Popola l'array mantenendo la struttura e inserendo l'ID di Firebase
+        messaggiAuto = Object.keys(dati).map(key => ({ id: key, ...dati[key] }));
+        
+        aggiornaTabellaMessaggiAdmin();
+        pianificaTuttiMessaggi();
+    });
+}
+
+function toggleProgrammazioneMsg(tipo) {
+    const valoreInput = document.getElementById('msgAutoValore');
+    const orarioInput = document.getElementById('msgAutoOrario');
+    const label = document.getElementById('msgAutoValoreLabel');
+
+    if (tipo === 'subito') {
+        valoreInput.style.display = 'block';
+        orarioInput.style.display = 'none';
+        label.innerText = 'Ritardo (secondi):';
+    } else {
+        valoreInput.style.display = 'none';
+        orarioInput.style.display = 'block';
+        label.innerText = 'Ora esatta:';
+    }
+}
+
+// Salva i dati direttamente su Firebase (rimangono memorizzati alla chiusura della pagina)
+function salvaNuovoMessaggioAdmin() {
+    const testo = document.getElementById('msgAutoTesto').value.trim();
+    const tipo = document.getElementById('msgAutoTipo').value;
+    const frequenza = document.getElementById('msgAutoFrequenza').value;
+    let valore = "";
+
+    if (!testo) return showAlert("Inserisci il testo del messaggio!");
+
+    if (tipo === 'subito') {
+        valore = parseInt(document.getElementById('msgAutoValore').value) || 0;
+    } else {
+        valore = document.getElementById('msgAutoOrario').value;
+        if (!valore) return showAlert("Imposta un orario valido!");
+    }
+
+    const nuovoMsg = {
+        testo: testo,
+        tipo: tipo,
+        valore: valore,
+        frequenza: frequenza,
+        dataCreazione: Date.now()
+    };
+
+    // Scrittura persistente sul database Firebase
+    db.ref('messaggiAuto').push(nuovoMsg, (err) => {
+        if (!err) {
+            document.getElementById('msgAutoTesto').value = "";
+            document.getElementById('msgAutoValore').value = "";
+            document.getElementById('msgAutoOrario').value = "";
+            showAlert("Avviso salvato e pianificato correttamente!", "Successo");
+        }
+    });
+}
+
+// Rimuove la pianificazione persistente da Firebase
+function eliminaMessaggioAdmin(id) {
+    if (confirm("Rimuovere definitivamente questo avviso pianificato?")) {
+        db.ref('messaggiAuto/' + id).remove();
+    }
+}
+
+function aggiornaTabellaMessaggiAdmin() {
+    const tbody = document.getElementById('tabellaMessaggiAdmin');
+    if (!tbody) return;
+
+    if (messaggiAuto.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Nessun avviso configurato</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = messaggiAuto.map(m => {
+        const infoProg = m.tipo === 'subito' ? `Ritardo: ${m.valore}s` : `Alle: ${m.valore}`;
+        const infoFreq = m.frequenza === 'una' ? 'Una volta' : (m.frequenza === '60' ? 'Ogni ora' : 'Ogni giorno');
+        return `
+            <tr>
+                <td style="font-weight:bold;">${m.testo}</td>
+                <td>${infoProg}<br><small style="color:#666;">Frequenza: ${infoFreq}</small></td>
+                <td style="text-align:center;">
+                    <button onclick="eliminaMessaggioAdmin('${m.id}')" style="background:#ff4757; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:11px;">Elimina</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function pianificaTuttiMessaggi() {
+    // Svuota i vecchi timer locali per evitare attivazioni doppie al rinfresco dei dati
+    timerAttivi.forEach(t => clearTimeout(t));
+    timerAttivi = [];
+
+    const oraCorrente = new Date();
+
+    messaggiAuto.forEach(m => {
+        let msMancanti = 0;
+
+        if (m.tipo === 'subito') {
+            const targetTime = m.dataCreazione + (m.valore * 1000);
+            msMancanti = targetTime - Date.now();
+        } else {
+            const parti = m.valore.split(":");
+            const targetDate = new Date();
+            targetDate.setHours(parseInt(parti[0]), parseInt(parti[1]), 0, 0);
+
+            if (targetDate < oraCorrente) {
+                targetDate.setDate(targetDate.getDate() + 1);
+            }
+            msMancanti = targetDate - oraCorrente;
+        }
+
+        if (msMancanti > 0) {
+            const timer = setTimeout(() => {
+                attivaAvvisoPopup(m);
+            }, msMancanti);
+            timerAttivi.push(timer);
+        } else if (m.tipo === 'subito' && m.frequenza !== 'una') {
+            const intervalloMs = parseInt(m.frequenza) * 60 * 1000;
+            const tempoTrascorso = Date.now() - m.dataCreazione;
+            const msAlProssimoCiclo = intervalloMs - (tempoTrascorso % intervalloMs);
+
+            const timer = setTimeout(() => {
+                attivaAvvisoPopup(m);
+            }, msAlProssimoCiclo);
+            timerAttivi.push(timer);
+        }
+    });
+}
+
+function attivaAvvisoPopup(msg) {
+    const popup = document.getElementById('autoAlertPopup');
+    const testoEl = document.getElementById('autoAlertText');
+    if (!popup || !testoEl) return;
+
+    testoEl.innerText = msg.testo;
+    popup.classList.add('show');
+
+    // Invia la notifica visualizzata nello storico di Firebase (diventa visibile a tutti in tempo reale)
+    const recordStorico = {
+        testo: msg.testo,
+        timestamp: Date.now(),
+        oraSemplice: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    db.ref('storicoAlert').push(recordStorico);
+
+    if (popupTimer) clearTimeout(popupTimer);
+    popupTimer = setTimeout(() => {
+        chiudiAutoAlert();
+    }, 10000);
+
+    if (msg.frequenza !== 'una') {
+        const intervalloMinuti = parseInt(msg.frequenza);
+        const timerSuccessivo = setTimeout(() => {
+            attivaAvvisoPopup(msg);
+        }, intervalloMinuti * 60 * 1000);
+        timerAttivi.push(timerSuccessivo);
+    }
+}
+
+function chiudiAutoAlert() {
+    const popup = document.getElementById('autoAlertPopup');
+    if (popup) popup.classList.remove('show');
+    if (popupTimer) clearTimeout(popupTimer);
+}
+
+function aggiornaCampanellaGrafica() {
+    const bellBtn = document.getElementById('bellBtn');
+    const bellBadge = document.getElementById('bellBadge');
+    if (!bellBtn || !bellBadge) return;
+
+    const user = firebase.auth().currentUser;
+    if (user && storicoAlert.length > 0) {
+        bellBtn.style.display = 'flex';
+        bellBadge.innerText = storicoAlert.length;
+        bellBadge.style.display = 'block';
+    } else if (user) {
+        bellBtn.style.display = 'flex';
+        bellBadge.style.display = 'none';
+    } else {
+        bellBtn.style.display = 'none';
+    }
+}
+
+function apriStoricoAlert() {
+    const modal = document.getElementById('storicoAlertModal');
+    const container = document.getElementById('storicoAlertContainer');
+    if (!modal || !container) return;
+
+    if (storicoAlert.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#666;">Nessun avviso registrato nelle ultime 2 ore.</p>';
+    } else {
+        container.innerHTML = storicoAlert.map(s => `
+            <div class="storico-alert-item">
+                <span style="font-weight: 500;">📢 ${s.testo}</span>
+                <span class="storico-alert-time">Mostrato alle ore: ${s.oraSemplice}</span>
+            </div>
+        `).join('');
+    }
+
+    modal.style.display = 'flex';
+}
 </script>
+    <button id="bellBtn" class="alert-bell-btn" onclick="apriStoricoAlert()" title="Storico Avvisi" style="display: none;">
+        🔔<span id="bellBadge" class="bell-badge" style="display: none;">0</span>
+    </button>
+
+    <!-- Popup Avvisi Automatici -->
+    <div id="autoAlertPopup" class="auto-alert-popup">
+        <button class="auto-alert-close" onclick="chiudiAutoAlert()">&times;</button>
+        <div style="font-size: 2.5rem; margin-bottom: 10px;">📢</div>
+        <h3 style="color: var(--primary); margin-top: 0;">Avviso di Servizio</h3>
+        <p id="autoAlertText" style="font-size: 1.1rem; font-weight: 500; color: var(--text); line-height: 1.5; margin-bottom: 0;"></p>
+    </div>
+
+    <!-- Modal Storico Avvisi -->
+    <div id="storicoAlertModal" style="display: none; position: fixed; z-index: 3500; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center;">
+        <div class="modal-content" style="max-width: 450px;">
+            <h3 style="color:var(--primary); margin-bottom:15px;">🔔 Storico Avvisi Recenti (Ultime 2 ore)</h3>
+            <div id="storicoAlertContainer" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;"></div>
+            <button onclick="document.getElementById('storicoAlertModal').style.display='none'" class="modal-btn" style="background:#e0e0e0; color:#333;">CHIUDI</button>
+        </div>
+    </div>
 </body>
 </html>
