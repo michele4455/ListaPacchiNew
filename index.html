@@ -3683,26 +3683,36 @@ function aggiornaCampanellaGrafica() {
     if (!bellBtn || !bellBadge) return;
 
     const user = firebase.auth().currentUser;
-    if (user && storicoAlert.length > 0) {
+    if (user) {
         bellBtn.style.display = 'flex';
-        bellBadge.innerText = storicoAlert.length;
-        bellBadge.style.display = 'block';
-    } else if (user) {
-        bellBtn.style.display = 'flex';
-        bellBadge.style.display = 'none';
+        
+        // Recupera il timestamp di quando l'utente ha aperto la campanella l'ultima volta
+        const ultimoControllo = parseInt(localStorage.getItem('ultimoControlloAlert') || '0');
+        
+        // Conta solo i messaggi arrivati DOPO l'ultimo controllo visivo
+        const messaggiNonLetti = storicoAlert.filter(s => s.timestamp > ultimoControllo).length;
+
+        if (messaggiNonLetti > 0) {
+            bellBadge.innerText = messaggiNonLetti;
+            bellBadge.style.display = 'block';
+        } else {
+            bellBadge.style.display = 'none';
+        }
     } else {
         bellBtn.style.display = 'none';
     }
 }
-
 function apriStoricoAlert() {
     const modal = document.getElementById('storicoAlertModal');
     const container = document.getElementById('storicoAlertContainer');
-    const bellBadge = document.getElementById('bellBadge'); // Recupera il badge numerico
+    const bellBadge = document.getElementById('bellBadge');
     
     if (!modal || !container) return;
 
-    // Nasconde il numero (badge) indicando che i messaggi sono stati letti
+    // Salva il momento esatto in cui lo storico viene aperto
+    localStorage.setItem('ultimoControlloAlert', Date.now().toString());
+
+    // Nasconde immediatamente il numero visivo
     if (bellBadge) {
         bellBadge.style.display = 'none';
     }
