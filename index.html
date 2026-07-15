@@ -981,10 +981,11 @@
             </div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <div>
-                <label style="font-size:0.75rem; font-weight:bold; color:var(--primary);">Ripetizione:</label>
+            <<div>
+    <label style="font-size:0.75rem; font-weight:bold; color:var(--primary);">Ripetizione:</label>
                 <select id="msgAutoFrequenza">
                     <option value="una">Una sola volta</option>
+                    <option value="secondi">Ripeti ogni X secondi impostati sopra</option>
                     <option value="60">Ogni ora</option>
                     <option value="1440">Ogni giorno</option>
                 </select>
@@ -3586,7 +3587,13 @@ function aggiornaTabellaMessaggiAdmin() {
 
     tbody.innerHTML = messaggiAuto.map(m => {
         const infoProg = m.tipo === 'subito' ? `Ritardo: ${m.valore}s` : `Alle: ${m.valore}`;
-        const infoFreq = m.frequenza === 'una' ? 'Una volta' : (m.frequenza === '60' ? 'Ogni ora' : 'Ogni giorno');
+        
+        // Gestione testuale della nuova frequenza in secondi
+        let infoFreq = 'Una volta';
+        if (m.frequenza === 'secondi') infoFreq = `Ogni ${m.valore} secondi`;
+        else if (m.frequenza === '60') infoFreq = 'Ogni ora';
+        else if (m.frequenza === '1440') infoFreq = 'Ogni giorno';
+
         return `
             <tr>
                 <td style="font-weight:bold;">${m.testo}</td>
@@ -3600,7 +3607,6 @@ function aggiornaTabellaMessaggiAdmin() {
 }
 
 function pianificaTuttiMessaggi() {
-    // Svuota i vecchi timer locali per evitare attivazioni doppie al rinfresco dei dati
     timerAttivi.forEach(t => clearTimeout(t));
     timerAttivi = [];
 
@@ -3629,7 +3635,14 @@ function pianificaTuttiMessaggi() {
             }, msMancanti);
             timerAttivi.push(timer);
         } else if (m.tipo === 'subito' && m.frequenza !== 'una') {
-            const intervalloMs = parseInt(m.frequenza) * 60 * 1000;
+            // Calcolo dell'intervallo corretto se la ripetizione è in secondi o minuti
+            let intervalloMs = 0;
+            if (m.frequenza === 'secondi') {
+                intervalloMs = parseInt(m.valore) * 1000;
+            } else {
+                intervalloMs = parseInt(m.frequenza) * 60 * 1000;
+            }
+
             const tempoTrascorso = Date.now() - m.dataCreazione;
             const msAlProssimoCiclo = intervalloMs - (tempoTrascorso % intervalloMs);
 
@@ -3649,38 +3662,34 @@ function attivaAvvisoPopup(msg) {
     testoEl.innerText = msg.testo;
     popup.classList.add('show');
 
-    // --- NUOVO: Generatore di suono "Din-Don" elettronico a volume massimo ---
+    // Generatore audio elettronico "Din-Don" a volume massimo
     try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        // PRIMO RINTOCCO (Nota alta e squillante)
         const osc1 = audioCtx.createOscillator();
         const gain1 = audioCtx.createGain();
         osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(987.77, audioCtx.currentTime); // Nota Si5 (molto acuta)
-        gain1.gain.setValueAtTime(1.0, audioCtx.currentTime); // VOLUME AL MASSIMO CONSENTITO (100%)
-        gain1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); // Sfuma in 0.3 secondi
+        osc1.frequency.setValueAtTime(987.77, audioCtx.currentTime);
+        gain1.gain.setValueAtTime(1.0, audioCtx.currentTime);
+        gain1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
         osc1.connect(gain1);
         gain1.connect(audioCtx.destination);
         osc1.start();
         osc1.stop(audioCtx.currentTime + 0.3);
 
-        // SECONDO RINTOCCO (Leggermente ritardato, nota più armoniosa)
         setTimeout(() => {
             const osc2 = audioCtx.createOscillator();
             const gain2 = audioCtx.createGain();
             osc2.type = 'sine';
-            osc2.frequency.setValueAtTime(1318.51, audioCtx.currentTime); // Nota Mi6 (ancora più squillante)
-            gain2.gain.setValueAtTime(1.0, audioCtx.currentTime); // VOLUME AL MASSIMO CONSENTITO (100%)
-            gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5); // Sfuma in 0.5 secondi
+            osc2.frequency.setValueAtTime(1318.51, audioCtx.currentTime);
+            gain2.gain.setValueAtTime(1.0, audioCtx.currentTime);
+            gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
             osc2.connect(gain2);
             gain2.connect(audioCtx.destination);
             osc2.start();
             osc2.stop(audioCtx.currentTime + 0.5);
-        }, 150); // Ritardo di 150 millisecondi tra i due rintocchi
-
+        }, 150);
     } catch (err) {
-        console.log("Autoplay audio bloccato o non supportato dal browser:", err);
+        console.log("Audio bloccato:", err);
     }
 
     // Invia la notifica visualizzata nello storico di Firebase
@@ -3696,11 +3705,18 @@ function attivaAvvisoPopup(msg) {
         chiudiAutoAlert();
     }, 10000);
 
+    // Pianificazione del ciclo successivo (Supporta i secondi dinamici o i minuti fissi)
     if (msg.frequenza !== 'una') {
-        const intervalloMinuti = parseInt(msg.frequenza);
+        let prossimoIntervalloMs = 0;
+        if (msg.frequenza === 'secondi') {
+            prossimoIntervalloMs = parseInt(msg.valore) * 1000;
+        } else {
+            prossimoIntervalloMs = parseInt(msg.frequenza) * 60 * 1000;
+        }
+
         const timerSuccessivo = setTimeout(() => {
             attivaAvvisoPopup(msg);
-        }, intervalloMinuti * 60 * 1000);
+        }, prossimoIntervalloMs);
         timerAttivi.push(timerSuccessivo);
     }
 }
