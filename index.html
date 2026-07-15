@@ -3649,7 +3649,12 @@ function attivaAvvisoPopup(msg) {
     testoEl.innerText = msg.testo;
     popup.classList.add('show');
 
-    // Invia la notifica visualizzata nello storico di Firebase (diventa visibile a tutti in tempo reale)
+    // --- NUOVO: Suono "Chime/Ping" moderno stile notifica smartphone ---
+    const suonoNotifica = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav');
+    suonoNotifica.volume = 0.6; // Regola il volume (0.0 minimo, 1.0 massimo)
+    suonoNotifica.play().catch(err => console.log("Autoplay audio bloccato dal browser", err));
+
+    // Invia la notifica visualizzata nello storico di Firebase
     const recordStorico = {
         testo: msg.testo,
         timestamp: Date.now(),
