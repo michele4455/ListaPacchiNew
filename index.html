@@ -2043,6 +2043,14 @@ ${statoTesto}
     </div>`;
 }
 
+// Definizione della funzione per chiudere il modal di modifica
+function closeEditModal() {
+    const modal = document.getElementById('editModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
 function apriModifica(id) {
     const p = pacchi.find(x => x.id === id);
     const container = document.getElementById('editFields');
