@@ -3756,6 +3756,7 @@ function apriStoricoAlert() {
     const modal = document.getElementById('storicoAlertModal');
     const container = document.getElementById('storicoAlertContainer');
     const bellBadge = document.getElementById('bellBadge');
+    const btnEliminaTutti = document.getElementById('btnEliminaTuttiAlert');
     
     if (!modal || !container) return;
 
@@ -3769,8 +3770,10 @@ function apriStoricoAlert() {
 
     if (storicoAlert.length === 0) {
         container.innerHTML = '<p style="text-align:center; color:#666;">Nessun avviso registrato nelle ultime 2 ore.</p>';
+        if (btnEliminaTutti) btnEliminaTutti.style.display = 'none'; // Nasconde il tasto se è già vuoto
     } else {
-        // Genera la lista inserendo un pulsante di cancellazione manuale (X) per ogni riga
+        if (btnEliminaTutti) btnEliminaTutti.style.display = 'block'; // Mostra il tasto se ci sono messaggi
+        
         container.innerHTML = storicoAlert.map(s => `
             <div class="storico-alert-item" style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
                 <div>
@@ -3784,13 +3787,13 @@ function apriStoricoAlert() {
 
     modal.style.display = 'flex';
 }
-function eliminaSingoloAlertStorico(id) {
-    if (confirm("Vuoi cancellare questo messaggio dallo storico?")) {
-        db.ref('storicoAlert/' + id).remove().then(() => {
-            // Rinfresca visivamente il contenuto del modal senza chiuderlo
+function eliminaTuttiAlertStorico() {
+    if (confirm("Sei sicuro di voler cancellare TUTTI i messaggi dallo storico in una sola volta?")) {
+        db.ref('storicoAlert').remove().then(() => {
+            // Rinfresca visivamente il contenuto del modal svuotandolo
             apriStoricoAlert();
         }).catch(err => {
-            console.error("Errore durante la cancellazione dell'alert: ", err);
+            console.error("Errore durante la rimozione dello storico completo: ", err);
         });
     }
 }
@@ -3809,11 +3812,16 @@ function eliminaSingoloAlertStorico(id) {
 
     <!-- Modal Storico Avvisi -->
     <div id="storicoAlertModal" style="display: none; position: fixed; z-index: 3500; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center;">
-        <div class="modal-content" style="max-width: 450px;">
-            <h3 style="color:var(--primary); margin-bottom:15px;">🔔 Storico Avvisi Recenti (Ultime 2 ore)</h3>
-            <div id="storicoAlertContainer" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;"></div>
+    <div class="modal-content" style="max-width: 450px;">
+        <h3 style="color:var(--primary); margin-bottom:15px;">🔔 Storico Avvisi Recenti (Ultime 2 ore)</h3>
+        <div id="storicoAlertContainer" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;"></div>
+        
+        <!-- Contenitore Pulsanti con l'aggiunta di Elimina Tutti -->
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button id="btnEliminaTuttiAlert" onclick="eliminaTuttiAlertStorico()" class="modal-btn" style="background:#ff4757; color:white; display: none;">ELIMINA TUTTI</button>
             <button onclick="document.getElementById('storicoAlertModal').style.display='none'" class="modal-btn" style="background:#e0e0e0; color:#333;">CHIUDI</button>
         </div>
     </div>
+</div>
 </body>
 </html>
