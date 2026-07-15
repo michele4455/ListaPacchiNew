@@ -735,7 +735,7 @@
 
     /* --- SISTEMA MESSAGGI AUTOMATICI --- */
 .alert-bell-btn {
-    position: fixed;
+    position: absolute; /* Modificato da fixed a absolute per non seguire lo scroll */
     top: 20px;
     left: 20px;
     z-index: 1002;
@@ -3698,7 +3698,14 @@ function aggiornaCampanellaGrafica() {
 function apriStoricoAlert() {
     const modal = document.getElementById('storicoAlertModal');
     const container = document.getElementById('storicoAlertContainer');
+    const bellBadge = document.getElementById('bellBadge'); // Recupera il badge numerico
+    
     if (!modal || !container) return;
+
+    // Nasconde il numero (badge) indicando che i messaggi sono stati letti
+    if (bellBadge) {
+        bellBadge.style.display = 'none';
+    }
 
     if (storicoAlert.length === 0) {
         container.innerHTML = '<p style="text-align:center; color:#666;">Nessun avviso registrato nelle ultime 2 ore.</p>';
