@@ -1774,6 +1774,9 @@ firebase.auth().onAuthStateChanged((user) => {
         
         // Avvia l'inizializzazione dei messaggi automatici e del loro storico
         inizializzaMessaggiAutomatici();
+        if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+        }
         
         resetInattivita();
         
@@ -3670,6 +3673,25 @@ function attivaAvvisoPopup(msg) {
     testoEl.innerText = msg.testo;
     popup.classList.add('show');
 
+    // --- NUOVO: Notifica Nativa di Chrome (funziona anche in altre schede) ---
+    if ("Notification" in window) {
+        if (Notification.permission === "granted") {
+            new Notification("Nuovo Avviso di Servizio", {
+                body: msg.testo,
+                icon: "https://cdn-icons-png.flaticon.com/512/3602/3602145.png" // Icona campanella
+            });
+        } else if (Notification.permission !== "denied") {
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    new Notification("Nuovo Avviso di Servizio", {
+                        body: msg.testo,
+                        icon: "https://cdn-icons-png.flaticon.com/512/3602/3602145.png"
+                    });
+                }
+            });
+        }
+    }
+
     // Generatore audio elettronico "Din-Don" a volume massimo
     try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -3709,9 +3731,11 @@ function attivaAvvisoPopup(msg) {
     db.ref('storicoAlert').push(recordStorico);
 
     if (popupTimer) clearTimeout(popupTimer);
+    
+    // MODIFICATO: Chiusura automatica del popup dopo 1 minuto (60000 millisecondi)
     popupTimer = setTimeout(() => {
         chiudiAutoAlert();
-    }, 10000);
+    }, 60000);
 
     // Pianificazione del ciclo successivo (Supporta i secondi dinamici o i minuti fissi)
     if (msg.frequenza !== 'una') {
