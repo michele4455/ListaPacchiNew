@@ -815,22 +815,40 @@
     margin-top: 4px;
 }
         
-/* Scritta PDF minimale e sobria */
-.pdf-generator-link {
+/* Contenitore del menu di stampa pieghevole */
+.pdf-dropdown-container {
+    text-align: right;
+    margin-bottom: 5px;
+    padding-right: 5px;
+}
+
+/* La freccettina sobria e cliccabile */
+.pdf-toggle-btn {
+    font-size: 0.85rem;
+    color: #888888;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    margin-bottom: 12px;
-    color: #666666; /* Grigio sobrio e discreto */
-    font-weight: 500;
-    text-decoration: none;
-    font-size: 0.85rem; /* Più piccolo e leggibile */
-    cursor: pointer;
-    transition: color 0.2s ease;
-    padding: 2px 5px;
+    gap: 4px;
 }
-.pdf-generator-link:hover {
-    color: var(--primary); /* Diventa blu solo al passaggio del mouse */
+.pdf-toggle-btn:hover {
+    color: var(--primary); /* Diventa del tuo colore primario solo al passaggio del mouse */
+}
+
+/* La scritta di stampa vera e propria, nascosta di base */
+.pdf-link-content {
+    display: none; /* Nascosta di base */
+    margin-top: 5px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--primary);
+    text-decoration: underline;
+    cursor: pointer;
+}
+.pdf-link-content:hover {
+    color: var(--primary-dark);
 }
         
     </style>
@@ -1995,14 +2013,17 @@ function aggiornaVista(){
     if (contEl) {
         let htmlContenuto = "";
         
-        // Se ci sono pacchi in giacenza, mostra la scritta minimalista per generare il PDF
+        // Se ci sono pacchi in giacenza, mostra solo la minuscola freccia di controllo
         if (inGiacenza.length > 0) {
             const etichettaCorriere = tabAttiva === 'Tutti' ? 'Tutti' : tabAttiva;
             htmlContenuto += `
-                <div style="text-align: right; margin-bottom: 10px; padding-right: 5px;">
-                    <span onclick="generaPdfListaPacchi()" class="pdf-generator-link">
-                        🖨️ Stampa lista giacenza (${etichettaCorriere})
+                <div class="pdf-dropdown-container">
+                    <span class="pdf-toggle-btn" onclick="toggleMenuPdf(this)">
+                        Opzioni di stampa <span class="freccia-icon">▼</span>
                     </span>
+                    <div class="pdf-link-content" onclick="generaPdfListaPacchi()">
+                        🖨️ Conferma: Genera PDF lista (${etichettaCorriere})
+                    </div>
                 </div>
             `;
         }
@@ -3864,6 +3885,21 @@ function eliminaTuttiAlertStorico() {
         });
     }
 }
+
+function toggleMenuPdf(elemento) {
+    const contenitore = elemento.parentElement;
+    const contenutoStampa = contenitore.querySelector('.pdf-link-content');
+    const freccia = elemento.querySelector('.freccia-icon');
+    
+    if (contenutoStampa.style.display === "block") {
+        contenutoStampa.style.display = "none";
+        freccia.textContent = "▼";
+    } else {
+        contenutoStampa.style.display = "block";
+        freccia.textContent = "▲";
+    }
+}
+    
 function generaPdfListaPacchi() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
