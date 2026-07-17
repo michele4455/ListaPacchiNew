@@ -814,6 +814,23 @@
     display: block;
     margin-top: 4px;
 }
+    /* Stile per la scritta di generazione PDF sopra la lista */
+.pdf-generator-link {
+    display: inline-block;
+    margin-bottom: 15px;
+    color: var(--primary);
+    font-weight: bold;
+    text-decoration: none;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: color 0.2s, transform 0.2s;
+    border-bottom: 2px dashed var(--primary);
+    padding-bottom: 2px;
+}
+.pdf-generator-link:hover {
+    color: var(--primary-dark);
+    transform: translateY(-1px);
+}
         
     </style>
     <script>
@@ -1973,8 +1990,26 @@ function aggiornaVista(){
     const counterEl = document.getElementById('counter');
     if (counterEl) counterEl.innerHTML = `📦 Giacenza ${tabAttiva}: ${inGiacenza.length} | 🏷️ Ultimo ID: #${ultimoID}`;
     
+    // --- PARTE MODIFICATA: Aggiungiamo la scritta PDF sopra la lista ---
     const contEl = document.getElementById('contenitori');
-    if (contEl) contEl.innerHTML = inGiacenza.map(p => generateHtml(p)).join('');
+    if (contEl) {
+        let htmlContenuto = "";
+        
+        // Se ci sono pacchi in giacenza, mostra la scritta per generare il PDF
+        if (inGiacenza.length > 0) {
+            const etichettaCorriere = tabAttiva === 'Tutti' ? 'Tutti i Corrieri' : tabAttiva;
+            htmlContenuto += `
+                <div style="text-align: left; margin-bottom: 15px; padding-left: 5px;">
+                    <span onclick="generaPdfListaPacchi()" style="color: var(--primary); font-weight: bold; text-decoration: underline; cursor: pointer; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 5px;">
+                        📄 Genera PDF Lista Giacenze (${etichettaCorriere})
+                    </span>
+                </div>
+            `;
+        }
+        
+        htmlContenuto += inGiacenza.map(p => generateHtml(p)).join('');
+        contEl.innerHTML = htmlContenuto;
+    }
     
     const ritEl = document.getElementById('ritiratiContainer');
     if (ritEl) ritEl.innerHTML = ritirati.map(p => generateHtml(p)).join('');
@@ -3828,6 +3863,126 @@ function eliminaTuttiAlertStorico() {
             console.error("Errore durante la rimozione dello storico completo: ", err);
         });
     }
+}
+function generaPdfListaPacchi() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const search = document.getElementById('search').value.toLowerCase().trim();
+    
+    const filterFn = p => {
+        const corrispondeTab = (tabAttiva === 'Tutti' || p.corriere === tabAttiva);
+        if (!corrispondeTab) return false;
+        if (!search) return true;
+        const cognomePacco = (p.cognome || "").toLowerCase();
+        const nomePacco = (p.nome || "").toLowerCase();
+        const trkPacco = (p.codiceTracciabilita || "").toLowerCase();
+        const idPacco = String(p.riconoscimento || "");
+        const cognomeNome = cognomePacco + " " + nomePacco;
+        const nomeCognome = nomePacco + " " + cognomePacco;
+        return cognomeNome.includes(search) || nomeCognome.includes(search) || idPacco.includes(search) || trkPacco.includes(search);
+    };
+
+    const pacchiDaStampare = pacchi.filter(p => !p.ritirato && filterFn(p));
+
+    if (pacchiDaStampare.length === 0) {
+        alert("Nessun pacco presente nella lista attuale da stampare.");
+        return;
+    }
+
+    // --- Header Grafico Istituzionale ---
+    doc.setFillColor(0, 51, 153); // Colore blu del tuo gestionale
+    doc.rect(0, 0, 210, 35, 'F');
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("CENTRO POST@ ANACLERIO - LISTA GIACENZE", 15, 18);
+
+    const dataOggi = new Date().toLocaleDateString('it-IT') + " " + new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    const tipoLista = tabAttiva === 'Tutti' ? 'TUTTI I CORRIERI' : `CORRIERE: ${tabAttiva.toUpperCase()}`;
+    doc.text(`Elenco: ${tipoLista} | Generato il: ${dataOggi}`, 15, 26);
+
+    // Linea gialla decorativa sotto l'header
+    doc.setFillColor(255, 204, 0);
+    doc.rect(0, 35, 210, 3, 'F');
+
+    // --- Tabella Intestazioni ---
+    let y = 48;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    doc.text("ID PACCO", 15, y);
+    doc.text("DESTINATARIO", 45, y);
+    doc.text("CORRIERE", 105, y);
+    doc.text("SCAFFALE", 135, y);
+    doc.text("TRACKING", 165, y);
+
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.3);
+    doc.line(15, y + 2, 195, y + 2);
+    y += 8;
+
+    // --- Righe dei Pacchi ---
+    pacchiDaStampare.forEach((p, index) => {
+        if (y > 275) {
+            doc.addPage();
+            y = 25;
+            
+            // Ripeti intestazioni colonne sulla nuova pagina
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
+            doc.setTextColor(100, 100, 100);
+            doc.text("ID PACCO", 15, y);
+            doc.text("DESTINATARIO", 45, y);
+            doc.text("CORRIERE", 105, y);
+            doc.text("SCAFFALE", 135, y);
+            doc.text("TRACKING", 165, y);
+            doc.line(15, y + 2, 195, y + 2);
+            y += 8;
+        }
+
+        // Colore di sfondo alternato per massima leggibilità (Zebra style)
+        if (index % 2 === 0) {
+            doc.setFillColor(245, 247, 250);
+            doc.rect(13, y - 4, 184, 6.5, 'F');
+        }
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(26, 26, 26);
+
+        // ID Pacco (# + grandezza)
+        doc.setFont("helvetica", "bold");
+        doc.text(`#${p.riconoscimento} (${p.grandezza || 'M'})`, 15, y);
+
+        // Destinatario
+        doc.setFont("helvetica", "normal");
+        const nominativo = `${(p.cognome || '').toUpperCase()} ${(p.nome || '').toUpperCase()}`;
+        doc.text(nominativo.length > 30 ? nominativo.substring(0, 28) + ".." : nominativo, 45, y);
+
+        // Corriere e Scaffale
+        doc.text(p.corriere || '-', 105, y);
+        doc.text(p.scaffale || '-', 135, y);
+
+        // Tracking
+        const trk = p.codiceTracciabilita || '-';
+        doc.text(trk.length > 18 ? trk.substring(0, 16) + ".." : trk, 165, y);
+
+        y += 6.5;
+    });
+
+    // Piè di pagina
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text(`Totale pacchi in giacenza stampati: ${pacchiDaStampare.length}`, 15, 287);
+
+    // Salva il file
+    const nomeFile = `Giacenza_${tabAttiva.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`;
+    doc.save(nomeFile);
 }
 </script>
     <button id="bellBtn" class="alert-bell-btn" onclick="apriStoricoAlert()" title="Storico Avvisi" style="display: none;">
