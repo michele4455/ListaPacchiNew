@@ -814,22 +814,23 @@
     display: block;
     margin-top: 4px;
 }
-    /* Stile per la scritta di generazione PDF sopra la lista */
+        
+/* Scritta PDF minimale e sobria */
 .pdf-generator-link {
-    display: inline-block;
-    margin-bottom: 15px;
-    color: var(--primary);
-    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+    color: #666666; /* Grigio sobrio e discreto */
+    font-weight: 500;
     text-decoration: none;
-    font-size: 1rem;
+    font-size: 0.85rem; /* Più piccolo e leggibile */
     cursor: pointer;
-    transition: color 0.2s, transform 0.2s;
-    border-bottom: 2px dashed var(--primary);
-    padding-bottom: 2px;
+    transition: color 0.2s ease;
+    padding: 2px 5px;
 }
 .pdf-generator-link:hover {
-    color: var(--primary-dark);
-    transform: translateY(-1px);
+    color: var(--primary); /* Diventa blu solo al passaggio del mouse */
 }
         
     </style>
@@ -1990,18 +1991,17 @@ function aggiornaVista(){
     const counterEl = document.getElementById('counter');
     if (counterEl) counterEl.innerHTML = `📦 Giacenza ${tabAttiva}: ${inGiacenza.length} | 🏷️ Ultimo ID: #${ultimoID}`;
     
-    // --- PARTE MODIFICATA: Aggiungiamo la scritta PDF sopra la lista ---
     const contEl = document.getElementById('contenitori');
     if (contEl) {
         let htmlContenuto = "";
         
-        // Se ci sono pacchi in giacenza, mostra la scritta per generare il PDF
+        // Se ci sono pacchi in giacenza, mostra la scritta minimalista per generare il PDF
         if (inGiacenza.length > 0) {
-            const etichettaCorriere = tabAttiva === 'Tutti' ? 'Tutti i Corrieri' : tabAttiva;
+            const etichettaCorriere = tabAttiva === 'Tutti' ? 'Tutti' : tabAttiva;
             htmlContenuto += `
-                <div style="text-align: left; margin-bottom: 15px; padding-left: 5px;">
-                    <span onclick="generaPdfListaPacchi()" style="color: var(--primary); font-weight: bold; text-decoration: underline; cursor: pointer; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 5px;">
-                        📄 Genera PDF Lista Giacenze (${etichettaCorriere})
+                <div style="text-align: right; margin-bottom: 10px; padding-right: 5px;">
+                    <span onclick="generaPdfListaPacchi()" class="pdf-generator-link">
+                        🖨️ Stampa lista giacenza (${etichettaCorriere})
                     </span>
                 </div>
             `;
@@ -2014,7 +2014,7 @@ function aggiornaVista(){
     const ritEl = document.getElementById('ritiratiContainer');
     if (ritEl) ritEl.innerHTML = ritirati.map(p => generateHtml(p)).join('');
 }
-
+    
 function generateHtml(p) {
     let firmaLink = (p.ritirato && p.firma && !p.isScaduto) ? `<span class="view-firma-link" onclick="mostraFirma('${p.id}')">VEDI FIRMA</span>` : '';
     let alertScadenza = '';
