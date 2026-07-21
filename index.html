@@ -2235,7 +2235,7 @@ function toggleInputNote(checked) {
     document.getElementById('subBoxNote').style.display = checked ? 'block' : 'none';
 }
 
-function handleRitira(id, forzaScaduto = false, usaCarrello = false) {
+ffunction handleRitira(id, forzaScaduto = false, usaCarrello = false) {
     // Registra se il modal è stato aperto dal carrello in basso a sinistra
     document.getElementById('cartBadgeBtn').setAttribute('data-aperto', usaCarrello ? 'true' : 'false');
 
@@ -2264,6 +2264,9 @@ function handleRitira(id, forzaScaduto = false, usaCarrello = false) {
         let infoContr = sp.isContrassegno ? `<b style="color:#ff4757;"> [CONTRASSEGNO € ${sp.importoContrassegno}]</b>` : '';
         let infoNote = (sp.noteAggiuntive && sp.noteAggiuntive.trim() !== '') ? ` <span style="color:var(--primary); font-weight:bold;">[ℹ️ ${sp.noteAggiuntive}]</span>` : '';
         
+        // AGGIUNTA TAG FERMOPOINT
+        let infoFermopoint = sp.isFermopoint ? ` <span style="color:#003399; font-weight:bold;">[📍 FERMOPOINT]</span>` : '';
+        
         // Determina se mostrare il pulsante aggiungi (+) o rimuovi (❌)
         let pulsanteCarrello = '';
         if (usaCarrello) {
@@ -2278,7 +2281,7 @@ function handleRitira(id, forzaScaduto = false, usaCarrello = false) {
                 <input type="checkbox" class="chk-multi-ritiro" data-id="${sp.id}" data-corriere="${sp.corriere}" ${isTarget ? 'checked' : ''}>
                 <div style="flex-grow:1; margin-right:10px;">
                     <strong>#${sp.riconoscimento}</strong> 
-                    - ${sp.cognome.toUpperCase()} ${sp.nome.toUpperCase()} (${sp.corriere})${infoContr}${infoNote}<br>
+                    - ${sp.cognome.toUpperCase()} ${sp.nome.toUpperCase()} (${sp.corriere})${infoFermopoint}${infoContr}${infoNote}<br>
                     <small>TRK: <span class="highlight-trk" onclick="event.preventDefault(); event.stopPropagation(); copiaTracking('${sp.codiceTracciabilita}');">${sp.codiceTracciabilita}</span> | Arrivato: ${sp.dataTestoInserimento || '-'}</small>
                 </div>
                 ${pulsanteCarrello}
