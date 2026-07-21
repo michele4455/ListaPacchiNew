@@ -2049,6 +2049,9 @@ function generateHtml(p) {
     if (!p.ritirato && p.noteAggiuntive && p.noteAggiuntive.trim() !== '') {
         indicatoreNote = `<span class="note-indicatore" onclick="showAlert('${p.noteAggiuntive.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', 'Note Aggiuntive')">ℹ️</span>`;
     }
+
+    // NOTA BLU FERMOPOINT
+    let notaFermopoint = p.isFermopoint ? ` <span style="color: #003399; font-weight: bold; font-size: 0.85rem;">[FERMOPOINT]</span>` : '';
     
     let statoTesto = '';
     let emojiIcona = '';
@@ -2058,10 +2061,10 @@ function generateHtml(p) {
         let testoNoteArchivio = (p.noteAggiuntive && p.noteAggiuntive.trim() !== '') ? `<br><small style="color:var(--primary); font-weight:bold;">📝 Nota: ${p.noteAggiuntive}</small>` : '';
         if (p.isScaduto) {
             emojiIcona = '<span class="stato-emoji">📦❌</span>';
-            statoTesto = `<div style="color:var(--warning); font-size:0.85rem; margin-top:5px; font-weight:bold;">PACCO SCADUTO (RESO) il ${p.dataRitiro}${testoNoteArchivio}</div>`;
+            statoTesto = `<div style="color:var(--warning); font-size:0.85rem; margin-top:5px; font-weight:bold;">PACCO SCADUTO (RESO) il ${p.dataRitiro}${notaFermopoint}${testoNoteArchivio}</div>`;
         } else {
             emojiIcona = '<span class="stato-emoji">✅</span>';
-            statoTesto = `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">RITIRATO DA ${p.ritiratoDa.toUpperCase()} IL ${p.dataRitiro} ${notaPudo}${notaContrassegno} ${firmaLink}${testoNoteArchivio}</div>`;
+            statoTesto = `<div style="color:var(--success); font-size:0.85rem; margin-top:5px; font-weight:bold;">RITIRATO DA ${p.ritiratoDa.toUpperCase()} IL ${p.dataRitiro} ${notaPudo}${notaContrassegno}${notaFermopoint} ${firmaLink}${testoNoteArchivio}</div>`;
         }
     }
 
@@ -2078,7 +2081,7 @@ function generateHtml(p) {
         <div style="flex-grow:1; display: flex; align-items: center;">
             ${emojiIcona}
             <div>
-                <span class="tag-grandezza">${p.grandezza}</span><span class="tag-corriere">${p.corriere}</span>${badgeContrassegno}<strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome.toUpperCase()}
+                <span class="tag-grandezza">${p.grandezza}</span><span class="tag-corriere">${p.corriere}</span>${badgeContrassegno}<strong>#${p.riconoscimento}</strong> - ${p.cognome.toUpperCase()} ${p.nome.toUpperCase()}${!p.ritirato ? notaFermopoint : ''}
                 <br><small style="display:block; margin-top:5px; color:#666;">
     📍 ${p.scaffale} • 🔍 TRK: 
     <div class="barcode-popup-container" 
@@ -2109,7 +2112,7 @@ function closeEditModal() {
         modal.style.display = 'none';
     }
 }
-
+    
 function apriModifica(id) {
     const p = pacchi.find(x => x.id === id);
     const container = document.getElementById('editFields');
@@ -2156,6 +2159,13 @@ function apriModifica(id) {
                 <option value="G" ${dimensioneAttuale === 'G' ? 'selected' : ''}>G</option>
             </select>
         </div>
+        <!-- BOX SELEZIONE FERMOPOINT -->
+        <div style="grid-column: span 2; background: #e7f0ff; padding: 12px; border-radius: 10px; border: 2px dashed #003399; margin-top: 10px;">
+            <label style="display:flex; align-items:center; gap:10px; font-size:1rem; cursor:pointer;">
+                <input type="checkbox" id="editIsFermopoint" ${p.isFermopoint ? 'checked' : ''} style="width:auto; transform:scale(1.2);">
+                <span style="color:var(--primary); font-weight:bold;">📍 Pacco FERMOPOINT</span>
+            </label>
+        </div>
         <div class="contrassegno-box">
             <label style="display:flex; align-items:center; gap:10px; font-size:1rem; cursor:pointer;">
                 <input type="checkbox" id="editIsContrassegno" ${p.isContrassegno ? 'checked' : ''} onchange="toggleInputContrassegno(this.checked)" style="width:auto; transform:scale(1.2);">
@@ -2188,6 +2198,10 @@ function apriModifica(id) {
         p.corriere = document.getElementById('editCorriere').value;
         p.scaffale = document.getElementById('editScaffale').value;
         p.grandezza = document.getElementById('editGrandezza').value;
+        
+        // SALVATAGGIO STATO FERMOPOINT
+        p.isFermopoint = document.getElementById('editIsFermopoint').checked;
+        
         p.isContrassegno = document.getElementById('editIsContrassegno').checked;
         p.importoContrassegno = p.isContrassegno ? document.getElementById('editImportoContrassegno').value.trim() : '';
         
