@@ -11,7 +11,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
@@ -888,18 +887,6 @@
                 top: 0,
                 behavior: 'smooth'
             });
-        }
-
-        // Funzione di supporto per generare il codice a barre in formato immagine PNG Base64
-        function generaBarcodeBase64(testo) {
-            const canvas = document.createElement('canvas');
-            JsBarcode(canvas, testo, {
-                format: "CODE128",
-                displayValue: false, // Nasconde il testo sotto il codice a barre per evitare sovrapposizioni
-                margin: 0,
-                height: 40
-            });
-            return canvas.toDataURL("image/png");
         }
     </script>
 </head>
@@ -3945,174 +3932,123 @@ function toggleMenuPdf(elemento) {
 }
     
 function generaPdfListaPacchi() {
-    // 1. Inizializzazione jsPDF
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({
-        orientation: 'p',
-        unit: 'mm',
-        format: 'a4'
-    });
+    const doc = new jsPDF();
 
-    // 2. Recupero del filtro di ricerca e filtraggio dei pacchi in giacenza
-    const search = (document.getElementById('search') ? document.getElementById('search').value : "").toLowerCase().trim();
+    const search = document.getElementById('search').value.toLowerCase().trim();
     
-    const pacchiInGiacenza = pacchi.filter(p => {
-        if (p.ritirato) return false;
-        
+    const filterFn = p => {
         const corrispondeTab = (tabAttiva === 'Tutti' || p.corriere === tabAttiva);
         if (!corrispondeTab) return false;
-
         if (!search) return true;
-
         const cognomePacco = (p.cognome || "").toLowerCase();
         const nomePacco = (p.nome || "").toLowerCase();
         const trkPacco = (p.codiceTracciabilita || "").toLowerCase();
         const idPacco = String(p.riconoscimento || "");
-        
-        return (cognomePacco + " " + nomePacco).includes(search) || 
-               (nomePacco + " " + cognomePacco).includes(search) || 
-               idPacco.includes(search) || 
-               trkPacco.includes(search);
-    });
+        const cognomeNome = cognomePacco + " " + nomePacco;
+        const nomeCognome = nomePacco + " " + cognomePacco;
+        return cognomeNome.includes(search) || nomeCognome.includes(search) || idPacco.includes(search) || trkPacco.includes(search);
+    };
 
-    if (pacchiInGiacenza.length === 0) {
-        showAlert("Nessun pacco presente in giacenza da stampare per questa vista!");
+    const pacchiDaStampare = pacchi.filter(p => !p.ritirato && filterFn(p));
+
+    if (pacchiDaStampare.length === 0) {
+        alert("Nessun pacco presente nella lista attuale da stampare.");
         return;
     }
 
-    // 3. Impostazioni Intestazione Documento
-    const dataOraAttuale = new Date().toLocaleString('it-IT');
-    let yPos = 15;
+    // --- Header Grafico Istituzionale ---
+    doc.setFillColor(0, 51, 153); // Colore blu del tuo gestionale
+    doc.rect(0, 0, 210, 35, 'F');
 
-    // Titolo Principale
+    doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
-    doc.setTextColor(0, 51, 153); // Blu primario #003399
-    doc.text("CENTRO POST@ ANACLERIO", 14, yPos);
-    
-    yPos += 7;
-    doc.setFontSize(12);
-    doc.setTextColor(50, 50, 50);
-    doc.text(`Lista Pacchi in Giacenza - Sezione: ${tabAttiva.toUpperCase()}`, 14, yPos);
+    doc.text("CENTRO POST@ ANACLERIO - LISTA GIACENZE", 15, 18);
 
-    // Sottotitolo Dettagli
-    yPos += 6;
+    const dataOggi = new Date().toLocaleDateString('it-IT') + " " + new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
     doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    const tipoLista = tabAttiva === 'Tutti' ? 'TUTTI I CORRIERI' : `CORRIERE: ${tabAttiva.toUpperCase()}`;
+    doc.text(`Elenco: ${tipoLista} | Generato il: ${dataOggi}`, 15, 26);
+
+    // Linea gialla decorativa sotto l'header
+    doc.setFillColor(255, 204, 0);
+    doc.rect(0, 35, 210, 3, 'F');
+
+    // --- Tabella Intestazioni ---
+    let y = 48;
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
     doc.setTextColor(100, 100, 100);
-    doc.text(`Data Generazione: ${dataOraAttuale} | Totale Pacchi: ${pacchiInGiacenza.length}`, 14, yPos);
+    doc.text("ID PACCO", 15, y);
+    doc.text("DESTINATARIO", 45, y);
+    doc.text("CORRIERE", 105, y);
+    doc.text("SCAFFALE", 135, y);
+    doc.text("TRACKING", 165, y);
 
-    yPos += 5;
-    doc.setDrawColor(0, 51, 153);
-    doc.setLineWidth(0.8);
-    doc.line(14, yPos, 196, yPos); // Linea divisoria blu
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.3);
+    doc.line(15, y + 2, 195, y + 2);
+    y += 8;
 
-    // 4. Intestazione Tabella
-    const disegnaIntestazioneTabella = (y) => {
-        doc.setFillColor(240, 242, 245);
-        doc.rect(14, y, 182, 8, 'F');
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(8.5);
-        doc.setTextColor(0, 51, 153);
-
-        doc.text("ID / DIM", 16, y + 5.5);
-        doc.text("CLIENTE / CONTATTO", 45, y + 5.5);
-        doc.text("CORRIERE / SCAFFALE", 105, y + 5.5);
-        doc.text("TRACKING", 155, y + 5.5);
-
-        doc.setDrawColor(200, 200, 200);
-        doc.setLineWidth(0.2);
-        doc.line(14, y + 8, 196, y + 8);
-    };
-
-    yPos += 4;
-    disegnaIntestazioneTabella(yPos);
-    yPos += 12;
-
-    // 5. Ciclo di stampa pacchi
-    pacchiInGiacenza.forEach((p, index) => {
-        // Controllo cambio pagina (A4 altezza 297mm)
-        if (yPos > 270) {
+    // --- Righe dei Pacchi ---
+    pacchiDaStampare.forEach((p, index) => {
+        if (y > 275) {
             doc.addPage();
-            yPos = 15;
-            disegnaIntestazioneTabella(yPos);
-            yPos += 12;
+            y = 25;
+            
+            // Ripeti intestazioni colonne sulla nuova pagina
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
+            doc.setTextColor(100, 100, 100);
+            doc.text("ID PACCO", 15, y);
+            doc.text("DESTINATARIO", 45, y);
+            doc.text("CORRIERE", 105, y);
+            doc.text("SCAFFALE", 135, y);
+            doc.text("TRACKING", 165, y);
+            doc.line(15, y + 2, 195, y + 2);
+            y += 8;
         }
 
-        // Recupero Telefono dall'Anagrafica se presente
-        const keyAnagrafica = `${(p.cognome || "").toUpperCase()}_${(p.nome || "").toUpperCase()}`;
-        const infoAnagrafica = anagraficaClienti[keyAnagrafica];
-        const telText = (infoAnagrafica && infoAnagrafica.telefono && infoAnagrafica.telefono !== '-') ? `Tel: ${infoAnagrafica.telefono}` : '';
+        // Colore di sfondo alternato per massima leggibilità (Zebra style)
+        if (index % 2 === 0) {
+            doc.setFillColor(245, 247, 250);
+            doc.rect(13, y - 4, 184, 6.5, 'F');
+        }
 
-        // Riga Pacco - ID e Dimensione
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(26, 26, 26);
+
+        // ID Pacco (# + grandezza)
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(9);
-        doc.setTextColor(0, 0, 0);
-        doc.text(`#${p.riconoscimento} [${p.grandezza || 'M'}]`, 16, yPos);
+        doc.text(`#${p.riconoscimento} (${p.grandezza || 'M'})`, 15, y);
 
-        // Cliente
-        const nomeCliente = `${(p.cognome || "").toUpperCase()} ${(p.nome || "").toUpperCase()}`;
-        doc.text(nomeCliente.substring(0, 30), 45, yPos);
+        // Destinatario
+        doc.setFont("helvetica", "normal");
+        const nominativo = `${(p.cognome || '').toUpperCase()} ${(p.nome || '').toUpperCase()}`;
+        doc.text(nominativo.length > 30 ? nominativo.substring(0, 28) + ".." : nominativo, 45, y);
 
         // Corriere e Scaffale
-        let loc = `${p.corriere} - ${p.scaffale || 'N.D.'}`;
-        if (p.isFermopoint) loc += " [FP]";
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(8.5);
-        doc.text(loc, 105, yPos);
+        doc.text(p.corriere || '-', 105, y);
+        doc.text(p.scaffale || '-', 135, y);
 
         // Tracking
-        const trk = (p.codiceTracciabilita && p.codiceTracciabilita !== '-') ? p.codiceTracciabilita : 'N/D';
-        doc.setFontSize(8);
-        doc.text(trk.substring(0, 22), 155, yPos);
+        const trk = p.codiceTracciabilita || '-';
+        doc.text(trk.length > 18 ? trk.substring(0, 16) + ".." : trk, 165, y);
 
-        // Dettagli aggiuntivi riga 2 (Telefono, Contrassegno, Data Arrivo)
-        yPos += 4.5;
-        doc.setFontSize(7.5);
-        doc.setTextColor(100, 100, 100);
+        y += 6.5;
+    });
 
-        let subText = `Arr: ${p.dataTestoInserimento || '-'}`;
-        if (telText) subText += ` | ${telText}`;
-        if (p.isContrassegno && p.importoContrassegno) {
-            subText += ` | CONTRASSEGNO: €${p.importoContrassegno}`;
-        }
-        if (p.noteAggiuntive) {
-            subText += ` | Note: ${p.noteAggiuntive.substring(0, 30)}`;
-        }
+    // Piè di pagina
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text(`Totale pacchi in giacenza stampati: ${pacchiDaStampare.length}`, 15, 287);
 
-        doc.text(subText, 45, yPos);
-
-        // Codice a barre visivo per il tracking (se valido)
-        if (trk !== 'N/D' && trk.length >= 4) {
-            try {
-                const barcodeImg = generaBarcodeBase64(trk);
-                doc.addImage(barcodeImg, 'PNG', 155, yPos - 3, 38, 7);
-            } catch (e) {
-                // Se genera error sul barcode prosegue senza interrompere il PDF
-            }
-        }
-
-        // Linea separatrice grigia chiara
-        yPos += 5.5;
-        doc.setDrawColor(230, 230, 230);
-        doc.setLineWidth(0.1);
-        doc.line(14, yPos, 196, yPos);
-
-        yPos += 4.5;
-    };
-
-    // 6. Pie di pagina con conteggio
-    const totalPages = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= totalPages; i++) {
-        doc.setPage(i);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(8);
-        doc.setTextColor(150, 150, 150);
-        doc.text(`Pagina ${i} di ${totalPages} - Centro Post@ Anaclerio`, 105, 290, { align: "center" });
-    }
-
-    // 7. Salvataggio / Download del File PDF
-    const nomeFile = `Lista_Pacchi_${tabAttiva.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`;
+    // Salva il file
+    const nomeFile = `Giacenza_${tabAttiva.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`;
     doc.save(nomeFile);
 }
 </script>
