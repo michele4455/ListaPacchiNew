@@ -3972,102 +3972,117 @@ function generaPdfListaPacchi() {
 
     // --- Header Grafico Istituzionale ---
     doc.setFillColor(0, 51, 153);
-    doc.rect(0, 0, 210, 35, 'F');
+    doc.rect(0, 0, 210, 32, 'F');
 
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
-    doc.text("CENTRO POST@ ANACLERIO - LISTA GIACENZE", 15, 18);
+    doc.text("CENTRO POST@ ANACLERIO - LISTA GIACENZE", 12, 16);
 
     const dataOggi = new Date().toLocaleDateString('it-IT') + " " + new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     const tipoLista = tabAttiva === 'Tutti' ? 'TUTTI I CORRIERI' : `CORRIERE: ${tabAttiva.toUpperCase()}`;
-    doc.text(`Elenco: ${tipoLista} | Generato il: ${dataOggi}`, 15, 26);
+    doc.text(`Elenco: ${tipoLista} | Generato il: ${dataOggi}`, 12, 24);
 
     doc.setFillColor(255, 204, 0);
-    doc.rect(0, 35, 210, 3, 'F');
+    doc.rect(0, 32, 210, 3, 'F');
 
-    // --- Tabella Intestazioni (Carattere ingrandito a 11pt) ---
-    let y = 48;
+    // --- Tabella Intestazioni ---
+    let y = 43;
     const disegnaIntestazione = (posY) => {
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(11);
+        doc.setFontSize(10);
         doc.setTextColor(0, 51, 153);
         doc.text("ID PACCO", 12, posY);
-        doc.text("DESTINATARIO", 42, posY);
-        doc.text("CORRIERE / SCAFFALE", 100, posY);
-        doc.text("BARCODE / TRACKING", 150, posY);
+        doc.text("DESTINATARIO / DATA ARRIVO", 45, posY);
+        doc.text("CORRIERE / SCAFFALE", 115, posY);
+        doc.text("BARCODE / TRACKING", 155, posY);
 
         doc.setDrawColor(0, 51, 153);
-        doc.setLineWidth(0.5);
+        doc.setLineWidth(0.4);
         doc.line(12, posY + 2, 198, posY + 2);
     };
 
     disegnaIntestazione(y);
-    y += 10;
+    y += 8;
 
     // --- Righe dei Pacchi ---
     pacchiDaStampare.forEach((p, index) => {
-        // Aumentata la soglia di cambio pagina per fare spazio all'altezza della riga col barcode
-        if (y > 265) {
+        // Controllo cambio pagina con limite ottimizzato
+        if (y > 275) {
             doc.addPage();
-            y = 20;
+            y = 16;
             disegnaIntestazione(y);
-            y += 10;
+            y += 8;
         }
 
-        // Sfondo alternato leggermente più alto per contenere il codice a barre
+        // Sfondo alternato compatto
         if (index % 2 === 0) {
             doc.setFillColor(245, 247, 250);
-            doc.rect(10, y - 5, 190, 15, 'F');
+            doc.rect(10, y - 4, 190, 10.5, 'F');
         }
 
-        // ID Pacco (# + grandezza) - Ingrandito a 11pt
+        // 1. ID Pacco (12pt Grassetto)
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(11);
+        doc.setFontSize(12);
         doc.setTextColor(0, 51, 153);
         doc.text(`#${p.riconoscimento} (${p.grandezza || 'M'})`, 12, y + 2);
 
-        // Destinatario - Ingrandito a 10pt
+        // 2. Destinatario (11pt Grassetto) e Data Arrivo (9.5pt Normale)
+        doc.setTextColor(26, 26, 26);
+        const nominativo = `${(p.cognome || '').toUpperCase()} ${(p.nome || '').toUpperCase()}`;
+        doc.text(nominativo.length > 25 ? nominativo.substring(0, 23) + ".." : nominativo, 45, y + 0.5);
+
+        // Formattazione data di arrivo (supporta sia dataStringa che ISO)
+        let dataArrivoFormattata = '-';
+        if (p.dataArrivo) {
+            const d = new Date(p.dataArrivo);
+            dataArrivoFormattata = !isNaN(d) ? d.toLocaleDateString('it-IT') : p.dataArrivo;
+        }
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9.5);
+        doc.setTextColor(90, 90, 90);
+        doc.text(`Arr: ${dataArrivoFormattata}`, 45, y + 5);
+
+        // 3. Corriere e Scaffale (10pt Grassetto)
         doc.setFont("helvetica", "bold");
         doc.setFontSize(10);
         doc.setTextColor(26, 26, 26);
-        const nominativo = `${(p.cognome || '').toUpperCase()} ${(p.nome || '').toUpperCase()}`;
-        doc.text(nominativo.length > 25 ? nominativo.substring(0, 23) + ".." : nominativo, 42, y + 2);
+        doc.text(`${p.corriere || '-'}`, 115, y + 0.5);
 
-        // Corriere e Scaffale - Ingrandito a 10pt
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(10);
-        doc.text(`${p.corriere || '-'}`, 100, y);
-        doc.setFontSize(9);
-        doc.setTextColor(100, 100, 100);
-        doc.text(`Scaffale: ${p.scaffale || '-'}`, 100, y + 5);
+        doc.setFontSize(9.5);
+        doc.setTextColor(90, 90, 90);
+        doc.text(`Scf: ${p.scaffale || '-'}`, 115, y + 5);
 
-        // Codice a barre e testo Tracking
+        // 4. Codice a barre compatto e testo Tracking (9pt)
         const trk = p.codiceTracciabilita || '-';
         if (trk !== '-') {
             try {
                 const imgBarcode = generaBarcodeBase64(trk);
-                doc.addImage(imgBarcode, 'PNG', 150, y - 4, 45, 9);
+                // Barcode più basso e ben posizionato
+                doc.addImage(imgBarcode, 'PNG', 155, y - 3.5, 42, 6);
             } catch (e) {
                 console.error("Errore generazione barcode PDF", e);
             }
         }
         
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(8);
+        doc.setFontSize(9);
         doc.setTextColor(40, 40, 40);
-        doc.text(trk.length > 22 ? trk.substring(0, 20) + ".." : trk, 150, y + 8);
+        doc.text(trk.length > 22 ? trk.substring(0, 20) + ".." : trk, 155, y + 5.5);
 
-        y += 16; // Incrementata la spaziatura verticale tra le righe
+        // Avanzamento verticale compatto (solo 11mm di altezza per riga)
+        y += 11;
     });
 
     // Piè di pagina
     doc.setFont("helvetica", "italic");
     doc.setFontSize(9);
     doc.setTextColor(150, 150, 150);
-    doc.text(`Totale pacchi in giacenza stampati: ${pacchiDaStampare.length}`, 12, 287);
+    doc.text(`Totale pacchi in giacenza stampati: ${pacchiDaStampare.length}`, 12, 289);
 
     // Salva il file
     const nomeFile = `Giacenza_${tabAttiva.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`;
