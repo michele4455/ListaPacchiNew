@@ -11,6 +11,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
@@ -887,6 +888,18 @@
                 top: 0,
                 behavior: 'smooth'
             });
+        }
+
+        // Funzione di supporto per generare il codice a barre in formato immagine PNG Base64
+        function generaBarcodeBase64(testo) {
+            const canvas = document.createElement('canvas');
+            JsBarcode(canvas, testo, {
+                format: "CODE128",
+                displayValue: false, // Nasconde il testo sotto il codice a barre per evitare sovrapposizioni
+                margin: 0,
+                height: 40
+            });
+            return canvas.toDataURL("image/png");
         }
     </script>
 </head>
@@ -3958,7 +3971,7 @@ function generaPdfListaPacchi() {
     }
 
     // --- Header Grafico Istituzionale ---
-    doc.setFillColor(0, 51, 153); // Colore blu del tuo gestionale
+    doc.setFillColor(0, 51, 153);
     doc.rect(0, 0, 210, 35, 'F');
 
     doc.setTextColor(255, 255, 255);
@@ -3972,80 +3985,89 @@ function generaPdfListaPacchi() {
     const tipoLista = tabAttiva === 'Tutti' ? 'TUTTI I CORRIERI' : `CORRIERE: ${tabAttiva.toUpperCase()}`;
     doc.text(`Elenco: ${tipoLista} | Generato il: ${dataOggi}`, 15, 26);
 
-    // Linea gialla decorativa sotto l'header
     doc.setFillColor(255, 204, 0);
     doc.rect(0, 35, 210, 3, 'F');
 
-    // --- Tabella Intestazioni ---
+    // --- Tabella Intestazioni (Carattere ingrandito a 11pt) ---
     let y = 48;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-    doc.text("ID PACCO", 15, y);
-    doc.text("DESTINATARIO", 45, y);
-    doc.text("CORRIERE", 105, y);
-    doc.text("SCAFFALE", 135, y);
-    doc.text("TRACKING", 165, y);
+    const disegnaIntestazione = (posY) => {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(0, 51, 153);
+        doc.text("ID PACCO", 12, posY);
+        doc.text("DESTINATARIO", 42, posY);
+        doc.text("CORRIERE / SCAFFALE", 100, posY);
+        doc.text("BARCODE / TRACKING", 150, posY);
 
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.3);
-    doc.line(15, y + 2, 195, y + 2);
-    y += 8;
+        doc.setDrawColor(0, 51, 153);
+        doc.setLineWidth(0.5);
+        doc.line(12, posY + 2, 198, posY + 2);
+    };
+
+    disegnaIntestazione(y);
+    y += 10;
 
     // --- Righe dei Pacchi ---
     pacchiDaStampare.forEach((p, index) => {
-        if (y > 275) {
+        // Aumentata la soglia di cambio pagina per fare spazio all'altezza della riga col barcode
+        if (y > 265) {
             doc.addPage();
-            y = 25;
-            
-            // Ripeti intestazioni colonne sulla nuova pagina
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(9);
-            doc.setTextColor(100, 100, 100);
-            doc.text("ID PACCO", 15, y);
-            doc.text("DESTINATARIO", 45, y);
-            doc.text("CORRIERE", 105, y);
-            doc.text("SCAFFALE", 135, y);
-            doc.text("TRACKING", 165, y);
-            doc.line(15, y + 2, 195, y + 2);
-            y += 8;
+            y = 20;
+            disegnaIntestazione(y);
+            y += 10;
         }
 
-        // Colore di sfondo alternato per massima leggibilità (Zebra style)
+        // Sfondo alternato leggermente più alto per contenere il codice a barre
         if (index % 2 === 0) {
             doc.setFillColor(245, 247, 250);
-            doc.rect(13, y - 4, 184, 6.5, 'F');
+            doc.rect(10, y - 5, 190, 15, 'F');
         }
 
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(8.5);
-        doc.setTextColor(26, 26, 26);
-
-        // ID Pacco (# + grandezza)
+        // ID Pacco (# + grandezza) - Ingrandito a 11pt
         doc.setFont("helvetica", "bold");
-        doc.text(`#${p.riconoscimento} (${p.grandezza || 'M'})`, 15, y);
+        doc.setFontSize(11);
+        doc.setTextColor(0, 51, 153);
+        doc.text(`#${p.riconoscimento} (${p.grandezza || 'M'})`, 12, y + 2);
 
-        // Destinatario
-        doc.setFont("helvetica", "normal");
+        // Destinatario - Ingrandito a 10pt
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(26, 26, 26);
         const nominativo = `${(p.cognome || '').toUpperCase()} ${(p.nome || '').toUpperCase()}`;
-        doc.text(nominativo.length > 30 ? nominativo.substring(0, 28) + ".." : nominativo, 45, y);
+        doc.text(nominativo.length > 25 ? nominativo.substring(0, 23) + ".." : nominativo, 42, y + 2);
 
-        // Corriere e Scaffale
-        doc.text(p.corriere || '-', 105, y);
-        doc.text(p.scaffale || '-', 135, y);
+        // Corriere e Scaffale - Ingrandito a 10pt
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text(`${p.corriere || '-'}`, 100, y);
+        doc.setFontSize(9);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Scaffale: ${p.scaffale || '-'}`, 100, y + 5);
 
-        // Tracking
+        // Codice a barre e testo Tracking
         const trk = p.codiceTracciabilita || '-';
-        doc.text(trk.length > 18 ? trk.substring(0, 16) + ".." : trk, 165, y);
+        if (trk !== '-') {
+            try {
+                const imgBarcode = generaBarcodeBase64(trk);
+                doc.addImage(imgBarcode, 'PNG', 150, y - 4, 45, 9);
+            } catch (e) {
+                console.error("Errore generazione barcode PDF", e);
+            }
+        }
+        
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.setTextColor(40, 40, 40);
+        doc.text(trk.length > 22 ? trk.substring(0, 20) + ".." : trk, 150, y + 8);
 
-        y += 6.5;
+        y += 16; // Incrementata la spaziatura verticale tra le righe
     });
 
     // Piè di pagina
     doc.setFont("helvetica", "italic");
-    doc.setFontSize(8);
+    doc.setFontSize(9);
     doc.setTextColor(150, 150, 150);
-    doc.text(`Totale pacchi in giacenza stampati: ${pacchiDaStampare.length}`, 15, 287);
+    doc.text(`Totale pacchi in giacenza stampati: ${pacchiDaStampare.length}`, 12, 287);
 
     // Salva il file
     const nomeFile = `Giacenza_${tabAttiva.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`;
