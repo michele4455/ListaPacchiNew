@@ -3992,8 +3992,8 @@ function generaPdfListaPacchi() {
 
         // 3. Ciclo Pacchi
         pacchiGiacenza.forEach((p) => {
-            // Controllo cambio pagina (spazio sufficiente per la nuova scheda più alta)
-            if (y > 255) {
+            // Controllo cambio pagina
+            if (y > 245) {
                 doc.addPage();
                 y = 20;
             }
@@ -4007,23 +4007,19 @@ function generaPdfListaPacchi() {
             if (p.isFermopoint) titoloPacco += " (FERMOPOINT)";
             doc.text(titoloPacco, 14, y);
 
-            // --- RIGA 2: CORRIERE, SCAFFALE E DATA ARRIVO (Font 10pt Normal) ---
+            // --- RIGA 2: CORRIERE E DATA ARRIVO (Senza Scaffale) ---
             doc.setTextColor(40, 40, 40);
             doc.setFontSize(10);
             doc.setFont("helvetica", "normal");
 
             const dataArrivo = p.dataTestoInserimento || p.dataInserimento || '-';
-            let dettagliText = `Corriere: ${p.corriere || '-'}  |  Scaffale: ${p.scaffale || '-'}  |  Arrivato: ${dataArrivo}`;
-            doc.text(dettagliText, 14, y + 7);
-
-            // --- RIGA 3: CONTRASSEGNO (se presente) ---
+            let dettagliText = `Corriere: ${p.corriere || '-'}   |   Arrivato il: ${dataArrivo}`;
             if (p.isContrassegno && p.importoContrassegno) {
-                doc.setFont("helvetica", "bold");
-                doc.setTextColor(204, 0, 0); // Rosso per evidenziare il contrassegno
-                doc.text(`CONTRASSEGNO: €${p.importoContrassegno}`, 14, y + 14);
+                dettagliText += `   |   CONTRASSEGNO: €${p.importoContrassegno}`;
             }
+            doc.text(dettagliText, 14, y + 6);
 
-            // --- GENERAZIONE E POSIZIONAMENTO BARCODE ---
+            // --- GENERAZIONE CODICE A BARRE (Ampio e ben visibile sotto i dati) ---
             const tracking = (p.codiceTracciabilita && p.codiceTracciabilita !== '-') ? p.codiceTracciabilita : null;
 
             if (tracking && typeof JsBarcode === 'function') {
@@ -4031,40 +4027,40 @@ function generaPdfListaPacchi() {
                     const canvasBarcode = document.createElement('canvas');
                     JsBarcode(canvasBarcode, tracking, {
                         format: "CODE128",
-                        width: 2.2,        // Barre più spesse e ben leggibili dal lettore
-                        height: 45,       // Altezza adeguata
-                        displayValue: true,// Mostra il testo del tracking sotto le barre
-                        fontSize: 12,
+                        width: 2,           // Larghezza ideale delle barre
+                        height: 35,          // Altezza bilanciata
+                        displayValue: true,  // Mostra il codice numerico/alfanumerico in chiaro
+                        fontSize: 11,
                         margin: 0
                     });
 
                     const barcodeImgData = canvasBarcode.toDataURL("image/png");
-                    // Posizionato a destra (X: 122), proporzionato per non coprire il testo (L: 74, H: 22)
-                    doc.addImage(barcodeImgData, 'PNG', 122, y - 3, 74, 22);
+                    // Posizionato su riga dedicata per non essere stretto (Larghezza: 100mm)
+                    doc.addImage(barcodeImgData, 'PNG', 14, y + 10, 100, 18);
                 } catch (err) {
                     doc.setFont("helvetica", "bold");
                     doc.setFontSize(9);
                     doc.setTextColor(100, 100, 100);
-                    doc.text(`TRK: ${tracking}`, 125, y + 6);
+                    doc.text(`TRK: ${tracking}`, 14, y + 15);
                 }
             } else if (tracking) {
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(9);
                 doc.setTextColor(100, 100, 100);
-                doc.text(`TRK: ${tracking}`, 125, y + 6);
+                doc.text(`TRK: ${tracking}`, 14, y + 15);
             } else {
                 doc.setFont("helvetica", "italic");
                 doc.setFontSize(9);
                 doc.setTextColor(150, 150, 150);
-                doc.text("TRK: Assente", 125, y + 6);
+                doc.text("TRK: Assente", 14, y + 15);
             }
 
-            // Separatore grigio chiaro tra i pacchi
-            doc.setDrawColor(225, 225, 225);
+            // Separatore grigio tra i pacchi
+            doc.setDrawColor(220, 220, 220);
             doc.setLineWidth(0.4);
-            doc.line(14, y + 22, 196, y + 22);
+            doc.line(14, y + 32, 196, y + 32);
 
-            y += 30; // Spaziatura verticale ottimale
+            y += 38; // Spaziatura verticale per la riga successiva
         });
 
         // 4. Salva il file PDF
@@ -4076,6 +4072,7 @@ function generaPdfListaPacchi() {
         alert("Si è verificato un errore durante la generazione del PDF: " + error.message);
     }
 }
+    
 </script>
     <button id="bellBtn" class="alert-bell-btn" onclick="apriStoricoAlert()" title="Storico Avvisi" style="display: none;">
         🔔<span id="bellBadge" class="bell-badge" style="display: none;">0</span>
