@@ -11,6 +11,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
@@ -3933,22 +3934,145 @@ function toggleMenuPdf(elemento) {
     
 function generaPdfListaPacchi() {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    const search = document.getElementById('search').value.toLowerCase().trim();
+    const doc = new jsPDF('p', 'mm', 'a4');
     
-    const filterFn = p => {
+    // Filtra i pacchi attualmente visualizzati in giacenza per il tab attivo / ricerca
+    const search = document.getElementById('search') ? document.getElementById('search').value.toLowerCase().trim() : '';
+    const pacchiGiacenza = pacchi.filter(p => {
+        if (p.ritirato) return false;
         const corrispondeTab = (tabAttiva === 'Tutti' || p.corriere === tabAttiva);
         if (!corrispondeTab) return false;
         if (!search) return true;
+        
         const cognomePacco = (p.cognome || "").toLowerCase();
         const nomePacco = (p.nome || "").toLowerCase();
         const trkPacco = (p.codiceTracciabilita || "").toLowerCase();
         const idPacco = String(p.riconoscimento || "");
-        const cognomeNome = cognomePacco + " " + nomePacco;
-        const nomeCognome = nomePacco + " " + cognomePacco;
-        return cognomeNome.includes(search) || nomeCognome.includes(search) || idPacco.includes(search) || trkPacco.includes(search);
-    };
+        
+        return (cognomePacco + " " + nomePacco).includes(search) || 
+               (nomePacco + " " + cognomePacco).includes(search) || 
+               idPacco.includes(search) || 
+               trkPacco.includes(search);
+    });
+
+    if (pacchiGiacenza.length === 0) {
+        showAlert("Nessun pacco presente in giacenza per questa selezione.");
+        return;
+    }
+
+    // --- INTESTAZIONE PDF ---
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18); // Carattere più grande per l'intestazione
+    doc.setTextColor(0, 51, 153); // Colore primario (#003399)
+    doc.text("CENTRO POST@ ANACLERIO", 14, 18);
+    
+    doc.setFontSize(12);
+    doc.setTextColor(50, 50, 50);
+    const dataStampa = new Date().toLocaleDateString('it-IT') + " " + new Date().toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'});
+    doc.text(`Lista Giacenza Pacchi (${tabAttiva}) - Data Stampa: ${dataStampa}`, 14, 25);
+    doc.text(`Totale Pacchi: ${pacchiGiacenza.length}`, 14, 31);
+
+    // --- TABELLA PACCHI ---
+    let startY = 38;
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const itemHeight = 22; // Altezza riga per ospitare il codice a barre e il testo più grande
+
+    // Intestazione Tabella
+    doc.setFillColor(0, 51, 153);
+    doc.rect(14, startY, 182, 8, 'F');
+    doc.setFontSize(11);
+    doc.setTextColor(255, 255, 255);
+    doc.text("ID", 16, startY + 6);
+    doc.text("Cliente", 30, startY + 6);
+    doc.text("Corriere / Scaffale", 80, startY + 6);
+    doc.text("Data Arrivo", 125, startY + 6);
+    doc.text("Codice a Barre (TRK)", 155, startY + 6);
+
+    startY += 8;
+
+    // Elemento Canvas nascosto per la generazione del codice a barre
+    let barcodeCanvas = document.createElement('canvas');
+
+    pacchiGiacenza.forEach((p, index) => {
+        // Controllo cambio pagina
+        if (startY + itemHeight > pageHeight - 15) {
+            doc.addPage();
+            startY = 20;
+            
+            // Re-intestazione nella nuova pagina
+            doc.setFillColor(0, 51, 153);
+            doc.rect(14, startY, 182, 8, 'F');
+            doc.setFontSize(11);
+            doc.setTextColor(255, 255, 255);
+            doc.text("ID", 16, startY + 6);
+            doc.text("Cliente", 30, startY + 6);
+            doc.text("Corriere / Scaffale", 80, startY + 6);
+            doc.text("Data Arrivo", 125, startY + 6);
+            doc.text("Codice a Barre (TRK)", 155, startY + 6);
+            startY += 8;
+        }
+
+        // Sfondo alternato per le righe (Zebra Striping)
+        if (index % 2 === 0) {
+            doc.setFillColor(245, 247, 250);
+            doc.rect(14, startY, 182, itemHeight, 'F');
+        }
+
+        // Bordo riga
+        doc.setDrawColor(220, 220, 220);
+        doc.rect(14, startY, 182, itemHeight, 'D');
+
+        // Testi (Grandezza Carattere Aumentata a 11pt e 10pt)
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`#${p.riconoscimento}`, 16, startY + 11);
+
+        doc.setFontSize(11);
+        const nomeCliente = `${p.cognome.toUpperCase()} ${p.nome.toUpperCase()}`;
+        // Taglia il nome se troppo lungo per evitare sovrapposizioni
+        doc.text(doc.splitTextToSize(nomeCliente, 48), 30, startY + 11);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text(`${p.corriere}`, 80, startY + 9);
+        doc.text(`📍 ${p.scaffale}`, 80, startY + 15);
+
+        // --- DATA DI ARRIVO DEL PACCO ---
+        const dataArrivo = p.dataTestoInserimento || '-';
+        doc.text(dataArrivo, 125, startY + 11);
+
+        // --- GENERAZIONE CODICE A BARRE ---
+        const trkCode = (p.codiceTracciabilita && p.codiceTracciabilita !== '-') ? p.codiceTracciabilita : '';
+        if (trkCode && typeof JsBarcode !== 'undefined') {
+            try {
+                JsBarcode(barcodeCanvas, trkCode, {
+                    format: "CODE128",
+                    width: 2,
+                    height: 40,
+                    displayValue: true,
+                    fontSize: 14,
+                    margin: 0
+                });
+                const imgData = barcodeCanvas.toDataURL("image/png");
+                // Inserisce il codice a barre a destra della riga
+                doc.addImage(imgData, 'PNG', 153, startY + 2, 40, 17);
+            } catch (e) {
+                // Fallback se il codice contiene caratteri non validi per Code128
+                doc.setFontSize(8);
+                doc.text(trkCode, 155, startY + 11);
+            }
+        } else {
+            doc.setFontSize(9);
+            doc.text(trkCode || '-', 155, startY + 11);
+        }
+
+        startY += itemHeight;
+    });
+
+    // Salva il PDF generato
+    doc.save(`Lista_Pacchi_Giacenza_${tabAttiva}_${new Date().toISOString().slice(0,10)}.pdf`);
+}
 
     const pacchiDaStampare = pacchi.filter(p => !p.ritirato && filterFn(p));
 
