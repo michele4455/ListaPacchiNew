@@ -3971,55 +3971,59 @@ function generaPdfListaPacchi() {
 
         // 2. Header Grafico Istituzionale (Centro Post@ Anaclerio)
         doc.setFillColor(0, 51, 153); // Blu
-        doc.rect(0, 0, 210, 28, 'F');
+        doc.rect(0, 0, 210, 26, 'F');
 
         doc.setTextColor(255, 255, 255);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(15);
-        doc.text("CENTRO POST@ ANACLERIO - LISTA GIACENZE", 14, 15);
+        doc.text("CENTRO POST@ ANACLERIO - LISTA GIACENZE", 14, 14);
 
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9.5);
         const dataStampa = new Date().toLocaleDateString('it-IT') + " " + new Date().toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'});
         const nomeTab = typeof tabAttiva !== 'undefined' ? tabAttiva.toUpperCase() : 'TUTTI';
-        doc.text(`Filtro: ${nomeTab} | Generato il: ${dataStampa} | Totale Pacchi: ${pacchiGiacenza.length}`, 14, 22);
+        doc.text(`Filtro: ${nomeTab} | Generato il: ${dataStampa} | Totale Pacchi: ${pacchiGiacenza.length}`, 14, 21);
 
         // Barra decorativa gialla
         doc.setFillColor(255, 204, 0);
-        doc.rect(0, 28, 210, 2, 'F');
+        doc.rect(0, 26, 210, 2, 'F');
 
-        let y = 38;
+        let y = 36;
 
-        // 3. Ciclo Pacchi (Con testo ingrandito, Data Arrivo e Barcode)
+        // 3. Ciclo Pacchi
         pacchiGiacenza.forEach((p) => {
-            // Controllo salto pagina
-            if (y > 260) {
+            // Controllo cambio pagina (spazio sufficiente per la nuova scheda più alta)
+            if (y > 255) {
                 doc.addPage();
                 y = 20;
             }
 
-            // --- TESTO INGRANDITO: Nome cliente e ID ---
+            // --- RIGA 1: NOME CLIENTE E ID (Font 12pt Bold Blu) ---
             doc.setFont("helvetica", "bold");
-            doc.setFontSize(13); // Ingrandito
+            doc.setFontSize(12);
             doc.setTextColor(0, 51, 153);
             
             let titoloPacco = `#${p.riconoscimento || ''} - ${(p.cognome || '').toUpperCase()} ${(p.nome || '').toUpperCase()} [${p.grandezza || 'M'}]`;
             if (p.isFermopoint) titoloPacco += " (FERMOPOINT)";
             doc.text(titoloPacco, 14, y);
 
-            // --- TESTO INGRANDITO: Corriere, Scaffale e Data Arrivo ---
-            doc.setTextColor(30, 30, 30);
-            doc.setFontSize(11); // Ingrandito
+            // --- RIGA 2: CORRIERE, SCAFFALE E DATA ARRIVO (Font 10pt Normal) ---
+            doc.setTextColor(40, 40, 40);
+            doc.setFontSize(10);
             doc.setFont("helvetica", "normal");
 
             const dataArrivo = p.dataTestoInserimento || p.dataInserimento || '-';
-            let dettagliText = `Corriere: ${p.corriere || '-'} | Ubicazione: ${p.scaffale || '-'} | Arrivato il: ${dataArrivo}`;
-            if (p.isContrassegno && p.importoContrassegno) {
-                dettagliText += ` | CONTRASSEGNO: €${p.importoContrassegno}`;
-            }
-            doc.text(dettagliText, 14, y + 6);
+            let dettagliText = `Corriere: ${p.corriere || '-'}  |  Scaffale: ${p.scaffale || '-'}  |  Arrivato: ${dataArrivo}`;
+            doc.text(dettagliText, 14, y + 7);
 
-            // --- Generazione Codice a Barre (Tracking) ---
+            // --- RIGA 3: CONTRASSEGNO (se presente) ---
+            if (p.isContrassegno && p.importoContrassegno) {
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(204, 0, 0); // Rosso per evidenziare il contrassegno
+                doc.text(`CONTRASSEGNO: €${p.importoContrassegno}`, 14, y + 14);
+            }
+
+            // --- GENERAZIONE E POSIZIONAMENTO BARCODE ---
             const tracking = (p.codiceTracciabilita && p.codiceTracciabilita !== '-') ? p.codiceTracciabilita : null;
 
             if (tracking && typeof JsBarcode === 'function') {
@@ -4027,39 +4031,43 @@ function generaPdfListaPacchi() {
                     const canvasBarcode = document.createElement('canvas');
                     JsBarcode(canvasBarcode, tracking, {
                         format: "CODE128",
-                        width: 2,
-                        height: 40,
-                        displayValue: true,
+                        width: 2.2,        // Barre più spesse e ben leggibili dal lettore
+                        height: 45,       // Altezza adeguata
+                        displayValue: true,// Mostra il testo del tracking sotto le barre
                         fontSize: 12,
                         margin: 0
                     });
 
                     const barcodeImgData = canvasBarcode.toDataURL("image/png");
-                    doc.addImage(barcodeImgData, 'PNG', 125, y - 4, 65, 20);
+                    // Posizionato a destra (X: 122), proporzionato per non coprire il testo (L: 74, H: 22)
+                    doc.addImage(barcodeImgData, 'PNG', 122, y - 3, 74, 22);
                 } catch (err) {
                     doc.setFont("helvetica", "bold");
                     doc.setFontSize(9);
-                    doc.text(`TRK: ${tracking}`, 130, y + 4);
+                    doc.setTextColor(100, 100, 100);
+                    doc.text(`TRK: ${tracking}`, 125, y + 6);
                 }
             } else if (tracking) {
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(9);
-                doc.text(`TRK: ${tracking}`, 130, y + 4);
+                doc.setTextColor(100, 100, 100);
+                doc.text(`TRK: ${tracking}`, 125, y + 6);
             } else {
                 doc.setFont("helvetica", "italic");
                 doc.setFontSize(9);
-                doc.text("TRK: Assente", 130, y + 4);
+                doc.setTextColor(150, 150, 150);
+                doc.text("TRK: Assente", 125, y + 6);
             }
 
-            // Separatore orizzontale
-            doc.setDrawColor(220, 220, 220);
-            doc.setLineWidth(0.3);
-            doc.line(14, y + 20, 196, y + 20);
+            // Separatore grigio chiaro tra i pacchi
+            doc.setDrawColor(225, 225, 225);
+            doc.setLineWidth(0.4);
+            doc.line(14, y + 22, 196, y + 22);
 
-            y += 26; // Spaziatura tra elementi
+            y += 30; // Spaziatura verticale ottimale
         });
 
-        // 4. Download PDF
+        // 4. Salva il file PDF
         const tabFilename = typeof tabAttiva !== 'undefined' ? tabAttiva.replace(/\s+/g, '_') : 'Tutti';
         doc.save(`Giacenza_${tabFilename}_${new Date().toISOString().slice(0, 10)}.pdf`);
 
