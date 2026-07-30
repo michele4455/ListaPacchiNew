@@ -11,7 +11,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
@@ -3933,139 +3932,23 @@ function toggleMenuPdf(elemento) {
 }
     
 function generaPdfListaPacchi() {
-    // 1. Verifichiamo prima di tutto se jsPDF esiste
-    if (typeof window.jspdf === 'undefined') {
-        alert("Errore: Libreria jsPDF non trovata. Controlla di aver incluso lo script nell'HTML.");
-        return;
-    }
-
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'mm', 'a4');
+    const doc = new jsPDF();
+
+    const search = document.getElementById('search').value.toLowerCase().trim();
     
-    // Recupero elementi di ricerca
-    const searchInput = document.getElementById('search');
-    const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
-    
-    // Filtro pacchi
-    const pacchiGiacenza = (typeof pacchi !== 'undefined' ? pacchi : []).filter(p => {
-        if (p.ritirato) return false;
-        const correnteTab = (typeof tabAttiva !== 'undefined') ? tabAttiva : 'Tutti';
-        const corrispondeTab = (correnteTab === 'Tutti' || p.corriere === correnteTab);
+    const filterFn = p => {
+        const corrispondeTab = (tabAttiva === 'Tutti' || p.corriere === tabAttiva);
         if (!corrispondeTab) return false;
         if (!search) return true;
-        
         const cognomePacco = (p.cognome || "").toLowerCase();
         const nomePacco = (p.nome || "").toLowerCase();
         const trkPacco = (p.codiceTracciabilita || "").toLowerCase();
         const idPacco = String(p.riconoscimento || "");
-        
-        return (cognomePacco + " " + nomePacco).includes(search) || 
-               (nomePacco + " " + cognomePacco).includes(search) || 
-               idPacco.includes(search) || 
-               trkPacco.includes(search);
-    });
-
-    if (pacchiGiacenza.length === 0) {
-        alert("Nessun pacco presente in giacenza per questa selezione.");
-        return;
-    }
-
-    // --- INTESTAZIONE PDF ---
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.setTextColor(0, 51, 153);
-    doc.text("CENTRO POST@ ANACLERIO", 14, 18);
-    
-    doc.setFontSize(11);
-    doc.setTextColor(50, 50, 50);
-    const tabNome = (typeof tabAttiva !== 'undefined') ? tabAttiva : 'Tutti';
-    const dataStampa = new Date().toLocaleDateString('it-IT') + " " + new Date().toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'});
-    doc.text(`Lista Giacenza Pacchi (${tabNome}) - Data Stampa: ${dataStampa}`, 14, 25);
-    doc.text(`Totale Pacchi: ${pacchiGiacenza.length}`, 14, 31);
-
-    // --- TABELLA ---
-    let startY = 38;
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const itemHeight = 22;
-
-    function disegnaIntestazione(y) {
-        doc.setFillColor(0, 51, 153);
-        doc.rect(14, y, 182, 8, 'F');
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(10);
-        doc.setTextColor(255, 255, 255);
-        doc.text("ID", 16, y + 6);
-        doc.text("Cliente", 30, y + 6);
-        doc.text("Corriere / Scaffale", 80, y + 6);
-        doc.text("Data Arrivo", 125, y + 6);
-        doc.text("Codice a Barre (TRK)", 155, y + 6);
-    }
-
-    disegnaIntestazione(startY);
-    startY += 8;
-
-    let barcodeCanvas = document.createElement('canvas');
-
-    pacchiGiacenza.forEach((p, index) => {
-        if (startY + itemHeight > pageHeight - 15) {
-            doc.addPage();
-            startY = 20;
-            disegnaIntestazione(startY);
-            startY += 8;
-        }
-
-        if (index % 2 === 0) {
-            doc.setFillColor(245, 247, 250);
-            doc.rect(14, startY, 182, itemHeight, 'F');
-        }
-
-        doc.setDrawColor(220, 220, 220);
-        doc.rect(14, startY, 182, itemHeight, 'D');
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(11);
-        doc.setTextColor(0, 0, 0);
-        doc.text(`#${p.riconoscimento || ''}`, 16, startY + 11);
-
-        doc.setFontSize(10);
-        const nomeCliente = `${(p.cognome || '').toUpperCase()} ${(p.nome || '').toUpperCase()}`;
-        doc.text(doc.splitTextToSize(nomeCliente, 48), 30, startY + 11);
-
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-        doc.text(`${p.corriere || ''}`, 80, startY + 9);
-        doc.text(`📍 ${p.scaffale || ''}`, 80, startY + 15);
-
-        const dataArrivo = p.dataTestoInserimento || p.dataInserimento || '-';
-        doc.text(String(dataArrivo), 125, startY + 11);
-
-        const trkCode = (p.codiceTracciabilita && p.codiceTracciabilita !== '-') ? String(p.codiceTracciabilita) : '';
-        if (trkCode && typeof JsBarcode !== 'undefined') {
-            try {
-                JsBarcode(barcodeCanvas, trkCode, {
-                    format: "CODE128",
-                    width: 2,
-                    height: 40,
-                    displayValue: true,
-                    fontSize: 12,
-                    margin: 0
-                });
-                const imgData = barcodeCanvas.toDataURL("image/png");
-                doc.addImage(imgData, 'PNG', 153, startY + 2, 40, 17);
-            } catch (e) {
-                doc.setFontSize(8);
-                doc.text(trkCode, 155, startY + 11);
-            }
-        } else {
-            doc.setFontSize(8);
-            doc.text(trkCode || '-', 155, startY + 11);
-        }
-
-        startY += itemHeight;
-    });
-
-    doc.save(`Lista_Pacchi_Giacenza_${new Date().toISOString().slice(0,10)}.pdf`);
-}
+        const cognomeNome = cognomePacco + " " + nomePacco;
+        const nomeCognome = nomePacco + " " + cognomePacco;
+        return cognomeNome.includes(search) || nomeCognome.includes(search) || idPacco.includes(search) || trkPacco.includes(search);
+    };
 
     const pacchiDaStampare = pacchi.filter(p => !p.ritirato && filterFn(p));
 
