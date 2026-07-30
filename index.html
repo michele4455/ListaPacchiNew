@@ -3936,7 +3936,7 @@ function generaPdfListaPacchi() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    // 1. Filtro pacchi
+    // Filtro pacchi
     const search = document.getElementById('search').value.toLowerCase().trim();
     
     const filterFn = p => {
@@ -3958,13 +3958,17 @@ function generaPdfListaPacchi() {
     const pacchiGiacenza = pacchi.filter(p => !p.ritirato && filterFn(p));
 
     if (pacchiGiacenza.length === 0) {
-        showAlert("Nessun pacco presente per il report selezionato.");
+        if (typeof showAlert === "function") {
+            showAlert("Nessun pacco presente per il report selezionato.");
+        } else {
+            alert("Nessun pacco presente per il report selezionato.");
+        }
         return;
     }
 
-    // 2. Intestazione Documento
+    // Header PDF
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(18); // Titolo grande
+    doc.setFontSize(18); // Font ingrandito
     doc.text(`Lista Pacchi in Giacenza - ${tabAttiva.toUpperCase()}`, 14, 18);
 
     doc.setFontSize(10);
@@ -3977,11 +3981,9 @@ function generaPdfListaPacchi() {
     doc.line(14, 28, 196, 28);
 
     let y = 38;
-    const canvasBarcode = document.createElement('canvas'); // Canvas temporaneo per JsBarcode
 
-    // 3. Ciclo Pacchi
+    // Ciclo sui pacchi
     pacchiGiacenza.forEach((p) => {
-        // Gestione cambio pagina
         if (y > 260) {
             doc.addPage();
             y = 20;
@@ -3996,23 +3998,24 @@ function generaPdfListaPacchi() {
         if (p.isFermopoint) titoloPacco += " (FERMOPOINT)";
         doc.text(titoloPacco, 14, y);
 
-        // --- Dettagli: Corriere, Scaffale e Data di Arrivo ---
+        // --- Dettagli: Corriere, Scaffale e Data Arrivo ---
         doc.setTextColor(30, 30, 30);
         doc.setFontSize(11); // Ingrandito
         doc.setFont("helvetica", "normal");
 
         const dataArrivo = p.dataTestoInserimento || '-';
-        let dettagliText = `Corriere: ${p.corriere} | Ubicazione: ${p.scaffale || '-'} | Arrivato: ${dataArrivo}`;
+        let dettagliText = `Corriere: ${p.corriere} | Ubicazione: ${p.scaffale || '-'} | Arrivato il: ${dataArrivo}`;
         if (p.isContrassegno && p.importoContrassegno) {
             dettagliText += ` | CONTRASSEGNO: €${p.importoContrassegno}`;
         }
         doc.text(dettagliText, 14, y + 6);
 
-        // --- Barcode del Tracking ---
+        // --- Generazione Barcode Protetta ---
         const tracking = (p.codiceTracciabilita && p.codiceTracciabilita !== '-') ? p.codiceTracciabilita : null;
 
-        if (tracking) {
+        if (tracking && typeof JsBarcode !== 'undefined') {
             try {
+                const canvasBarcode = document.createElement('canvas');
                 JsBarcode(canvasBarcode, tracking, {
                     format: "CODE128",
                     width: 2,
@@ -4029,18 +4032,22 @@ function generaPdfListaPacchi() {
                 doc.setFontSize(9);
                 doc.text(`TRK: ${tracking}`, 130, y + 4);
             }
+        } else if (tracking) {
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
+            doc.text(`TRK: ${tracking}`, 130, y + 4);
         } else {
             doc.setFont("helvetica", "italic");
             doc.setFontSize(9);
             doc.text("TRK: Assente", 130, y + 4);
         }
 
-        // Linea separatrice
+        // Separatore
         doc.setDrawColor(220, 220, 220);
         doc.setLineWidth(0.3);
         doc.line(14, y + 20, 196, y + 20);
 
-        y += 26; // Spazio verticale tra un elemento e l'altro
+        y += 26;
     });
 
     doc.save(`Lista_Pacchi_${tabAttiva}_${new Date().toISOString().slice(0, 10)}.pdf`);
