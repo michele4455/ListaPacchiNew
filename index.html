@@ -3933,226 +3933,140 @@ function toggleMenuPdf(elemento) {
 }
     
 function generaPdfListaPacchi() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
 
-    // Filtro pacchi
-    const search = document.getElementById('search').value.toLowerCase().trim();
-    
-    const filterFn = p => {
-        const corrispondeTab = (tabAttiva === 'Tutti' || p.corriere === tabAttiva);
-        if (!corrispondeTab) return false;
-        if (!search) return true;
-
-        const cognomePacco = (p.cognome || "").toLowerCase();
-        const nomePacco = (p.nome || "").toLowerCase();
-        const trkPacco = (p.codiceTracciabilita || "").toLowerCase();
-        const idPacco = String(p.riconoscimento || "");
-
-        return (cognomePacco + " " + nomePacco).includes(search) || 
-               (nomePacco + " " + cognomePacco).includes(search) || 
-               idPacco.includes(search) || 
-               trkPacco.includes(search);
-    };
-
-    const pacchiGiacenza = pacchi.filter(p => !p.ritirato && filterFn(p));
-
-    if (pacchiGiacenza.length === 0) {
-        if (typeof showAlert === "function") {
-            showAlert("Nessun pacco presente per il report selezionato.");
-        } else {
-            alert("Nessun pacco presente per il report selezionato.");
-        }
-        return;
-    }
-
-    // Header PDF
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(18); // Font ingrandito
-    doc.text(`Lista Pacchi in Giacenza - ${tabAttiva.toUpperCase()}`, 14, 18);
-
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    const dataStampa = new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-    doc.text(`Data Generazione: ${dataStampa} | Totale Pacchi: ${pacchiGiacenza.length}`, 14, 25);
-
-    doc.setDrawColor(0, 51, 153);
-    doc.setLineWidth(0.8);
-    doc.line(14, 28, 196, 28);
-
-    let y = 38;
-
-    // Ciclo sui pacchi
-    pacchiGiacenza.forEach((p) => {
-        if (y > 260) {
-            doc.addPage();
-            y = 20;
-        }
-
-        // --- Nome, ID e Dimensione Pacco (Testo Grande) ---
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(13); // Ingrandito
-        doc.setTextColor(0, 51, 153);
+        // 1. Filtro pacchi
+        const searchInput = document.getElementById('search');
+        const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
         
-        let titoloPacco = `#${p.riconoscimento} - ${(p.cognome || '').toUpperCase()} ${(p.nome || '').toUpperCase()} [${p.grandezza || 'M'}]`;
-        if (p.isFermopoint) titoloPacco += " (FERMOPOINT)";
-        doc.text(titoloPacco, 14, y);
+        const filterFn = p => {
+            const corrispondeTab = (typeof tabAttiva === 'undefined' || tabAttiva === 'Tutti' || p.corriere === tabAttiva);
+            if (!corrispondeTab) return false;
+            if (!search) return true;
 
-        // --- Dettagli: Corriere, Scaffale e Data Arrivo ---
-        doc.setTextColor(30, 30, 30);
-        doc.setFontSize(11); // Ingrandito
-        doc.setFont("helvetica", "normal");
+            const cognomePacco = (p.cognome || "").toLowerCase();
+            const nomePacco = (p.nome || "").toLowerCase();
+            const trkPacco = (p.codiceTracciabilita || "").toLowerCase();
+            const idPacco = String(p.riconoscimento || "");
 
-        const dataArrivo = p.dataTestoInserimento || '-';
-        let dettagliText = `Corriere: ${p.corriere} | Ubicazione: ${p.scaffale || '-'} | Arrivato il: ${dataArrivo}`;
-        if (p.isContrassegno && p.importoContrassegno) {
-            dettagliText += ` | CONTRASSEGNO: €${p.importoContrassegno}`;
+            return (cognomePacco + " " + nomePacco).includes(search) || 
+                   (nomePacco + " " + cognomePacco).includes(search) || 
+                   idPacco.includes(search) || 
+                   trkPacco.includes(search);
+        };
+
+        const listaPacchi = (typeof pacchi !== 'undefined' && Array.isArray(pacchi)) ? pacchi : [];
+        const pacchiGiacenza = listaPacchi.filter(p => !p.ritirato && filterFn(p));
+
+        if (pacchiGiacenza.length === 0) {
+            if (typeof showAlert === "function") {
+                showAlert("Nessun pacco presente per il report selezionato.");
+            } else {
+                alert("Nessun pacco presente per il report selezionato.");
+            }
+            return;
         }
-        doc.text(dettagliText, 14, y + 6);
 
-        // --- Generazione Barcode Protetta ---
-        const tracking = (p.codiceTracciabilita && p.codiceTracciabilita !== '-') ? p.codiceTracciabilita : null;
+        // 2. Header Grafico Istituzionale (Centro Post@ Anaclerio)
+        doc.setFillColor(0, 51, 153); // Blu
+        doc.rect(0, 0, 210, 28, 'F');
 
-        if (tracking && typeof JsBarcode !== 'undefined') {
-            try {
-                const canvasBarcode = document.createElement('canvas');
-                JsBarcode(canvasBarcode, tracking, {
-                    format: "CODE128",
-                    width: 2,
-                    height: 40,
-                    displayValue: true,
-                    fontSize: 12,
-                    margin: 0
-                });
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(15);
+        doc.text("CENTRO POST@ ANACLERIO - LISTA GIACENZE", 14, 15);
 
-                const barcodeImgData = canvasBarcode.toDataURL("image/png");
-                doc.addImage(barcodeImgData, 'PNG', 125, y - 4, 65, 20);
-            } catch (err) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9.5);
+        const dataStampa = new Date().toLocaleDateString('it-IT') + " " + new Date().toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'});
+        const nomeTab = typeof tabAttiva !== 'undefined' ? tabAttiva.toUpperCase() : 'TUTTI';
+        doc.text(`Filtro: ${nomeTab} | Generato il: ${dataStampa} | Totale Pacchi: ${pacchiGiacenza.length}`, 14, 22);
+
+        // Barra decorativa gialla
+        doc.setFillColor(255, 204, 0);
+        doc.rect(0, 28, 210, 2, 'F');
+
+        let y = 38;
+
+        // 3. Ciclo Pacchi (Con testo ingrandito, Data Arrivo e Barcode)
+        pacchiGiacenza.forEach((p) => {
+            // Controllo salto pagina
+            if (y > 260) {
+                doc.addPage();
+                y = 20;
+            }
+
+            // --- TESTO INGRANDITO: Nome cliente e ID ---
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(13); // Ingrandito
+            doc.setTextColor(0, 51, 153);
+            
+            let titoloPacco = `#${p.riconoscimento || ''} - ${(p.cognome || '').toUpperCase()} ${(p.nome || '').toUpperCase()} [${p.grandezza || 'M'}]`;
+            if (p.isFermopoint) titoloPacco += " (FERMOPOINT)";
+            doc.text(titoloPacco, 14, y);
+
+            // --- TESTO INGRANDITO: Corriere, Scaffale e Data Arrivo ---
+            doc.setTextColor(30, 30, 30);
+            doc.setFontSize(11); // Ingrandito
+            doc.setFont("helvetica", "normal");
+
+            const dataArrivo = p.dataTestoInserimento || p.dataInserimento || '-';
+            let dettagliText = `Corriere: ${p.corriere || '-'} | Ubicazione: ${p.scaffale || '-'} | Arrivato il: ${dataArrivo}`;
+            if (p.isContrassegno && p.importoContrassegno) {
+                dettagliText += ` | CONTRASSEGNO: €${p.importoContrassegno}`;
+            }
+            doc.text(dettagliText, 14, y + 6);
+
+            // --- Generazione Codice a Barre (Tracking) ---
+            const tracking = (p.codiceTracciabilita && p.codiceTracciabilita !== '-') ? p.codiceTracciabilita : null;
+
+            if (tracking && typeof JsBarcode === 'function') {
+                try {
+                    const canvasBarcode = document.createElement('canvas');
+                    JsBarcode(canvasBarcode, tracking, {
+                        format: "CODE128",
+                        width: 2,
+                        height: 40,
+                        displayValue: true,
+                        fontSize: 12,
+                        margin: 0
+                    });
+
+                    const barcodeImgData = canvasBarcode.toDataURL("image/png");
+                    doc.addImage(barcodeImgData, 'PNG', 125, y - 4, 65, 20);
+                } catch (err) {
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(9);
+                    doc.text(`TRK: ${tracking}`, 130, y + 4);
+                }
+            } else if (tracking) {
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(9);
                 doc.text(`TRK: ${tracking}`, 130, y + 4);
+            } else {
+                doc.setFont("helvetica", "italic");
+                doc.setFontSize(9);
+                doc.text("TRK: Assente", 130, y + 4);
             }
-        } else if (tracking) {
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(9);
-            doc.text(`TRK: ${tracking}`, 130, y + 4);
-        } else {
-            doc.setFont("helvetica", "italic");
-            doc.setFontSize(9);
-            doc.text("TRK: Assente", 130, y + 4);
-        }
 
-        // Separatore
-        doc.setDrawColor(220, 220, 220);
-        doc.setLineWidth(0.3);
-        doc.line(14, y + 20, 196, y + 20);
+            // Separatore orizzontale
+            doc.setDrawColor(220, 220, 220);
+            doc.setLineWidth(0.3);
+            doc.line(14, y + 20, 196, y + 20);
 
-        y += 26;
-    });
+            y += 26; // Spaziatura tra elementi
+        });
 
-    doc.save(`Lista_Pacchi_${tabAttiva}_${new Date().toISOString().slice(0, 10)}.pdf`);
-}
+        // 4. Download PDF
+        const tabFilename = typeof tabAttiva !== 'undefined' ? tabAttiva.replace(/\s+/g, '_') : 'Tutti';
+        doc.save(`Giacenza_${tabFilename}_${new Date().toISOString().slice(0, 10)}.pdf`);
 
-    const pacchiDaStampare = pacchi.filter(p => !p.ritirato && filterFn(p));
-
-    if (pacchiDaStampare.length === 0) {
-        alert("Nessun pacco presente nella lista attuale da stampare.");
-        return;
+    } catch (error) {
+        console.error("Errore Generazione PDF:", error);
+        alert("Si è verificato un errore durante la generazione del PDF: " + error.message);
     }
-
-    // --- Header Grafico Istituzionale ---
-    doc.setFillColor(0, 51, 153); // Colore blu del tuo gestionale
-    doc.rect(0, 0, 210, 35, 'F');
-
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.text("CENTRO POST@ ANACLERIO - LISTA GIACENZE", 15, 18);
-
-    const dataOggi = new Date().toLocaleDateString('it-IT') + " " + new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    const tipoLista = tabAttiva === 'Tutti' ? 'TUTTI I CORRIERI' : `CORRIERE: ${tabAttiva.toUpperCase()}`;
-    doc.text(`Elenco: ${tipoLista} | Generato il: ${dataOggi}`, 15, 26);
-
-    // Linea gialla decorativa sotto l'header
-    doc.setFillColor(255, 204, 0);
-    doc.rect(0, 35, 210, 3, 'F');
-
-    // --- Tabella Intestazioni ---
-    let y = 48;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-    doc.text("ID PACCO", 15, y);
-    doc.text("DESTINATARIO", 45, y);
-    doc.text("CORRIERE", 105, y);
-    doc.text("SCAFFALE", 135, y);
-    doc.text("TRACKING", 165, y);
-
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.3);
-    doc.line(15, y + 2, 195, y + 2);
-    y += 8;
-
-    // --- Righe dei Pacchi ---
-    pacchiDaStampare.forEach((p, index) => {
-        if (y > 275) {
-            doc.addPage();
-            y = 25;
-            
-            // Ripeti intestazioni colonne sulla nuova pagina
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(9);
-            doc.setTextColor(100, 100, 100);
-            doc.text("ID PACCO", 15, y);
-            doc.text("DESTINATARIO", 45, y);
-            doc.text("CORRIERE", 105, y);
-            doc.text("SCAFFALE", 135, y);
-            doc.text("TRACKING", 165, y);
-            doc.line(15, y + 2, 195, y + 2);
-            y += 8;
-        }
-
-        // Colore di sfondo alternato per massima leggibilità (Zebra style)
-        if (index % 2 === 0) {
-            doc.setFillColor(245, 247, 250);
-            doc.rect(13, y - 4, 184, 6.5, 'F');
-        }
-
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(8.5);
-        doc.setTextColor(26, 26, 26);
-
-        // ID Pacco (# + grandezza)
-        doc.setFont("helvetica", "bold");
-        doc.text(`#${p.riconoscimento} (${p.grandezza || 'M'})`, 15, y);
-
-        // Destinatario
-        doc.setFont("helvetica", "normal");
-        const nominativo = `${(p.cognome || '').toUpperCase()} ${(p.nome || '').toUpperCase()}`;
-        doc.text(nominativo.length > 30 ? nominativo.substring(0, 28) + ".." : nominativo, 45, y);
-
-        // Corriere e Scaffale
-        doc.text(p.corriere || '-', 105, y);
-        doc.text(p.scaffale || '-', 135, y);
-
-        // Tracking
-        const trk = p.codiceTracciabilita || '-';
-        doc.text(trk.length > 18 ? trk.substring(0, 16) + ".." : trk, 165, y);
-
-        y += 6.5;
-    });
-
-    // Piè di pagina
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
-    doc.text(`Totale pacchi in giacenza stampati: ${pacchiDaStampare.length}`, 15, 287);
-
-    // Salva il file
-    const nomeFile = `Giacenza_${tabAttiva.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`;
-    doc.save(nomeFile);
 }
 </script>
     <button id="bellBtn" class="alert-bell-btn" onclick="apriStoricoAlert()" title="Storico Avvisi" style="display: none;">
