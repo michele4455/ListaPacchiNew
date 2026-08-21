@@ -865,6 +865,140 @@
 .pdf-link-content:hover {
     color: var(--primary-dark);
 }
+        .chat-toggle-btn {
+    position: fixed;
+    bottom: 85px;
+    right: 25px;
+    background-color: var(--primary);
+    color: var(--accent);
+    border: 2px solid var(--accent);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 1.4rem;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: transform 0.2s;
+}
+.chat-toggle-btn:hover {
+    transform: scale(1.1);
+}
+.chat-badge-count {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--warning);
+    color: white;
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 50%;
+    font-weight: bold;
+    display: none;
+}
+
+.chat-window {
+    display: none;
+    position: fixed;
+    bottom: 145px;
+    right: 25px;
+    width: 350px;
+    height: 450px;
+    background: white;
+    border: 2px solid var(--primary);
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    z-index: 1001;
+    flex-direction: column;
+    overflow: hidden;
+}
+.chat-window.show {
+    display: flex;
+}
+.chat-header {
+    background: var(--primary);
+    color: white;
+    padding: 10px 15px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 3px solid var(--accent);
+}
+.chat-device-info {
+    font-size: 0.75rem;
+    color: var(--accent);
+    font-weight: normal;
+}
+.chat-messages {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    background: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.chat-msg {
+    max-width: 80%;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    line-height: 1.3;
+    word-break: break-word;
+}
+.chat-msg.mine {
+    align-self: flex-end;
+    background: var(--primary);
+    color: white;
+    border-bottom-right-radius: 2px;
+}
+.chat-msg.other {
+    align-self: flex-start;
+    background: #e9ecef;
+    color: #333;
+    border-bottom-left-radius: 2px;
+    border: 1px solid #ced4da;
+}
+.chat-msg-author {
+    font-size: 0.7rem;
+    font-weight: bold;
+    margin-bottom: 2px;
+    color: var(--accent);
+}
+.chat-msg.other .chat-msg-author {
+    color: var(--primary);
+}
+.chat-msg-time {
+    font-size: 0.65rem;
+    opacity: 0.8;
+    text-align: right;
+    margin-top: 3px;
+}
+.chat-input-area {
+    display: flex;
+    padding: 10px;
+    background: white;
+    border-top: 1px solid #ddd;
+    gap: 5px;
+}
+.chat-input-area input {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+}
+.chat-input-area button {
+    padding: 8px 15px;
+    background: var(--primary);
+    color: var(--accent);
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
         
     </style>
     <script>
@@ -4072,11 +4206,228 @@ function generaPdfListaPacchi() {
         alert("Si è verificato un errore durante la generazione del PDF: " + error.message);
     }
 }
+// --- SISTEMA CHAT INTER-DISPOSITIVO ---
+let mioDeviceId = localStorage.getItem("chat_device_id");
+let mioDeviceNome = localStorage.getItem("chat_device_nome");
+let chatAperta = false;
+let messaggiNonLetti = 0;
+
+// Configurazione o recupero identificativo del dispositivo
+if (!mioDeviceId) {
+    mioDeviceId = 'PC-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    localStorage.setItem("chat_device_id", mioDeviceId);
+}
+
+if (!mioDeviceNome) {
+    // Tenta di recuperare l'IP o assegna un nome predefinito
+    fetch('https://api.ipify.org?format=json')
+        .then(res => res.json())
+        .then(data => {
+            mioDeviceNome = "PC (" + data.ip + ")";
+            localStorage.setItem("chat_device_nome", mioDeviceNome);
+            aggiornaHeaderChat();
+        })
+        .catch(() => {
+            mioDeviceNome = "Postazione " + mioDeviceId;
+            localStorage.setItem("chat_device_nome", mioDeviceNome);
+            aggiornaHeaderChat();
+        });
+}
+
+function aggiornaHeaderChat() {
+    const el = document.getElementById("chatDeviceDisplay");
+    if (el) el.innerText = (mioDeviceNome || mioDeviceId) + " [Clicca per rinominare]";
+}
+
+// Consente di cliccare sull'header per rinominare la postazione (es. "Cassa 1")
+document.addEventListener("DOMContentLoaded", function() {
+    richiediPermessoNotifiche();
+    aggiornaHeaderChat();
+    
+    const devEl = document.getElementById("chatDeviceDisplay");
+    if(devEl) {
+        devEl.style.cursor = "pointer";
+        devEl.onclick = function() {
+            let nuovoNome = prompt("Inserisci il nome identificativo di questo computer:", mioDeviceNome);
+            if (nuovoNome && nuovoNome.trim() !== "") {
+                mioDeviceNome = nuovoNome.trim();
+                localStorage.setItem("chat_device_nome", mioDeviceNome);
+                aggiornaHeaderChat();
+            }
+        };
+    }
+    
+    inializzaAscoltoChat();
+});
+
+function richiediPermessoNotifiche() {
+    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+        Notification.requestPermission();
+    }
+}
+
+function toggleChatWindow() {
+    const win = document.getElementById("chatWindow");
+    chatAperta = !chatAperta;
+    if (chatAperta) {
+        win.classList.add("show");
+        messaggiNonLetti = 0;
+        aggiornaBadgeChat();
+        const container = document.getElementById("chatMessages");
+        container.scrollTop = container.scrollHeight;
+    } else {
+        win.classList.remove("show");
+    }
+}
+
+function aggiornaBadgeChat() {
+    const badge = document.getElementById("chatBadge");
+    if (messaggiNonLetti > 0 && !chatAperta) {
+        badge.innerText = messaggiNonLetti;
+        badge.style.display = "block";
+    } else {
+        badge.style.display = "none";
+    }
+}
+
+function inviaMessaggioChat() {
+    const input = document.getElementById("chatInputMsg");
+    const testo = input.value.trim();
+    if (!testo) return;
+
+    const adesso = Date.now();
+    const messaggioData = {
+        senderId: mioDeviceId,
+        senderName: mioDeviceNome || mioDeviceId,
+        testo: testo,
+        timestamp: adesso
+    };
+
+    // Salvataggio su Firebase
+    firebase.database().ref("chat_messages").push(messaggioData);
+    input.value = "";
+}
+
+function inializzaAscoltoChat() {
+    const chatRef = firebase.database().ref("chat_messages");
+    
+    // Ascolta nuovi messaggi in arrivo
+    chatRef.on("child_added", function(snapshot) {
+        const msg = snapshot.val();
+        const key = snapshot.key;
+        const oraAttuale = Date.now();
+        const UN_ORA = 60 * 60 * 1000; // 1 ora in millisecondi
+
+        // Se il messaggio è più vecchio di 1 ora, puliscilo da Firebase ed ignoralo
+        if (oraAttuale - msg.timestamp > UN_ORA) {
+            firebase.database().ref("chat_messages/" + key).remove();
+            return;
+        }
+
+        mostraMessaggioInChat(msg);
+
+        // Se il messaggio proviene da un altro dispositivo
+        if (msg.senderId !== mioDeviceId) {
+            if (!chatAperta) {
+                messaggiNonLetti++;
+                aggiornaBadgeChat();
+            }
+            notificaNuovoMessaggio(msg);
+        }
+    });
+
+    // Pulizia periodica automatica ogni 5 minuti per i messaggi scaduti (> 1 ora)
+    setInterval(() => {
+        const oraAttuale = Date.now();
+        const UN_ORA = 60 * 60 * 1000;
+        
+        chatRef.once("value", function(snapshot) {
+            snapshot.forEach(function(child) {
+                const msg = child.val();
+                if (oraAttuale - msg.timestamp > UN_ORA) {
+                    firebase.database().ref("chat_messages/" + child.key).remove();
+                    // Rimuovi anche dall'interfaccia se presente
+                    const el = document.getElementById("msg-" + child.key);
+                    if (el) el.remove();
+                }
+            });
+        });
+    }, 5 * 60 * 1000);
+}
+
+function mostraMessaggioInChat(msg) {
+    const container = document.getElementById("chatMessages");
+    const isMine = msg.senderId === mioDeviceId;
+    
+    const d = new Date(msg.timestamp);
+    const orarioStr = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+
+    const msgDiv = document.createElement("div");
+    msgDiv.className = "chat-msg " + (isMine ? "mine" : "other");
+    
+    msgDiv.innerHTML = `
+        <div class="chat-msg-author">${isMine ? 'Tu' : escapeHtml(msg.senderName)}</div>
+        <div>${escapeHtml(msg.testo)}</div>
+        <div class="chat-msg-time">${orarioStr}</div>
+    `;
+
+    container.appendChild(msgDiv);
+    container.scrollTop = container.scrollHeight;
+}
+
+function notificaNuovoMessaggio(msg) {
+    // Suono di notifica
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.value = 587.33; // Nota Re5
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.2);
+    } catch(e){}
+
+    // Notifica di Sistema/Desktop
+    if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("💬 Messaggio da " + msg.senderName, {
+            body: msg.testo,
+            icon: "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💬</text></svg>"
+        });
+    }
+}
+
+function escapeHtml(text) {
+    return text.replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+    });
+}
     
 </script>
     <button id="bellBtn" class="alert-bell-btn" onclick="apriStoricoAlert()" title="Storico Avvisi" style="display: none;">
         🔔<span id="bellBadge" class="bell-badge" style="display: none;">0</span>
     </button>
+    <button class="chat-toggle-btn" onclick="toggleChatWindow()" title="Chat Inter-Dispositivo">
+    💬
+    <span id="chatBadge" class="chat-badge-count">0</span>
+</button>
+
+<div id="chatWindow" class="chat-window">
+    <div class="chat-header">
+        <div>
+            <span>💬 Chat Gestionale</span>
+            <div id="chatDeviceDisplay" class="chat-device-info">Rilevamento dispositivo...</div>
+        </div>
+        <button onclick="toggleChatWindow()" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;">✕</button>
+    </div>
+    <div id="chatMessages" class="chat-messages">
+        </div>
+    <div class="chat-input-area">
+        <input type="text" id="chatInputMsg" placeholder="Scrivi un messaggio..." onkeypress="if(event.key==='Enter') inviaMessaggioChat()">
+        <button onclick="inviaMessaggioChat()">INVIA</button>
+    </div>
+</div>
 
     <!-- Popup Avvisi Automatici -->
     <div id="autoAlertPopup" class="auto-alert-popup">
