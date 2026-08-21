@@ -4239,7 +4239,7 @@ function generaPdfListaPacchi() {
 }
 
 // ==========================================
-// CHAT INTERNA CON NOTIFICHE FORTI E POP-UP
+// CHAT INTERNA CON NOTIFICHE NATIVE DI CHROME
 // ==========================================
 
 let chatMessaggiUnread = 0;
@@ -4253,12 +4253,11 @@ if (!myDeviceId) {
 
 let myDeviceName = localStorage.getItem('chat_device_name') || ('Postazione-' + myDeviceId.substr(3));
 
-// Variabili per gestione notifiche visive
+// Variabili notifiche visive
 let titoloOriginaleDocumento = document.title;
 let intervalloLampeggioTitolo = null;
-let chatInizializzata = false;
 
-// Audio Context Globale + Auto-Sblocco al primo click
+// Audio Context Globale + Auto-Sblocco
 let audioCtxGlobal = null;
 function abilitaAudioContext() {
     try {
@@ -4272,9 +4271,41 @@ function abilitaAudioContext() {
     } catch(e) {}
 }
 
-document.addEventListener('click', abilitaAudioContext, { once: true });
+// Chiede i permessi per le notifiche di Chrome al primo click
+document.addEventListener('click', () => {
+    abilitaAudioContext();
+    richiediPermessoNotificheChrome();
+}, { once: true });
 
-// 🔊 SUONO FORTE E SQUILLANTE (Doppio Chime ad alta frequenza)
+// 🌐 RICHIEDI PERMESSO PER LE NOTIFICHE NATIVE DI CHROME/WINDOWS
+function richiediPermessoNotificheChrome() {
+    if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+    }
+}
+
+// 🔔 NOTIFICA NATIVA DI CHROME (quella di sistema)
+function mostraNotificaNativaChrome(mittente, testo) {
+    if ("Notification" in window && Notification.permission === "granted") {
+        try {
+            const notifica = new Notification(`💬 Messaggio da ${mittente}`, {
+                body: testo,
+                icon: 'https://cdn-icons-png.flaticon.com/512/134/134937.png', // Icona chat
+                tag: 'chat-msg'
+            });
+
+            notifica.onclick = () => {
+                window.focus();
+                if (!chatAperta) toggleChatWindow();
+                notifica.close();
+            };
+        } catch(e) {
+            console.log("Errore notifica Chrome:", e);
+        }
+    }
+}
+
+// 🔊 SUONO FORTE (Doppio Chime)
 function riproduciSuonoForteNotifica() {
     try {
         abilitaAudioContext();
@@ -4282,36 +4313,31 @@ function riproduciSuonoForteNotifica() {
 
         const orario = audioCtxGlobal.currentTime;
 
-        // Tono 1 (Forte e squillante)
         const osc1 = audioCtxGlobal.createOscillator();
         const gain1 = audioCtxGlobal.createGain();
-        osc1.type = 'triangle'; // Tipo di onda ben udibile
-        osc1.frequency.setValueAtTime(880, orario); // Nota A5
-        gain1.gain.setValueAtTime(0.5, orario); // Volume Alto
+        osc1.type = 'triangle';
+        osc1.frequency.setValueAtTime(880, orario);
+        gain1.gain.setValueAtTime(0.5, orario);
         gain1.gain.exponentialRampToValueAtTime(0.01, orario + 0.25);
         osc1.connect(gain1);
         gain1.connect(audioCtxGlobal.destination);
         osc1.start(orario);
         osc1.stop(orario + 0.25);
 
-        // Tono 2 (Acuto "Ding-Dong")
         const osc2 = audioCtxGlobal.createOscillator();
         const gain2 = audioCtxGlobal.createGain();
         osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(1320, orario + 0.15); // Nota E6
+        osc2.frequency.setValueAtTime(1320, orario + 0.15);
         gain2.gain.setValueAtTime(0.6, orario + 0.15);
         gain2.gain.exponentialRampToValueAtTime(0.01, orario + 0.5);
         osc2.connect(gain2);
         gain2.connect(audioCtxGlobal.destination);
         osc2.start(orario + 0.15);
         osc2.stop(orario + 0.5);
-
-    } catch(e) {
-        console.log("Errore audio:", e);
-    }
+    } catch(e) {}
 }
 
-// 🔔 POP-UP NOTIFICA A SCHERMO (In alto a destra)
+// 📌 BANNER NOTIFICA SULLA PAGINA
 function mostraBannerNotifica(mittente, testo) {
     let container = document.getElementById('chatNotificationContainer');
     if (!container) {
@@ -4343,18 +4369,16 @@ function mostraBannerNotifica(mittente, testo) {
         pointer-events: auto;
         cursor: pointer;
         font-family: sans-serif;
-        animation: chatSlideIn 0.3s ease-out;
     `;
 
     toast.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <strong style="color:#ff9800; font-size:0.95rem;">💬 Messaggio da ${escapeHtmlChat(mittente)}</strong>
+            <strong style="color:#ff9800; font-size:0.95rem;">💬 ${escapeHtmlChat(mittente)}</strong>
             <span style="font-size:0.75rem; color:#aaa;">Adesso</span>
         </div>
         <div style="font-size:0.9rem; color:#e5e7eb; word-break:break-word;">${escapeHtmlChat(testo)}</div>
     `;
 
-    // Cliccando sul pop-up si apre direttamente la chat
     toast.onclick = () => {
         if (!chatAperta) toggleChatWindow();
         toast.remove();
@@ -4362,7 +4386,6 @@ function mostraBannerNotifica(mittente, testo) {
 
     container.appendChild(toast);
 
-    // Rimozione automatica dopo 5 secondi
     setTimeout(() => {
         if (toast.parentNode) {
             toast.style.opacity = '0';
@@ -4398,7 +4421,6 @@ function inizializzaChatDispositivo() {
     const elInputName = document.getElementById('chatDeviceName');
     if (elInputName) elInputName.value = myDeviceName;
 
-    // Registra dispositivo attivo
     const deviceRef = db.ref('chat_devices/' + myDeviceId);
     deviceRef.set({
         id: myDeviceId,
@@ -4407,7 +4429,6 @@ function inizializzaChatDispositivo() {
     });
     deviceRef.onDisconnect().remove();
 
-    // Sincronizza lista dispositivi "Invia a:"
     db.ref('chat_devices').on('value', (snapshot) => {
         const data = snapshot.val() || {};
         const select = document.getElementById('chatTargetSelect');
@@ -4427,14 +4448,13 @@ function inizializzaChatDispositivo() {
         select.value = currentVal;
     });
 
-    // Ascolto Messaggi Completi per Rendering Grafico
     db.ref('chat_messages').on('value', (snapshot) => {
         const data = snapshot.val() || {};
         const container = document.getElementById('chatMessagesContainer');
         if (!container) return;
 
         container.innerHTML = '';
-        const oraLimite = Date.now() - (60 * 60 * 1000); // 1 ora
+        const oraLimite = Date.now() - (60 * 60 * 1000);
         let messaggiValidi = [];
 
         Object.keys(data).forEach(key => {
@@ -4472,19 +4492,18 @@ function inizializzaChatDispositivo() {
         container.scrollTop = container.scrollHeight;
     });
 
-    // Ascolto "child_added" per NOTIFICHE ISTANTANEE sui nuovi arrivi
-    const oraAvvio = Date.now() - 5000; // tolleranza 5 secondi
+    const oraAvvio = Date.now() - 5000;
     db.ref('chat_messages').on('child_added', (snapshot) => {
         const m = snapshot.val();
         if (!m) return;
 
-        // Se il messaggio è nuovo, non inviato da me ed è diretto a me o a tutti
         if (m.senderId !== myDeviceId && m.timestamp > oraAvvio && (m.targetId === 'TUTTI' || m.targetId === myDeviceId)) {
             if (!chatAperta) {
                 chatMessaggiUnread++;
                 aggiornaBadgeChat();
                 riproduciSuonoForteNotifica();
                 mostraBannerNotifica(m.senderName, m.testo);
+                mostraNotificaNativaChrome(m.senderName, m.testo); // <-- Notifica di sistema Chrome
                 avviaLampeggioTitolo();
             }
         }
@@ -4553,7 +4572,6 @@ function inviaMessaggioChat() {
     input.value = '';
 }
 
-// Integrazione Autenticazione Firebase
 firebase.auth().onAuthStateChanged((user) => {
     const btnChat = document.getElementById('chatHeaderBtn');
     if (user) {
