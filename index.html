@@ -530,7 +530,7 @@
             text-align: center;
         }
 
-       /* --- NUOVO DESIGN A GRIGLIA / QUADRATI INVENTARIO --- */
+      /* --- DESIGN A GRIGLIA / QUADRATI INVENTARIO --- */
 #inventarioModal {
     display: none;
     position: fixed; 
@@ -568,7 +568,28 @@
     gap: 10px;
 }
 
-/* Griglia a quadrati per i pacchi */
+/* --- TASTO INVENTARIO NEL MENU PRINCIPALE (CELESTE) --- */
+.btn-inventario-menu {
+    background-color: #00b4d8 !important; /* Celeste / Azzurro brillante */
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 12px 16px !important;
+    font-weight: 800 !important;
+    font-size: 0.95rem !important;
+    text-transform: uppercase !important;
+    cursor: pointer !important;
+    width: 100% !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+    transition: transform 0.15s ease, background-color 0.15s ease !important;
+}
+
+.btn-inventario-menu:hover {
+    background-color: #0096c7 !important;
+    transform: translateY(-1px);
+}
+
+/* Griglia a quadrati per i pacchi all'interno della modal */
 .inventario-grid-pacchi {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -586,7 +607,7 @@
 .pacco-card {
     background: #ffffff;
     border: 2px solid #cbd5e1;
-    border-top: 5px solid #94a3b8; /* Grigio iniziale */
+    border-top: 5px solid #94a3b8;
     border-radius: 12px;
     padding: 12px;
     display: flex;
@@ -675,7 +696,7 @@
     font-weight: 800;
 }
 
-/* Bottoni */
+/* Bottoni dentro il Modale */
 .btn-inv-pdf {
     background: #dc2626;
     color: #ffffff;
@@ -710,6 +731,7 @@
     cursor: pointer;
     flex: 0.6;
 }
+.btn-inv-close:hover { background: #e2e8f0; }
 
         /* Pulsante Area Amministratore - Viola Intenso per differenziarsi */
         .admin-btn {
@@ -1480,7 +1502,7 @@
             <button class="menu-toggle-btn" onclick="toggleMenuTendina(event)">Menu ☰</button>
             <div id="menuTendina" class="dropdown-menu">
                 <button class="admin-btn" onclick="richiediAccessoAdmin(); chiudiMenuTendina();">AREA AMMINISTRATORE</button>
-                <button class="inventario-btn" onclick="apriInventarioModal(); chiudiMenuTendina();">INVENTARIO</button>
+                <button class="btn-inventario-menu" onclick="apriInventarioModal()">INVENTARIO</button>
                 <button class="anagrafica-btn" onclick="apriAnagraficaModal(); chiudiMenuTendina();">ANAGRAFICA CLIENTI</button>
                 <button class="report-btn" onclick="document.getElementById('reportModal').style.display='flex'; chiudiMenuTendina();">REPORT</button>
                 <button class="logout-btn" onclick="logout(); chiudiMenuTendina();">LOGOUT</button>
