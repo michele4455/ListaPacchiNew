@@ -1449,9 +1449,10 @@
 <button id="cartBadgeBtn" class="cart-badge" onclick="handleRitira(null, false, true)" title="Mostra pacchi selezionati">📦 <span id="cartCount">0</span></button>
 <button id="scrollToTopBtn" class="scroll-top-btn" onclick="tornaSu()" title="Torna all'inizio">↑</button>
     
-<div id="Modal">
+<!-- === MODALE INVENTARIO CORRETTO === -->
+<div id="inventarioModal">
     <div class="modal-content">
-        <h3 class="-header-title">📦 Inventario Giacenze Magazzino</h3>
+        <h3 class="inventario-header-title">📦 Inventario Giacenze Magazzino</h3>
         
         <div style="margin-bottom: 12px;">
             <label style="font-weight:700; display:block; margin-bottom:4px; color:#475569; font-size:0.75rem; text-transform:uppercase;">Seleziona Corriere o Tutto il Magazzino:</label>
@@ -1461,7 +1462,7 @@
 
         <div style="margin-bottom: 12px; display:flex; gap:8px;">
             <input type="text" id="inventarioSearchInput" placeholder="Scansiona Barcode o Codice TRK..." oninput="gestisciScansioneInventario()" style="width:100%; padding:10px 14px; border-radius:10px; border:2px solid #cbd5e1; text-transform: uppercase; font-size:0.95rem; font-weight:700;">
-            <button onclick="startScanner('inventarioSearchInput')" style="padding:10px 14px; border-radius:10px; border:1px solid #cbd5e1; background:#f1f5f9; cursor:pointer; font-size:1.1rem;">📸</button>
+            <button onclick="if(typeof startScanner === 'function') startScanner('inventarioSearchInput')" style="padding:10px 14px; border-radius:10px; border:1px solid #cbd5e1; background:#f1f5f9; cursor:pointer; font-size:1.1rem;">📸</button>
         </div>
 
         <div class="inventario-grid-pacchi" id="inventarioPacchiContainer">
@@ -1490,7 +1491,7 @@
         </div>
     </div>
 </div>
-
+    
 <div id="mainPage" style="display:none;">
     <div class="app-header">
         <div class="header-actions">
