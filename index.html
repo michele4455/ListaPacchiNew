@@ -865,145 +865,170 @@
 .pdf-link-content:hover {
     color: var(--primary-dark);
 }
-        /* --- BOTTONE CHAT (Da mettere nell'header accanto alla campanella) --- */
-.chat-toggle-btn {
-    position: relative; /* Ora sta dentro il flusso dell'header */
-    background: transparent;
+        /* --- CHAT INTERNA TRA DISPOSITIVI --- */
+.chat-btn-header {
+    position: absolute;
+    top: 20px;
+    left: 75px; /* Posizionato subito a destra della campanella degli alert */
+    z-index: 1002;
+    background-color: var(--accent);
     color: var(--primary);
-    border: none;
-    font-size: 1.4rem;
+    border: 2px solid var(--primary);
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    font-size: 1.3rem;
     cursor: pointer;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
-    padding: 4px 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     transition: transform 0.2s;
-    z-index: 1000;
 }
-.chat-toggle-btn:hover {
-    transform: scale(1.15);
+.chat-btn-header:hover {
+    transform: scale(1.1);
 }
-.chat-badge-count {
+.chat-badge {
     position: absolute;
-    top: -2px;
-    right: -2px;
-    background: var(--warning, #ff4757);
+    top: -5px;
+    right: -5px;
+    background: var(--warning);
     color: white;
-    font-size: 0.65rem;
-    padding: 2px 5px;
+    font-size: 0.7rem;
+    padding: 3px 7px;
     border-radius: 50%;
     font-weight: bold;
     display: none;
-    line-height: 1;
 }
 
-/* --- FINESTRA CHAT (Ottimizzata per zoom 175%) --- */
-.chat-window {
-    box-sizing: border-box;
+/* Finestra Chat Popup */
+.chat-box-window {
     display: none;
-    position: fixed; /* Ancorata allo schermo visibile */
-    top: 60px;       /* Distanza dall'alto per non coprire l'header */
-    right: 10px;     /* Margine dal bordo destro */
-    
-    /* Dimensioni flessibili: si restringono se lo zoom è alto */
+    position: fixed;
+    top: 75px;
+    left: 20px;
     width: 320px;
-    max-width: calc(100vw - 20px); 
-    height: 380px;
-    max-height: calc(100vh - 80px);
-    
+    max-width: calc(100vw - 40px);
+    height: 420px;
+    max-height: calc(100vh - 100px);
     background: white;
-    border: 2px solid var(--primary);
-    border-radius: 12px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-    z-index: 9999;
+    border: 3px solid var(--primary);
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    z-index: 3500;
     flex-direction: column;
     overflow: hidden;
+    font-family: inherit;
 }
-.chat-window.show {
+.chat-box-window.open {
     display: flex;
 }
 .chat-header {
     background: var(--primary);
     color: white;
-    padding: 8px 12px;
-    font-weight: bold;
+    padding: 10px 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 3px solid var(--accent);
+    font-size: 0.9rem;
+    font-weight: bold;
 }
-.chat-device-info {
-    font-size: 0.7rem;
-    color: var(--accent);
-    font-weight: normal;
+.chat-device-name-input {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.5);
+    color: white;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.8rem;
+    width: 110px;
+    text-transform: none !important;
 }
-.chat-messages {
+.chat-device-name-input::placeholder { color: #ddd; }
+
+.chat-messages-container {
     flex: 1;
-    padding: 8px;
+    padding: 10px;
     overflow-y: auto;
-    background: #f8f9fa;
+    background: #f4f6f9;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.chat-msg-bubble {
+    max-width: 82%;
+    padding: 8px 10px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    line-height: 1.3;
+    word-break: break-word;
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.chat-msg-sent {
+    align-self: flex-end;
+    background: #003399;
+    color: white;
+    border-bottom-right-radius: 2px;
+}
+.chat-msg-received {
+    align-self: flex-start;
+    background: #ffffff;
+    color: #333;
+    border: 1px solid #ddd;
+    border-bottom-left-radius: 2px;
+}
+.chat-msg-meta {
+    font-size: 0.68rem;
+    opacity: 0.75;
+    margin-bottom: 2px;
+    display: flex;
+    justify-content: space-between;
+    gap: 5px;
+}
+.chat-msg-time {
+    font-size: 0.65rem;
+    text-align: right;
+    margin-top: 4px;
+    opacity: 0.7;
+}
+
+.chat-footer {
+    padding: 8px;
+    background: #fff;
+    border-top: 1px solid #ddd;
     display: flex;
     flex-direction: column;
     gap: 6px;
 }
-.chat-msg {
-    max-width: 85%;
-    padding: 6px 10px;
-    border-radius: 8px;
-    font-size: 0.8rem;
-    line-height: 1.25;
-    word-break: break-word;
+.chat-target-select {
+    padding: 4px 8px !important;
+    font-size: 0.78rem !important;
+    border-radius: 6px !important;
+    border: 1px solid var(--primary) !important;
+    height: auto !important;
 }
-.chat-msg.mine {
-    align-self: flex-end;
+.chat-input-row {
+    display: flex;
+    gap: 6px;
+}
+.chat-input-field {
+    flex: 1;
+    padding: 8px !important;
+    font-size: 0.85rem !important;
+    border-radius: 6px !important;
+    border: 1px solid #ccc !important;
+    text-transform: none !important;
+}
+.chat-send-btn {
     background: var(--primary);
     color: white;
-    border-bottom-right-radius: 2px;
-}
-.chat-msg.other {
-    align-self: flex-start;
-    background: #e9ecef;
-    color: #333;
-    border-bottom-left-radius: 2px;
-    border: 1px solid #ced4da;
-}
-.chat-msg-author {
-    font-size: 0.65rem;
-    font-weight: bold;
-    margin-bottom: 2px;
-    color: var(--accent);
-}
-.chat-msg.other .chat-msg-author {
-    color: var(--primary);
-}
-.chat-msg-time {
-    font-size: 0.6rem;
-    opacity: 0.8;
-    text-align: right;
-    margin-top: 2px;
-}
-.chat-input-area {
-    display: flex;
-    padding: 6px;
-    background: white;
-    border-top: 1px solid #ddd;
-    gap: 4px;
-}
-.chat-input-area input {
-    flex: 1;
-    padding: 6px 8px;
-    font-size: 0.8rem;
-    box-sizing: border-box;
-}
-.chat-input-area button {
-    padding: 6px 10px;
-    background: var(--primary);
-    color: var(--accent);
     border: none;
+    padding: 8px 12px !important;
     border-radius: 6px;
     font-weight: bold;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
+    width: auto !important;
 }
         
     </style>
@@ -4212,226 +4237,235 @@ function generaPdfListaPacchi() {
         alert("Si è verificato un errore durante la generazione del PDF: " + error.message);
     }
 }
-// --- SISTEMA CHAT INTER-DISPOSITIVO ---
-let mioDeviceId = localStorage.getItem("chat_device_id");
-let mioDeviceNome = localStorage.getItem("chat_device_nome");
+
+    // ==========================================
+// LOGICA CHAT INTERNA TRA DISPOSITIVI
+// ==========================================
+
+let chatMessaggiUnread = 0;
 let chatAperta = false;
-let messaggiNonLetti = 0;
+let myDeviceId = localStorage.getItem('chat_device_id');
 
-// Configurazione o recupero identificativo del dispositivo
-if (!mioDeviceId) {
-    mioDeviceId = 'PC-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-    localStorage.setItem("chat_device_id", mioDeviceId);
+if (!myDeviceId) {
+    myDeviceId = 'PC_' + Math.random().toString(36).substr(2, 6).toUpperCase();
+    localStorage.setItem('chat_device_id', myDeviceId);
 }
 
-if (!mioDeviceNome) {
-    // Tenta di recuperare l'IP o assegna un nome predefinito
-    fetch('https://api.ipify.org?format=json')
-        .then(res => res.json())
-        .then(data => {
-            mioDeviceNome = "PC (" + data.ip + ")";
-            localStorage.setItem("chat_device_nome", mioDeviceNome);
-            aggiornaHeaderChat();
-        })
-        .catch(() => {
-            mioDeviceNome = "Postazione " + mioDeviceId;
-            localStorage.setItem("chat_device_nome", mioDeviceNome);
-            aggiornaHeaderChat();
-        });
-}
+let myDeviceName = localStorage.getItem('chat_device_name') || ('Postazione-' + myDeviceId.substr(3));
 
-function aggiornaHeaderChat() {
-    const el = document.getElementById("chatDeviceDisplay");
-    if (el) el.innerText = (mioDeviceNome || mioDeviceId) + " [Clicca per rinominare]";
-}
-
-// Consente di cliccare sull'header per rinominare la postazione (es. "Cassa 1")
-document.addEventListener("DOMContentLoaded", function() {
-    richiediPermessoNotifiche();
-    aggiornaHeaderChat();
-    
-    const devEl = document.getElementById("chatDeviceDisplay");
-    if(devEl) {
-        devEl.style.cursor = "pointer";
-        devEl.onclick = function() {
-            let nuovoNome = prompt("Inserisci il nome identificativo di questo computer:", mioDeviceNome);
-            if (nuovoNome && nuovoNome.trim() !== "") {
-                mioDeviceNome = nuovoNome.trim();
-                localStorage.setItem("chat_device_nome", mioDeviceNome);
-                aggiornaHeaderChat();
-            }
-        };
-    }
-    
-    inializzaAscoltoChat();
-});
-
-function richiediPermessoNotifiche() {
-    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
-        Notification.requestPermission();
-    }
-}
-
-function toggleChatWindow() {
-    const win = document.getElementById("chatWindow");
-    chatAperta = !chatAperta;
-    if (chatAperta) {
-        win.classList.add("show");
-        messaggiNonLetti = 0;
-        aggiornaBadgeChat();
-        const container = document.getElementById("chatMessages");
-        container.scrollTop = container.scrollHeight;
-    } else {
-        win.classList.remove("show");
-    }
-}
-
-function aggiornaBadgeChat() {
-    const badge = document.getElementById("chatBadge");
-    if (messaggiNonLetti > 0 && !chatAperta) {
-        badge.innerText = messaggiNonLetti;
-        badge.style.display = "block";
-    } else {
-        badge.style.display = "none";
-    }
-}
-
-function inviaMessaggioChat() {
-    const input = document.getElementById("chatInputMsg");
-    const testo = input.value.trim();
-    if (!testo) return;
-
-    const adesso = Date.now();
-    const messaggioData = {
-        senderId: mioDeviceId,
-        senderName: mioDeviceNome || mioDeviceId,
-        testo: testo,
-        timestamp: adesso
-    };
-
-    // Salvataggio su Firebase
-    firebase.database().ref("chat_messages").push(messaggioData);
-    input.value = "";
-}
-
-function inializzaAscoltoChat() {
-    const chatRef = firebase.database().ref("chat_messages");
-    
-    // Ascolta nuovi messaggi in arrivo
-    chatRef.on("child_added", function(snapshot) {
-        const msg = snapshot.val();
-        const key = snapshot.key;
-        const oraAttuale = Date.now();
-        const UN_ORA = 60 * 60 * 1000; // 1 ora in millisecondi
-
-        // Se il messaggio è più vecchio di 1 ora, puliscilo da Firebase ed ignoralo
-        if (oraAttuale - msg.timestamp > UN_ORA) {
-            firebase.database().ref("chat_messages/" + key).remove();
-            return;
-        }
-
-        mostraMessaggioInChat(msg);
-
-        // Se il messaggio proviene da un altro dispositivo
-        if (msg.senderId !== mioDeviceId) {
-            if (!chatAperta) {
-                messaggiNonLetti++;
-                aggiornaBadgeChat();
-            }
-            notificaNuovoMessaggio(msg);
-        }
-    });
-
-    // Pulizia periodica automatica ogni 5 minuti per i messaggi scaduti (> 1 ora)
-    setInterval(() => {
-        const oraAttuale = Date.now();
-        const UN_ORA = 60 * 60 * 1000;
-        
-        chatRef.once("value", function(snapshot) {
-            snapshot.forEach(function(child) {
-                const msg = child.val();
-                if (oraAttuale - msg.timestamp > UN_ORA) {
-                    firebase.database().ref("chat_messages/" + child.key).remove();
-                    // Rimuovi anche dall'interfaccia se presente
-                    const el = document.getElementById("msg-" + child.key);
-                    if (el) el.remove();
-                }
-            });
-        });
-    }, 5 * 60 * 1000);
-}
-
-function mostraMessaggioInChat(msg) {
-    const container = document.getElementById("chatMessages");
-    const isMine = msg.senderId === mioDeviceId;
-    
-    const d = new Date(msg.timestamp);
-    const orarioStr = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
-
-    const msgDiv = document.createElement("div");
-    msgDiv.className = "chat-msg " + (isMine ? "mine" : "other");
-    
-    msgDiv.innerHTML = `
-        <div class="chat-msg-author">${isMine ? 'Tu' : escapeHtml(msg.senderName)}</div>
-        <div>${escapeHtml(msg.testo)}</div>
-        <div class="chat-msg-time">${orarioStr}</div>
-    `;
-
-    container.appendChild(msgDiv);
-    container.scrollTop = container.scrollHeight;
-}
-
-function notificaNuovoMessaggio(msg) {
-    // Suono di notifica
+// Suono Notifica Messaggio
+function riproduciSuonoNotificaChat() {
     try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // Nota D5
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.1); // Nota A5
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-        osc.frequency.value = 587.33; // Nota Re5
-        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.2);
-    } catch(e){}
-
-    // Notifica di Sistema/Desktop
-    if ("Notification" in window && Notification.permission === "granted") {
-        new Notification("💬 Messaggio da " + msg.senderName, {
-            body: msg.testo,
-            icon: "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💬</text></svg>"
-        });
-    }
+        osc.stop(audioCtx.currentTime + 0.3);
+    } catch(e) {}
 }
 
-function escapeHtml(text) {
-    return text.replace(/[&<>"']/g, function(m) {
+function inizializzaChatDispositivo() {
+    const elInputName = document.getElementById('chatDeviceName');
+    if (elInputName) elInputName.value = myDeviceName;
+
+    // Registra presenza dispositivo
+    const deviceRef = db.ref('chat_devices/' + myDeviceId);
+    deviceRef.set({
+        id: myDeviceId,
+        nome: myDeviceName,
+        lastSeen: Date.now()
+    });
+    deviceRef.onDisconnect().remove();
+
+    // Sincronizza lista dispositivi attivi per il menu a tendina "Invia a:"
+    db.ref('chat_devices').on('value', (snapshot) => {
+        const data = snapshot.val() || {};
+        const select = document.getElementById('chatTargetSelect');
+        if (!select) return;
+
+        const currentVal = select.value;
+        select.innerHTML = '<option value="TUTTI">📢 Invia a: TUTTI</option>';
+
+        Object.keys(data).forEach(id => {
+            if (id !== myDeviceId) {
+                const opt = document.createElement('option');
+                opt.value = id;
+                opt.textContent = '💻 ' + (data[id].nome || id);
+                select.appendChild(opt);
+            }
+        });
+        select.value = currentVal;
+    });
+
+    // Ascolto messaggi in tempo reale
+    db.ref('chat_messages').on('value', (snapshot) => {
+        const data = snapshot.val() || {};
+        const container = document.getElementById('chatMessagesContainer');
+        if (!container) return;
+
+        container.innerHTML = '';
+        const oraLimite = Date.now() - (60 * 60 * 1000); // 1 ora fa
+        let messaggiValidi = [];
+        let nuoviMessaggiNonLetti = false;
+
+        Object.keys(data).forEach(key => {
+            const m = data[key];
+
+            // Rimuovi da Firebase se più vecchio di 1 ora
+            if (m.timestamp < oraLimite) {
+                db.ref('chat_messages/' + key).remove();
+                return;
+            }
+
+            // Mostra se destinato a TUTTI, a questo PC o inviato da questo PC
+            if (m.targetId === 'TUTTI' || m.targetId === myDeviceId || m.senderId === myDeviceId) {
+                messaggiValidi.push({ key, ...m });
+            }
+        });
+
+        // Ordina per orario
+        messaggiValidi.sort((a, b) => a.timestamp - b.timestamp);
+
+        messaggiValidi.forEach(m => {
+            const isMe = (m.senderId === myDeviceId);
+            const div = document.createElement('div');
+            div.className = 'chat-msg-bubble ' + (isMe ? 'chat-msg-sent' : 'chat-msg-received');
+            
+            const ora = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const infoMittente = isMe ? 'Tu' : m.senderName;
+            const infoDest = m.targetId === 'TUTTI' ? '' : (isMe ? ' ➔ ' + m.targetName : ' (Privato)');
+
+            div.innerHTML = `
+                <div class="chat-msg-meta">
+                    <strong>${escapeHtmlChat(infoMittente)}${escapeHtmlChat(infoDest)}</strong>
+                </div>
+                <div>${escapeHtmlChat(m.testo)}</div>
+                <div class="chat-msg-time">${ora}</div>
+            `;
+            container.appendChild(div);
+        });
+
+        // Controlla se c'è un nuovo messaggio non letto
+        if (messaggiValidi.length > 0) {
+            const ultimoMsg = messaggiValidi[messaggiValidi.length - 1];
+            if (ultimoMsg.senderId !== myDeviceId && ultimoMsg.timestamp > (window.lastMsgSeenTimestamp || 0)) {
+                if (!chatAperta) {
+                    chatMessaggiUnread++;
+                    aggiornaBadgeChat();
+                    riproduciSuonoNotificaChat();
+                }
+                window.lastMsgSeenTimestamp = ultimoMsg.timestamp;
+            }
+        }
+
+        container.scrollTop = container.scrollHeight;
+    });
+}
+
+function escapeHtmlChat(str) {
+    if (!str) return '';
+    return str.replace(/[&<>"']/g, function(m) {
         return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
     });
 }
+
+function aggiornaNomeDispositivo(nuovoNome) {
+    if (!nuovoNome.trim()) return;
+    myDeviceName = nuovoNome.trim();
+    localStorage.setItem('chat_device_name', myDeviceName);
+    db.ref('chat_devices/' + myDeviceId).update({ nome: myDeviceName });
+}
+
+function toggleChatWindow() {
+    const modal = document.getElementById('chatBoxModal');
+    chatAperta = !modal.classList.contains('open');
+    if (chatAperta) {
+        modal.classList.add('open');
+        chatMessaggiUnread = 0;
+        aggiornaBadgeChat();
+        const container = document.getElementById('chatMessagesContainer');
+        if (container) container.scrollTop = container.scrollHeight;
+    } else {
+        modal.classList.remove('open');
+    }
+}
+
+function aggiornaBadgeChat() {
+    const badge = document.getElementById('chatBadge');
+    if (!badge) return;
+    if (chatMessaggiUnread > 0) {
+        badge.innerText = chatMessaggiUnread;
+        badge.style.display = 'block';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+function inviaMessaggioChat() {
+    const input = document.getElementById('chatInputMsg');
+    const select = document.getElementById('chatTargetSelect');
+    const testo = input.value.trim();
+    if (!testo) return;
+
+    const targetId = select.value;
+    const targetName = select.options[select.selectedIndex].text.replace('💻 ', '');
+
+    const record = {
+        senderId: myDeviceId,
+        senderName: myDeviceName,
+        targetId: targetId,
+        targetName: targetName,
+        testo: testo,
+        timestamp: Date.now()
+    };
+
+    db.ref('chat_messages').push(record);
+    input.value = '';
+}
+
+// Avvio automatico al caricamento dell'autenticazione Firebase
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        inizializzaChatDispositivo();
+    }
+});
     
 </script>
     <button id="bellBtn" class="alert-bell-btn" onclick="apriStoricoAlert()" title="Storico Avvisi" style="display: none;">
         🔔<span id="bellBadge" class="bell-badge" style="display: none;">0</span>
     </button>
-    <button class="chat-toggle-btn" onclick="toggleChatWindow()" title="Chat Inter-Dispositivo">
+    <button class="chat-btn-header" onclick="toggleChatWindow()" title="Chat Interna">
     💬
-    <span id="chatBadge" class="chat-badge-count">0</span>
+    <span id="chatBadge" class="chat-badge">0</span>
 </button>
 
-<div id="chatWindow" class="chat-window">
+<div id="chatBoxModal" class="chat-box-window">
     <div class="chat-header">
-        <div>
-            <span>💬 Chat Gestionale</span>
-            <div id="chatDeviceDisplay" class="chat-device-info">Rilevamento dispositivo...</div>
+        <span>💬 Chat Interna</span>
+        <div style="display:flex; align-items:center; gap:5px;">
+            <input type="text" id="chatDeviceName" class="chat-device-name-input" placeholder="Nome PC..." onchange="aggiornaNomeDispositivo(this.value)" title="Clicca per cambiare nome a questa postazione">
+            <button onclick="toggleChatWindow()" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer; padding:0 4px;">&times;</button>
         </div>
-        <button onclick="toggleChatWindow()" style="background:none; border:none; color:white; font-size:1.2rem; cursor:pointer;">✕</button>
     </div>
-    <div id="chatMessages" class="chat-messages">
+    
+    <div id="chatMessagesContainer" class="chat-messages-container">
         </div>
-    <div class="chat-input-area">
-        <input type="text" id="chatInputMsg" placeholder="Scrivi un messaggio..." onkeypress="if(event.key==='Enter') inviaMessaggioChat()">
-        <button onclick="inviaMessaggioChat()">INVIA</button>
+    
+    <div class="chat-footer">
+        <select id="chatTargetSelect" class="chat-target-select">
+            <option value="TUTTI">📢 Invia a: TUTTI</option>
+        </select>
+        <div class="chat-input-row">
+            <input type="text" id="chatInputMsg" class="chat-input-field" placeholder="Scrivi un messaggio..." onkeydown="if(event.key==='Enter') inviaMessaggioChat()">
+            <button onclick="inviaMessaggioChat()" class="chat-send-btn">➔</button>
+        </div>
     </div>
 </div>
 
