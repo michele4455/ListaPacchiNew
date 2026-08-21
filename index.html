@@ -4242,6 +4242,10 @@ function generaPdfListaPacchi() {
 // CHAT INTERNA CON NOTIFICHE NATIVE DI CHROME
 // ==========================================
 
+// ==========================================
+// CHAT INTERNA CON NOTIFICHE CHROME RIGENERATE E SBLOCCATE
+// ==========================================
+
 let chatMessaggiUnread = 0;
 let chatAperta = false;
 let myDeviceId = localStorage.getItem('chat_device_id');
@@ -4253,9 +4257,11 @@ if (!myDeviceId) {
 
 let myDeviceName = localStorage.getItem('chat_device_name') || ('Postazione-' + myDeviceId.substr(3));
 
-// Variabili notifiche visive
+// Variabili notifiche visive e tracciamento
 let titoloOriginaleDocumento = document.title;
 let intervalloLampeggioTitolo = null;
+const messaggiGiaProcessati = new Set(); // Evita doppie notifiche o notifiche sui messaggi vecchi
+let chatProntaPerNotificare = false;
 
 // Audio Context Globale + Auto-Sblocco
 let audioCtxGlobal = null;
@@ -4271,27 +4277,27 @@ function abilitaAudioContext() {
     } catch(e) {}
 }
 
-// Chiede i permessi per le notifiche di Chrome al primo click
+// Sblocco audio e richiesta permessi al primo click
 document.addEventListener('click', () => {
     abilitaAudioContext();
     richiediPermessoNotificheChrome();
 }, { once: true });
 
-// 🌐 RICHIEDI PERMESSO PER LE NOTIFICHE NATIVE DI CHROME/WINDOWS
 function richiediPermessoNotificheChrome() {
     if ("Notification" in window && Notification.permission === "default") {
         Notification.requestPermission();
     }
 }
 
-// 🔔 NOTIFICA NATIVA DI CHROME (quella di sistema)
+// 🔔 NOTIFICA NATIVA CHROME (SBLOCCATA SENZA TAG E CON ID UNIVOCO)
 function mostraNotificaNativaChrome(mittente, testo) {
     if ("Notification" in window && Notification.permission === "granted") {
         try {
+            // Rimuovendo 'tag' ogni notifica viene mostrata come NUOVA senza sovrascrivere o bloccarsi
             const notifica = new Notification(`💬 Messaggio da ${mittente}`, {
                 body: testo,
-                icon: 'https://cdn-icons-png.flaticon.com/512/134/134937.png', // Icona chat
-                tag: 'chat-msg'
+                icon: 'https://cdn-icons-png.flaticon.com/512/134/134937.png',
+                requireInteraction: false // Si chiude da sola o resta finché non clicchi
             });
 
             notifica.onclick = () => {
@@ -4337,7 +4343,7 @@ function riproduciSuonoForteNotifica() {
     } catch(e) {}
 }
 
-// 📌 BANNER NOTIFICA SULLA PAGINA
+// 📌 BANNER NOTIFICA A SCHERMO
 function mostraBannerNotifica(mittente, testo) {
     let container = document.getElementById('chatNotificationContainer');
     if (!container) {
@@ -4429,6 +4435,7 @@ function inizializzaChatDispositivo() {
     });
     deviceRef.onDisconnect().remove();
 
+    // Sincronizza lista "Invia a:"
     db.ref('chat_devices').on('value', (snapshot) => {
         const data = snapshot.val() || {};
         const select = document.getElementById('chatTargetSelect');
@@ -4448,6 +4455,7 @@ function inizializzaChatDispositivo() {
         select.value = currentVal;
     });
 
+    // Ascolto Messaggi Completi (Caricamento iniziale + Render Grafico)
     db.ref('chat_messages').on('value', (snapshot) => {
         const data = snapshot.val() || {};
         const container = document.getElementById('chatMessagesContainer');
@@ -4459,10 +4467,17 @@ function inizializzaChatDispositivo() {
 
         Object.keys(data).forEach(key => {
             const m = data[key];
+            
+            // Popoliamo il Set dei messaggi già presenti così NON notifica quelli vecchi
+            if (!chatProntaPerNotificare) {
+                messaggiGiaProcessati.add(key);
+            }
+
             if (m.timestamp < oraLimite) {
                 db.ref('chat_messages/' + key).remove();
                 return;
             }
+
             if (m.targetId === 'TUTTI' || m.targetId === myDeviceId || m.senderId === myDeviceId) {
                 messaggiValidi.push({ key, ...m });
             }
@@ -4489,22 +4504,30 @@ function inizializzaChatDispositivo() {
             container.appendChild(div);
         });
 
+        // Dopo la prima sincronizzazione, attiviamo il sistema per notificare i nuovi
+        chatProntaPerNotificare = true;
         container.scrollTop = container.scrollHeight;
     });
 
-    const oraAvvio = Date.now() - 5000;
+    // Ascolto "child_added" ISTANTANEO
     db.ref('chat_messages').on('child_added', (snapshot) => {
+        const key = snapshot.key;
         const m = snapshot.val();
         if (!m) return;
 
-        if (m.senderId !== myDeviceId && m.timestamp > oraAvvio && (m.targetId === 'TUTTI' || m.targetId === myDeviceId)) {
-            if (!chatAperta) {
-                chatMessaggiUnread++;
-                aggiornaBadgeChat();
-                riproduciSuonoForteNotifica();
-                mostraBannerNotifica(m.senderName, m.testo);
-                mostraNotificaNativaChrome(m.senderName, m.testo); // <-- Notifica di sistema Chrome
-                avviaLampeggioTitolo();
+        // Se la chat è pronta, il messaggio NON è mio, non l'abbiamo mai visto ed è per me/tutti
+        if (chatProntaPerNotificare && !messaggiGiaProcessati.has(key)) {
+            messaggiGiaProcessati.add(key);
+
+            if (m.senderId !== myDeviceId && (m.targetId === 'TUTTI' || m.targetId === myDeviceId)) {
+                if (!chatAperta) {
+                    chatMessaggiUnread++;
+                    aggiornaBadgeChat();
+                    riproduciSuonoForteNotifica();
+                    mostraBannerNotifica(m.senderName, m.testo);
+                    mostraNotificaNativaChrome(m.senderName, m.testo);
+                    avviaLampeggioTitolo();
+                }
             }
         }
     });
