@@ -15,858 +15,317 @@
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
     <style>
-        :root { 
-            --primary: #003399;
-            --primary-dark: #002266;
-            --secondary: #f0f2f5; 
-            --text: #1a1a1a; 
-            --accent: #ffcc00; 
-            --success: #00b894;
-            --warning: #ff4757;
-            --white: #ffffff;
-            --border-color: #003399;
-        }
+    :root { 
+        --primary: #003399;
+        --primary-dark: #002266;
+        --secondary: #f0f2f5; 
+        --text: #1a1a1a; 
+        --accent: #ffcc00; 
+        --success: #00b894;
+        --warning: #ff4757;
+        --white: #ffffff;
+        --border-color: #003399;
+    }
 
-        body { 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--secondary); 
-            padding: 0; margin: 0; color: var(--text); 
-        }
+    /* Ottimizzazione Render HW */
+    * { box-sizing: border-box; }
+    body { 
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background-color: var(--secondary); 
+        padding: 0; margin: 0; color: var(--text); 
+        contain: content;
+    }
 
-        .app-header { 
-            background: var(--primary);
-            padding: 30px 20px;
-            text-align: center;
-            border-bottom: 6px solid var(--accent);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            margin-bottom: 30px;
-            position: relative;
-        }
+    .app-header { 
+        background: var(--primary);
+        padding: 20px 15px;
+        text-align: center;
+        border-bottom: 6px solid var(--accent);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        margin-bottom: 30px;
+        position: relative;
+        width: 100%;
+    }
+    
+    .live-clock {
+        color: var(--white);
+        font-weight: bold;
+        margin-top: 10px;
+        font-size: 1.1rem;
+        background: rgba(0,0,0,0.2);
+        display: inline-block;
+        padding: 5px 15px;
+        border-radius: 50px;
+    }
+
+    .header-actions {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 1001;
+    }
+
+    .menu-toggle-btn {
+        background-color: var(--accent);
+        color: var(--primary);
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        border: 2px solid var(--primary);
+        cursor: pointer;
+        font-weight: bold;
+        text-transform: uppercase;
+        transition: background 0.2s;
+    }
+
+    .menu-toggle-btn:hover { background-color: var(--white); }
+
+    .dropdown-menu {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: 115%;
+        background-color: var(--white);
+        border: 2px solid var(--primary);
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        padding: 10px;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 200px;
+    }
+
+    .dropdown-menu.show { display: flex; }
+
+    .dropdown-menu button {
+        width: 100%;
+        display: block;
+        margin: 0 !important;
+    }
+
+    .logout-btn { background: #ff4757; color: white; padding: 8px 15px; border-radius: 8px; font-size: 0.8rem; border: none; cursor: pointer; font-weight: bold; }
+    .report-btn { background: var(--accent); color: var(--primary); padding: 8px 15px; border-radius: 8px; font-size: 0.8rem; border: none; cursor: pointer; font-weight: bold; }
+    .anagrafica-btn { background: var(--success); color: white; padding: 8px 15px; border-radius: 8px; font-size: 0.8rem; border: none; cursor: pointer; font-weight: bold; }
+
+    .header-content {
+        display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 100%;
+    }
+
+    .header-content img { 
+        max-height: 100px; width: auto; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)); margin-bottom: 15px; display: block;
+    }
+
+    .header-content h1 { 
+        margin: 0; font-size: 1.8rem; color: var(--white); text-transform: uppercase; letter-spacing: 2px; font-weight: bold;
+    }
+
+    #loginPage {
+        display: flex; justify-content: center; align-items: center; height: 100vh; background: var(--primary);
+    }
+    
+    .login-box { 
+        background: var(--white); padding: 40px; border-radius: 20px; text-align: center; width: 100%; max-width: 350px; border-top: 8px solid var(--accent); box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    .login-box button {
+        width: 100%; padding: 14px; background-color: var(--primary); color: var(--accent); border: none; border-radius: 50px; font-weight: bold; text-transform: uppercase; cursor: pointer; transition: transform 0.2s, background-color 0.2s;
+    }
+
+    .container { max-width: 1000px; margin: 0 auto; padding: 0 20px 40px 20px; }
+
+    .toggle-form-btn {
+        display: block; width: 100%; background-color: var(--primary); color: var(--accent); padding: 15px; border: 2px solid var(--primary); border-radius: 12px; font-weight: bold; font-size: 1.1rem; cursor: pointer; text-transform: uppercase; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: all 0.3s;
+    }
+    .toggle-form-btn:hover { background-color: var(--primary-dark); }
+
+    .form-group { 
+        display: none; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; background: var(--white); padding: 25px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 25px; align-items: start;
+    }
+
+    .input-with-icon { position: relative; display: flex; align-items: center; width: 100%; }
+    .input-with-icon input { padding-right: 45px; }
+    .scanner-trigger { position: absolute; right: 15px; cursor: pointer; font-size: 1.5rem; user-select: none; z-index: 10; }
+
+    input, select, .form-group button { 
+        padding: 14px; font-size: 14px; border-radius: 10px; border: 2px solid var(--border-color); outline: none; transition: border-color 0.2s; width: 100%;
+    }
+
+    #codiceTracciabilita, #cognome, #nome, #search, #editCognome, #editNome, #editTrk, #modalInput, #searchAnagrafica, #editAnagraficaCognome, #editAnagraficaNome {
+        text-transform: uppercase;
+    }
+
+    input:focus, select:focus {
+        background-color: var(--white) !important; border-color: #fab005 !important; box-shadow: 0 0 8px rgba(250, 176, 5, 0.5);
+    }
+
+    .form-group button { background-color: var(--primary); color: var(--accent); border: none; cursor: pointer; font-weight: bold; text-transform: uppercase; }
+
+    .suggestions-list {
+        position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid var(--primary); border-top: none; border-radius: 0 0 10px 10px; z-index: 999; max-height: 200px; overflow-y: auto; box-shadow: 0 10px 20px rgba(0,0,0,0.1); display: none;
+    }
+    .suggestion-item { padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 14px; display: flex; justify-content: space-between; outline: none; }
+    .suggestion-item:hover, .suggestion-item:focus { background-color: #fff9db; }
+
+    .status-bar { background: var(--white); border: 2px solid var(--primary); color: var(--primary); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.1rem; }
+    
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 25px; }
+    .tabs button { background-color: #ffffff; color: var(--primary); border: 2px solid var(--primary); padding: 10px 18px; border-radius: 50px; cursor: pointer; font-size: 14px; font-weight: 700; }
+    .tabs button.active { background-color: var(--accent); color: var(--primary); transform: translateY(-2px); }
+
+    /* Ottimizzazione e rendering elementi lista pacchi */
+    .pacco, .cliente-item { 
+        background: var(--white); border-left: 8px solid var(--primary); padding: 20px; display: flex; justify-content: space-between; align-items: center; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 3px 6px rgba(0,0,0,0.05);
+        contain: content; content-visibility: auto; contain-intrinsic-size: 100px;
+    }
+    .pacco.ritirato { border-left-color: var(--success); opacity: 0.8; }
+    .pacco.scaduto { border-left-color: var(--warning); opacity: 0.8; }
+    
+    .tag-grandezza { background: var(--accent); color: var(--primary); padding: 4px 10px; border-radius: 6px; font-weight: 900; margin-right: 8px; border: 1px solid var(--primary); }
+    .tag-corriere { background: var(--primary); color: white; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.75rem; text-transform: uppercase; margin-right: 12px; }
+    
+    .ritira-btn, .action-btn-green { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+    .ritira-btn:hover, .action-btn-green:hover { background: var(--primary-dark); }
+    
+    .edit-dots { background: #eee; color: #333; border: none; padding: 10px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-left: 8px; font-size: 1.2rem; line-height: 1; }
+    .edit-dots:hover { background: #ddd; }
+
+    .btn-ripristina { background: #666; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.7rem; }
+    .view-firma-link { color: var(--primary); text-decoration: none; cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-left: 10px; padding: 4px 8px; border: 1px solid var(--primary); border-radius: 5px; }
+    
+    @keyframes alertBlink { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
+    .scadenza-alert { font-size: 1.8rem; cursor: pointer; margin-right: 15px; vertical-align: middle; animation: alertBlink 1s infinite; display: inline-block; }
+    .note-indicatore { font-size: 1.5rem; cursor: pointer; margin-right: 15px; vertical-align: middle; display: inline-block; }
+    .stato-emoji { display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; margin-right: 10px; font-size: 1.5rem; line-height: 1; }
+
+    #customModal, #editModal, #reportModal, #anagraficaModal, #editAnagraficaModal { 
+        display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; overflow-y: auto; padding: 20px 0;
+    }
+
+    #scannerModal {
+        display: none; position: fixed; z-index: 99999 !important; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; overflow-y: auto; padding: 20px 0;
+    }
+    
+    #beautifyAlert {
+        display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; overflow-y: auto; padding: 20px 0;
+    }
+
+    .modal-content { 
+        background: white; padding: 25px; border-radius: 20px; width: 95%; max-width: 800px; text-align: center; border-top: 10px solid var(--primary); position: relative; margin: auto;
+    }
+
+    .modal-body-flex { display: flex; gap: 20px; text-align: left; margin-top: 15px; flex-wrap: wrap; }
+    .modal-left { flex: 1; min-width: 250px; }
+    .modal-right { flex: 1; min-width: 300px; text-align: center; border-left: 1px solid #eee; padding-left: 20px; }
+    .modal-btn { padding: 15px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; width: 100%; }
+
+    #successOverlay { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); align-items: center; justify-content: center; flex-direction: column; }
+    
+    #signature-pad { border: 2px dashed #ccc; background: #fff; border-radius: 8px; touch-action: none; max-width: 100%; }
+    .highlight-trk { color: #333; font-weight: bold; border-bottom: 2px solid var(--accent); padding: 0 2px; cursor: copy; }
+    .paga-box { background: #fff9db; padding: 10px; border: 2px solid #fab005; border-radius: 10px; margin-top: 10px; display: flex; align-items: center; gap: 10px; font-weight: bold; }
+    .tag-pagato { color: #d9480f; font-weight: bold; font-size: 0.8rem; background: #fff4e6; padding: 2px 6px; border-radius: 4px; margin-left: 5px; border: 1px solid #ffd8a8; }
+    .tag-non-pagato { color: #c92a2a; font-weight: bold; font-size: 0.8rem; background: #fff5f5; padding: 2px 6px; border-radius: 4px; margin-left: 5px; border: 1px solid #ffc9c9; }
+    
+    .item-selezione { display: flex; align-items: center; background: white; margin-bottom: 5px; padding: 8px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer; }
+    .item-selezione input { width: auto; margin-right: 10px; transform: scale(1.3); }
+
+    .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; }
+    .edit-grid label { font-size: 0.8rem; font-weight: bold; color: var(--primary); margin-top: 5px; display: block; }
         
-        .live-clock {
-            color: var(--white);
-            font-weight: bold;
-            margin-top: 10px;
-            font-size: 1.1rem;
-            background: rgba(0,0,0,0.2);
-            display: inline-block;
-            padding: 5px 15px;
-            border-radius: 50px;
-        }
+    .contrassegno-box { grid-column: span 2; background: #ffe3e3; padding: 12px; border-radius: 10px; border: 2px dashed #ff4757; margin-top: 10px; }
+    .note-box { grid-column: span 2; background: #e8f4fd; padding: 12px; border-radius: 10px; border: 2px dashed #003399; margin-top: 10px; }
+    .tag-contrassegno { background: #ff4757; color: white; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.75rem; margin-right: 8px; display: inline-block; }
+    .alert-contrassegno-modal { background: #ffe3e3; border: 2px solid #ff4757; color: #c92a2a; padding: 12px; border-radius: 10px; margin-bottom: 15px; font-weight: bold; font-size: 1.1rem; text-align: center; }
 
-/* Ripristina la struttura originale del titolo e posiziona il menu in alto a destra */
-        .header-actions {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 1001;
-        }
+    /* ========================================================= */
+    /* GRAPHIC DESIGN MODERNO PER LA PAGINA INVENTARIO (Punto 2) */
+    /* ========================================================= */
+    #inventarioModal {
+        display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
+        background: rgba(0, 15, 40, 0.75); backdrop-filter: blur(5px);
+        align-items: center; justify-content: center; overflow-y: auto; padding: 20px 0;
+    }
 
-        /* Stile del pulsante Menu che usa i colori nativi della tua app */
-        .menu-toggle-btn {
-            background-color: var(--accent);
-            color: var(--primary);
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            border: 2px solid var(--primary);
-            cursor: pointer;
-            font-weight: bold;
-            text-transform: uppercase;
-            transition: background 0.2s;
-        }
+    .inv-header-title { color: var(--primary); margin: 0 0 15px 0; font-size: 1.4rem; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .inv-select-label { font-weight: 700; font-size: 0.85rem; color: #495057; display: block; margin-bottom: 6px; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        .menu-toggle-btn:hover {
-            background-color: var(--white);
-        }
+    .inv-select-custom {
+        width: 100%; padding: 12px 15px; border-radius: 12px; border: 2px solid #e2e8f0; background-color: #f8fafc; font-size: 0.95rem; font-weight: 700; color: var(--primary); outline: none; transition: all 0.2s; cursor: pointer;
+    }
+    .inv-select-custom:focus { border-color: var(--primary); background-color: #fff; box-shadow: 0 0 0 3px rgba(0, 51, 153, 0.15); }
 
-        /* Contenitore della tendina */
-        .dropdown-menu {
-            display: none;
-            position: absolute;
-            right: 0;
-            top: 115%;
-            background-color: var(--white);
-            border: 2px solid var(--primary);
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            padding: 10px;
-            flex-direction: column;
-            gap: 8px;
-            min-width: 200px;
-        }
+    .inventario-grid-pacchi {
+        display: flex; flex-direction: column; gap: 8px; max-height: 230px; overflow-y: auto; margin-top: 10px; padding: 4px; text-align: left;
+    }
 
-        /* Mostra la tendina */
-        .dropdown-menu.show {
-            display: flex;
-        }
+    .pacco-inventario-item {
+        background: #ffffff; color: #334155; padding: 12px 16px; border-radius: 10px; font-weight: 600; font-size: 0.9rem;
+        display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #cbd5e1;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.03); transition: all 0.25s ease; contain: content;
+    }
 
-        /* Forza i pulsanti dentro la tendina a mantenere i loro stili grafici originali */
-        .dropdown-menu button {
-            width: 100%;
-            display: block;
-            box-sizing: border-box;
-            margin: 0 !important;
-        }
+    .pacco-inventario-item.scansionato {
+        background: #f0fdf4 !important; color: #166534 !important; border-left-color: #22c55e !important; box-shadow: 0 2px 8px rgba(34, 197, 94, 0.15);
+    }
 
-        .logout-btn {
-            background: #ff4757;
-            color: white;
-            padding: 8px 15px;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-        }
+    .riepilogo-inventario-box {
+        background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; margin-top: 15px; text-align: left; font-size: 0.9rem; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+    }
 
-        .report-btn {
-            background: var(--accent);
-            color: var(--primary);
-            padding: 8px 15px;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-        }
+    .riepilogo-stat-line { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-weight: 600; color: #475569; }
+    .riepilogo-badge-val { padding: 3px 10px; border-radius: 20px; font-weight: 800; font-size: 0.85rem; }
 
-        /* Pulsante Anagrafica Verde Richiesto */
-        .anagrafica-btn {
-            background: var(--success);
-            color: white;
-            padding: 8px 15px;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-        }
+    .inv-mancanti-box {
+        margin-top: 12px; padding-top: 10px; border-top: 1px dashed #cbd5e1;
+    }
+    
+    .inv-mancanti-box ul {
+        margin: 8px 0 0 0; padding-left: 20px; max-height: 90px; overflow-y: auto; color: #dc2626; font-weight: 600; font-size: 0.85rem;
+    }
 
-       .app-header {
-            background-color: var(--primary);
-            color: var(--white);
-            padding: 20px 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-            border-bottom: 4px solid var(--accent);
-            position: relative; /* Consente al menu a tendina di posizionarsi correttamente */
-            width: 100%;
-            box-sizing: border-box;
-        }
+    /* Altri elementi UI */
+    .admin-btn { background: #6c5ce7; color: white; padding: 8px 15px; border-radius: 8px; font-size: 0.8rem; border: none; cursor: pointer; font-weight: bold; }
+    .admin-btn:hover { background: #5b4bc4; }
+    .admin-table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 15px; text-align: left; font-size: 0.9rem; }
+    .admin-table th, .admin-table td { padding: 10px; border: 1px solid #ddd; }
+    .admin-table th { background-color: var(--primary); color: white; }
+    .admin-section { border: 2px solid var(--primary); border-radius: 12px; padding: 15px; background: #fdfdfd; margin-bottom: 25px; text-align: left; }
+    .admin-section h4 { margin-top: 0; color: var(--primary); border-bottom: 2px solid var(--accent); padding-bottom: 5px; text-transform: uppercase; }
 
-        /* Allineamento e centratura di Logo, Titolo e Data */
-        .header-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            width: 100%;
-        }
+    .cart-badge {
+        position: fixed; bottom: 25px; left: 25px; background-color: var(--primary); color: var(--accent); border: 2px solid var(--accent); padding: 12px 18px; border-radius: 50px; font-size: 1.2rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: none; align-items: center; justify-content: center; gap: 8px; z-index: 999; transition: transform 0.2s;
+    }
+    .cart-badge:hover { background-color: var(--primary-dark); transform: scale(1.05); }
+    .btn-azione-carrello { background: none; border: none; font-size: 1.2rem; cursor: pointer; padding: 0 5px; margin-left: auto; }
 
-        .header-content img { 
-            max-height: 100px;
-            width: auto;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
-            margin-bottom: 15px;
-            display: block;
-        }
+    .scroll-top-btn {
+        position: fixed; bottom: 25px; right: 25px; background-color: var(--primary); color: var(--accent); border: 2px solid var(--accent); width: 50px; height: 50px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: none; align-items: center; justify-content: center; z-index: 999; transition: transform 0.2s;
+    }
+    .scroll-top-btn:hover { background-color: var(--primary-dark); transform: scale(1.1); }
 
-        .header-content h1 { 
-            margin: 0;
-            font-size: 1.8rem; 
-            color: var(--white); 
-            text-transform: uppercase; 
-            letter-spacing: 2px;
-            font-weight: bold;
-        }
+    .barcode-popup-container { position: relative; display: inline-block; }
+    .barcode-popup {
+        display: none; position: absolute; bottom: 135%; left: 50%; transform: translateX(-50%); background-color: white; border: 2px solid var(--primary); padding: 10px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 9999; text-align: center; white-space: nowrap;
+    }
+    .barcode-popup.show { display: block; }
+    .barcode-popup img { max-width: 200px; height: auto; display: block; margin: 0 auto 5px auto; }
+    .barcode-popup span { font-size: 12px !important; color: #333 !important; display: block !important; font-family: monospace !important; }
 
-        #loginPage {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: var(--primary);
-        }
-        .login-box { 
-            background: var(--white);
-            padding: 40px; 
-            border-radius: 20px; 
-            text-align: center; 
-            width: 100%; 
-            max-width: 350px; 
-            border-top: 8px solid var(--accent); 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        }
-
-        body {
-            overflow: hidden;
-        }
+    .alert-bell-btn { position: absolute; top: 20px; left: 20px; z-index: 1002; background-color: var(--accent); color: var(--primary); border: 2px solid var(--primary); width: 45px; height: 45px; border-radius: 50%; font-size: 1.3rem; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .bell-badge { position: absolute; top: -5px; right: -5px; background: var(--warning); color: white; font-size: 0.7rem; padding: 3px 7px; border-radius: 50%; font-weight: bold; }
+    .auto-alert-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 20px; box-shadow: 0 15px 50px rgba(0,0,0,0.4); z-index: 4000; width: 90%; max-width: 450px; text-align: center; border-top: 10px solid var(--primary); }
+    .auto-alert-popup.show { display: block; }
+    .auto-alert-close { position: absolute; top: 15px; right: 15px; font-size: 1.5rem; font-weight: bold; color: #999; cursor: pointer; border: none; background: none; }
+    .auto-alert-close:hover { color: var(--warning); }
+    .storico-alert-item { padding: 12px; border-bottom: 1px solid #eee; text-align: left; font-size: 0.9rem; }
+    .storico-alert-time { font-size: 0.75rem; color: #888; display: block; margin-top: 4px; }
         
-        .login-box button {
-            width: 100%;
-            padding: 14px;
-            background-color: var(--primary);
-            color: var(--accent);
-            border: none;
-            border-radius: 50px;
-            font-weight: bold;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: transform 0.2s, background-color 0.2s;
-        }
-
-       .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 0 20px 40px 20px;
-        }
-
-        .toggle-form-btn {
-            display: block;
-            width: 100%;
-            background-color: var(--primary);
-            color: var(--accent);
-            padding: 15px;
-            border: 2px solid var(--primary);
-            border-radius: 12px;
-            font-weight: bold;
-            font-size: 1.1rem;
-            cursor: pointer;
-            text-transform: uppercase;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            transition: all 0.3s;
-        }
-        .toggle-form-btn:hover {
-            background-color: var(--primary-dark);
-        }
-
-        .form-group { 
-            display: none; 
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
-            gap: 12px; 
-            background: var(--white); 
-            padding: 25px; 
-            border-radius: 15px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
-            margin-bottom: 25px;
-            align-items: start;
-        }
-
-        .input-with-icon {
-            position: relative;
-            display: flex;
-            align-items: center;
-            width: 100%;
-        }
-        .input-with-icon input { padding-right: 45px;
-        }
-        .scanner-trigger {
-            position: absolute;
-            right: 15px;
-            cursor: pointer;
-            font-size: 1.5rem;
-            user-select: none;
-            z-index: 10;
-        }
-
-        input, select, .form-group button { 
-            padding: 14px;
-            font-size: 14px; 
-            border-radius: 10px; 
-            border: 2px solid var(--border-color);
-            outline: none; 
-            transition: all 0.3s;
-            box-sizing: border-box;
-            width: 100%;
-        }
-
-        /* Trasforma visivamente in maiuscolo durante la digitazione */
-        #codiceTracciabilita, #cognome, #nome, #search, #editCognome, #editNome, #editTrk, #modalInput, #searchAnagrafica, #editAnagraficaCognome, #editAnagraficaNome {
-            text-transform: uppercase;
-        }
-
-        input:focus, select:focus {
-            background-color: var(--white) !important;
-            border-color: #fab005 !important;
-            box-shadow: 0 0 8px rgba(250, 176, 5, 0.5);
-        }
-
-        .form-group button { background-color: var(--primary); color: var(--accent); border: none; cursor: pointer;
-            font-weight: bold; text-transform: uppercase; }
-
-        .suggestions-list {
-            position: absolute;
-            top: 100%; left: 0; right: 0;
-            background: white;
-            border: 2px solid var(--primary);
-            border-top: none;
-            border-radius: 0 0 10px 10px;
-            z-index: 999;
-            max-height: 200px;
-            overflow-y: auto;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-            display: none;
-        }
-        .suggestion-item { padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #eee;
-            font-size: 14px; display: flex; justify-content: space-between; outline: none; }
-        .suggestion-item:hover, .suggestion-item:focus { background-color: #fff9db; }
-
-        .status-bar { background: var(--white); border: 2px solid var(--primary); color: var(--primary); padding: 15px;
-            border-radius: 12px; text-align: center; margin-bottom: 20px; font-weight: 900; font-size: 1.1rem;
-        }
-        
-        .tabs { display: flex;
-            gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 25px; }
-        .tabs button { 
-            background-color: #ffffff;
-            color: var(--primary); border: 2px solid var(--primary); 
-            padding: 10px 18px; border-radius: 50px; cursor: pointer; font-size: 14px; font-weight: 700;
-        }
-        .tabs button.active { background-color: var(--accent); color: var(--primary); transform: translateY(-2px);
-        }
-
-        .pacco, .cliente-item { 
-            background: var(--white);
-            border-left: 8px solid var(--primary); padding: 20px; 
-            display: flex; justify-content: space-between; align-items: center; border-radius: 12px; 
-            margin-bottom: 12px;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.05); transition: 0.3s;
-        }
-        .pacco.ritirato { border-left-color: var(--success);
-            opacity: 0.8; }
-        .pacco.scaduto { border-left-color: var(--warning); opacity: 0.8;
-        }
-        
-        .tag-grandezza { background: var(--accent);
-            color: var(--primary); padding: 4px 10px; border-radius: 6px; font-weight: 900; margin-right: 8px; border: 1px solid var(--primary);
-        }
-        .tag-corriere { background: var(--primary); color: white; padding: 4px 10px; border-radius: 6px;
-            font-weight: bold; font-size: 0.75rem; text-transform: uppercase; margin-right: 12px; }
-        
-        .ritira-btn, .action-btn-green { background: var(--primary);
-            color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase;
-        }
-        .ritira-btn:hover, .action-btn-green:hover { background: var(--primary-dark);
-        }
-        
-        .edit-dots {
-            background: #eee;
-            color: #333;
-            border: none;
-            padding: 10px 12px;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-left: 8px;
-            font-size: 1.2rem;
-            line-height: 1;
-        }
-        .edit-dots:hover { background: #ddd;
-        }
-
-        .btn-ripristina { background: #666; color: white; border: none; padding: 5px 10px;
-            border-radius: 5px; cursor: pointer; font-size: 0.7rem; }
-
-        .view-firma-link { color: var(--primary); text-decoration: none;
-            cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-left: 10px; padding: 4px 8px; border: 1px solid var(--primary); border-radius: 5px;
-        }
-        
-        @keyframes alertBlink { 
-            0% { opacity: 1; transform: scale(1); } 
-            50% { opacity: 0.3; transform: scale(1.2); } 
-            100% { opacity: 1; transform: scale(1); } 
-        }
-        .scadenza-alert { font-size: 1.8rem; cursor: pointer; margin-right: 15px; vertical-align: middle;
-            animation: alertBlink 1s infinite; display: inline-block; }
-
-        .note-indicatore {
-            font-size: 1.5rem;
-            cursor: pointer;
-            margin-right: 15px;
-            vertical-align: middle;
-            display: inline-block;
-        }
-
-        .stato-emoji {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            vertical-align: middle;
-            margin-right: 10px;
-            font-size: 1.5rem;
-            line-height: 1;
-        }
-        /* ✅ NUOVO CSS */
-#customModal, #editModal, #reportModal, #anagraficaModal, #editAnagraficaModal { 
-    display: none;
-    position: fixed; 
-    z-index: 1000; 
-    left: 0; top: 0; 
-    width: 100%; height: 100%; 
-    background: rgba(0,0,0,0.8); 
-    align-items: center; 
-    justify-content: center; 
-    overflow-y: auto;
-    padding: 20px 0;
-}
-
-/* MODAL FOTOCAMERA: z-index altissimo per sovrapporsi sempre in primo piano */
-#scannerModal {
-    display: none;
-    position: fixed; 
-    z-index: 99999 !important; 
-    left: 0; top: 0; 
-    width: 100%; height: 100%; 
-    background: rgba(0,0,0,0.9); 
-    align-items: center; 
-    justify-content: center; 
-    overflow-y: auto;
-    padding: 20px 0;
-}
-        
-        #beautifyAlert {
-            display: none;
-            position: fixed; 
-            z-index: 3000; 
-            left: 0; top: 0; 
-            width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.8); 
-            align-items: center; 
-            justify-content: center; 
-            overflow-y: auto;
-            padding: 20px 0;
-        }
-
-        .modal-content { 
-            background: white;
-            padding: 25px; 
-            border-radius: 20px; 
-            width: 95%; 
-            max-width: 800px; 
-            text-align: center; 
-            border-top: 10px solid var(--primary); 
-            position: relative;
-            margin: auto;
-        }
-
-        .modal-body-flex { display: flex; gap: 20px; text-align: left; margin-top: 15px; flex-wrap: wrap;
-        }
-        .modal-left { flex: 1; min-width: 250px;
-        }
-        .modal-right { flex: 1; min-width: 300px; text-align: center; border-left: 1px solid #eee;
-            padding-left: 20px; }
-        
-        .modal-btn { padding: 15px;
-            border-radius: 10px; border: none; cursor: pointer; font-weight: bold; width: 100%;
-        }
-
-        #successOverlay { display: none; position: fixed; z-index: 2000; left: 0; top: 0;
-            width: 100%; height: 100%; background: rgba(255,255,255,0.9); align-items: center; justify-content: center; flex-direction: column;
-        }
-        
-        #signature-pad { border: 2px dashed #ccc;
-            background: #fff; border-radius: 8px; touch-action: none; max-width: 100%; }
-        .highlight-trk { color: #333;
-            font-weight: bold; border-bottom: 2px solid var(--accent); padding: 0 2px; cursor: copy;
-        }
-        .paga-box { background: #fff9db; padding: 10px; border: 2px solid #fab005; border-radius: 10px;
-            margin-top: 10px; display: flex; align-items: center; gap: 10px; font-weight: bold;
-        }
-        .tag-pagato { color: #d9480f; font-weight: bold; font-size: 0.8rem; background: #fff4e6;
-            padding: 2px 6px; border-radius: 4px; margin-left: 5px; border: 1px solid #ffd8a8;
-        }
-        .tag-non-pagato { color: #c92a2a; font-weight: bold; font-size: 0.8rem; background: #fff5f5;
-            padding: 2px 6px; border-radius: 4px; margin-left: 5px; border: 1px solid #ffc9c9;
-        }
-        
-        .item-selezione { display: flex;
-            align-items: center; background: white; margin-bottom: 5px; padding: 8px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer;
-        }
-        .item-selezione input { width: auto; margin-right: 10px; transform: scale(1.3);
-        }
-
-        .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left;
-        }
-        .edit-grid label { font-size: 0.8rem; font-weight: bold; color: var(--primary); margin-top: 5px;
-            display: block; }
-            
-        .contrassegno-box {
-            grid-column: span 2;
-            background: #ffe3e3;
-            padding: 12px;
-            border-radius: 10px;
-            border: 2px dashed #ff4757;
-            margin-top: 10px;
-        }
-        .note-box {
-            grid-column: span 2;
-            background: #e8f4fd;
-            padding: 12px;
-            border-radius: 10px;
-            border: 2px dashed #003399;
-            margin-top: 10px;
-        }
-        .tag-contrassegno {
-            background: #ff4757;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-weight: bold;
-            font-size: 0.75rem;
-            margin-right: 8px;
-            display: inline-block;
-        }
-        .alert-contrassegno-modal {
-            background: #ffe3e3;
-            border: 2px solid #ff4757;
-            color: #c92a2a;
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            font-weight: bold;
-            font-size: 1.1rem;
-            text-align: center;
-        }
-
-        #inventarioModal {
-            display: none;
-            position: fixed; 
-            z-index: 1000; 
-            left: 0; top: 0; 
-            width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.8); 
-            align-items: center; 
-            justify-content: center; 
-            overflow-y: auto;
-            padding: 20px 0;
-        }
-
-        .inventario-btn {
-            background: #00bcd4; /* Colore celeste richiesto */
-            color: white;
-            padding: 8px 15px;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .inventario-grid-pacchi {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-height: 250px;
-            overflow-y: auto;
-            margin-top: 15px;
-            padding: 5px;
-            text-align: left;
-        }
-
-        .pacco-inventario-item {
-            background: #e0e0e0; /* Grigio iniziale per tutti i pacchi */
-            color: #333;
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 0.9rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 5px solid #9e9e9e;
-            transition: background-color 0.3s, border-color 0.3s;
-        }
-
-        .pacco-inventario-item.scansionato {
-            background: var(--success) !important; /* Verde al riscontro positivo */
-            color: white !important;
-            border-left-color: #009432 !important;
-        }
-
-        .riepilogo-inventario-box {
-            background: #f8f9fa;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 15px;
-            text-align: left;
-            font-size: 0.95rem;
-        }
-
-        .riepilogo-inventario-box ul {
-            margin: 5px 0 0 0;
-            padding-left: 20px;
-            max-height: 100px;
-            overflow-y: auto;
-        }
-
-        /* Pulsante Area Amministratore - Viola Intenso per differenziarsi */
-        .admin-btn {
-            background: #6c5ce7;
-            color: white;
-            padding: 8px 15px;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .admin-btn:hover {
-            background: #5b4bc4;
-        }
-
-        /* Stili interni per le tabelle di gestione amministratore */
-        .admin-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            margin-bottom: 15px;
-            text-align: left;
-            font-size: 0.9rem;
-        }
-        .admin-table th, .admin-table td {
-            padding: 10px;
-            border: 1px solid #ddd;
-        }
-        .admin-table th {
-            background-color: var(--primary);
-            color: white;
-        }
-        .admin-section {
-            border: 2px solid var(--primary);
-            border-radius: 12px;
-            padding: 15px;
-            background: #fdfdfd;
-            margin-bottom: 25px;
-            text-align: left;
-        }
-        .admin-section h4 {
-            margin-top: 0;
-            color: var(--primary);
-            border-bottom: 2px solid var(--accent);
-            padding-bottom: 5px;
-            text-transform: uppercase;
-        }
-
-        /* Stile del Badge Carrello in basso a sinistra */
-.cart-badge {
-    position: fixed;
-    bottom: 25px;
-    left: 25px;
-    background-color: var(--primary);
-    color: var(--accent);
-    border: 2px solid var(--accent);
-    padding: 12px 18px;
-    border-radius: 50px;
-    font-size: 1.2rem;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    display: none; /* Nascondi di default */
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    z-index: 999;
-    transition: all 0.2s ease-in-out;
-}
-.cart-badge:hover {
-    background-color: var(--primary-dark);
-    transform: scale(1.05);
-}
-.btn-azione-carrello {
-    background: none;
-    border: none;
-    font-size: 1.2rem;
-    cursor: pointer;
-    padding: 0 5px;
-    margin-left: auto;
-}
-
-        /* Pulsante Flottante Torna Su */
-        .scroll-top-btn {
-            position: fixed;
-            bottom: 25px;
-            right: 25px;
-            background-color: var(--primary);
-            color: var(--accent);
-            border: 2px solid var(--accent);
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            font-size: 1.5rem;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            display: none; /* Nascosto di default */
-            align-items: center;
-            justify-content: center;
-            z-index: 999;
-            transition: all 0.2s ease-in-out;
-        }
-        .scroll-top-btn:hover {
-            background-color: var(--primary-dark);
-            transform: scale(1.1);
-        }
-        .barcode-popup-container {
-    position: relative;
-    display: inline-block;
-}
-
-.barcode-popup {
-    display: none;
-    position: absolute;
-    bottom: 135%; /* Posiziona il popup sopra il testo */
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: white;
-    border: 2px solid var(--primary);
-    padding: 10px;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    z-index: 9999; /* Resta sopra a tutto */
-    text-align: center;
-    white-space: nowrap;
-}
-
-/* Mostra il popup solo quando JavaScript aggiunge la classe .show */
-.barcode-popup.show {
-    display: block;
-}
-
-.barcode-popup img {
-    max-width: 200px;
-    height: auto;
-    display: block;
-    margin: 0 auto 5px auto;
-}
-
-.barcode-popup span {
-    font-size: 12px !important;
-    color: #333 !important;
-    display: block !important;
-    font-family: monospace !important;
-}
-
-    /* --- SISTEMA MESSAGGI AUTOMATICI --- */
-.alert-bell-btn {
-    position: absolute; /* Modificato da fixed a absolute per non seguire lo scroll */
-    top: 20px;
-    left: 20px;
-    z-index: 1002;
-    background-color: var(--accent);
-    color: var(--primary);
-    border: 2px solid var(--primary);
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    font-size: 1.3rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    transition: transform 0.2s;
-}
-.alert-bell-btn:hover {
-    transform: scale(1.1);
-}
-.bell-badge {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background: var(--warning);
-    color: white;
-    font-size: 0.7rem;
-    padding: 3px 7px;
-    border-radius: 50%;
-    font-weight: bold;
-}
-.auto-alert-popup {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0.9);
-    background: white;
-    padding: 30px;
-    border-radius: 20px;
-    box-shadow: 0 15px 50px rgba(0,0,0,0.4);
-    z-index: 4000;
-    width: 90%;
-    max-width: 450px;
-    text-align: center;
-    border-top: 10px solid var(--primary);
-    transition: all 0.3s ease-in-out;
-}
-.auto-alert-popup.show {
-    display: block;
-    transform: translate(-50%, -50%) scale(1);
-}
-.auto-alert-close {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #999;
-    cursor: pointer;
-    border: none;
-    background: none;
-}
-.auto-alert-close:hover {
-    color: var(--warning);
-}
-.storico-alert-item {
-    padding: 12px;
-    border-bottom: 1px solid #eee;
-    text-align: left;
-    font-size: 0.9rem;
-}
-.storico-alert-time {
-    font-size: 0.75rem;
-    color: #888;
-    display: block;
-    margin-top: 4px;
-}
-        
-/* Contenitore del menu di stampa pieghevole */
-.pdf-dropdown-container {
-    text-align: right;
-    margin-bottom: 5px;
-    padding-right: 5px;
-}
-
-/* La freccettina sobria e cliccabile */
-.pdf-toggle-btn {
-    font-size: 0.85rem;
-    color: #888888;
-    cursor: pointer;
-    user-select: none;
-    transition: color 0.2s;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-}
-.pdf-toggle-btn:hover {
-    color: var(--primary); /* Diventa del tuo colore primario solo al passaggio del mouse */
-}
-
-/* La scritta di stampa vera e propria, nascosta di base */
-.pdf-link-content {
-    display: none; /* Nascosta di base */
-    margin-top: 5px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--primary);
-    text-decoration: underline;
-    cursor: pointer;
-}
-.pdf-link-content:hover {
-    color: var(--primary-dark);
-}
-        
-    </style>
+    .pdf-dropdown-container { text-align: right; margin-bottom: 5px; padding-right: 5px; }
+    .pdf-toggle-btn { font-size: 0.85rem; color: #888888; cursor: pointer; user-select: none; transition: color 0.2s; display: inline-flex; align-items: center; gap: 4px; }
+    .pdf-toggle-btn:hover { color: var(--primary); }
+    .pdf-link-content { display: none; margin-top: 5px; font-size: 0.85rem; font-weight: 500; color: var(--primary); text-decoration: underline; cursor: pointer; }
+    .pdf-link-content:hover { color: var(--primary-dark); }
+</style>
     <script>
         window.addEventListener('scroll', function() {
             gestisciPulsanteScroll();
@@ -1159,13 +618,14 @@
 <button id="scrollToTopBtn" class="scroll-top-btn" onclick="tornaSu()" title="Torna all'inizio">↑</button>
     
 <div id="inventarioModal">
-    <div class="modal-content" style="max-width: 600px;">
-        <h3 style="color:var(--primary); margin:0 0 15px 0;">📦 Inventario Pacchi per Corriere</h3>
+    <div class="modal-content" style="max-width: 650px;">
+        <h3 class="inv-header-title">📦 Inventario Pacchi in Giacenza</h3>
         
-        <div style="margin-bottom: 12px;">
-            <label style="font-weight:bold; display:block; margin-bottom:5px; text-align:left;">Seleziona Corriere:</label>
-            <select id="inventarioCorriereSelect" onchange="caricaPacchiInventario()">
-                </select>
+        <div style="margin-bottom: 14px;">
+            <label class="inv-select-label">Filtra per Corriere:</label>
+            <select id="inventarioCorriereSelect" class="inv-select-custom" onchange="caricaPacchiInventario()">
+                <!-- I dati vengono popilati in automatico con opzione 'Tutti' -->
+            </select>
         </div>
 
         <div class="input-with-icon" style="margin-bottom: 15px;">
@@ -1173,24 +633,34 @@
             <span class="scanner-trigger" onclick="startScanner('inventarioSearchInput')">📸</span>
         </div>
 
-        <h4 style="text-align:left; margin: 15px 0 5px 0; color: var(--primary);">Elenco Pacchi del Corriere:</h4>
+        <h4 style="text-align:left; margin: 15px 0 6px 0; color: var(--primary); font-weight: 700;">Elenco Pacchi da Verificare:</h4>
         <div class="inventario-grid-pacchi" id="inventarioPacchiContainer">
-            </div>
+            <!-- Pacchi generati dinamicamente -->
+        </div>
 
         <div class="riepilogo-inventario-box">
-            <div style="margin-bottom: 5px;"><b>• Pacchi in inventario (totale a gestionale):</b> <span id="invTotaleGiacenza" style="font-weight:bold; color:var(--primary);">0</span></div>
-            <div style="margin-bottom: 5px;"><b>• Pacchi scansionati (presenti e verificati):</b> <span id="invTotaleScansionati" style="font-weight:bold; color:var(--success);">0</span></div>
-            <div style="margin-bottom: 5px;"><b>• Pacchi mancanti (non scansionati):</b> <span id="invTotaleMancanti" style="font-weight:bold; color:var(--warning);">0</span></div>
-            <div style="margin-top: 10px;">
-                <b>Lista codici mancanti:</b>
-                <ul id="invListaMancantiText" style="color:#c92a2a; font-weight:500;">
-                    </ul>
+            <div class="riepilogo-stat-line">
+                <span>• Pacchi in inventario (totale gestionale):</span>
+                <span id="invTotaleGiacenza" class="riepilogo-badge-val" style="background:#e0e7ff; color:var(--primary);">0</span>
+            </div>
+            <div class="riepilogo-stat-line">
+                <span>• Pacchi scansionati (presenti e verificati):</span>
+                <span id="invTotaleScansionati" class="riepilogo-badge-val" style="background:#dcfce7; color:#15803d;">0</span>
+            </div>
+            <div class="riepilogo-stat-line">
+                <span>• Pacchi mancanti (da riscontrare):</span>
+                <span id="invTotaleMancanti" class="riepilogo-badge-val" style="background:#fee2e2; color:#b91c1c;">0</span>
+            </div>
+            <div class="inv-mancanti-box">
+                <b style="color:#475569;">Codici o ID non ancora riscontrati:</b>
+                <ul id="invListaMancantiText"></ul>
             </div>
         </div>
 
         <div style="margin-top:20px; display:flex; gap:10px;">
-    <button onclick="chiudiInventarioModal()" class="modal-btn" style="background:#e0e0e0; color:#333;">CHIUDI INVENTARIO</button>
-    <button id="btnTerminaInventario" onclick="terminaInventarioConReport()" class="modal-btn">TERMINA INVENTARIO</button></div>
+            <button onclick="chiudiInventarioModal()" class="modal-btn" style="background:#e2e8f0; color:#334155;">CHIUDI INVENTARIO</button>
+            <button id="btnTerminaInventario" onclick="terminaInventarioConReport()" class="modal-btn" style="background:var(--primary); color:var(--accent);">TERMINA E RICEVI REPORT</button>
+        </div>
     </div>
 </div>
 
@@ -3018,15 +2488,21 @@ function riproduciBeepSuccesso() {
 }
 
 function apriInventarioModal() {
-    const selectCorriere = document.getElementById('inventarioCorriereSelect');
-    selectCorriere.innerHTML = ""; 
+    const selCorriere = document.getElementById('inventarioCorriereSelect');
+    if (selCorriere) {
+        // Opzione "Tutti i pacchi" inclusa come predefinita
+        let opzioni = '<option value="TUTTI">📦 TUTTI I PACCHI IN GIACENZA</option>';
+        corrieri.forEach(c => {
+            opzioni += `<option value="${c}">${c}</option>`;
+        });
+        selCorriere.innerHTML = opzioni;
+    }
     
-    corrieri.forEach(corriere => {
-        let opt = document.createElement('option');
-        opt.value = corriere;
-        opt.innerText = corriere;
-        selectCorriere.appendChild(opt);
-    });
+    pacchiInventarioScansionati.clear();
+    document.getElementById('inventarioSearchInput').value = '';
+    document.getElementById('inventarioModal').style.display = 'flex';
+    caricaPacchiInventario();
+}
 
     trkScansionatiInventario = [];
     document.getElementById('inventarioSearchInput').value = "";
@@ -3043,90 +2519,90 @@ function apriInventarioModal() {
 
 function chiudiInventarioModal() {
     document.getElementById('inventarioModal').style.display = 'none';
-    trkScansionatiInventario = [];
 }
 
 function caricaPacchiInventario() {
-    const corriereSelezionato = document.getElementById('inventarioCorriereSelect').value;
+    const corriereScelto = document.getElementById('inventarioCorriereSelect').value;
     const container = document.getElementById('inventarioPacchiContainer');
-    container.innerHTML = ""; 
     
-    const listaPacchiAttivi = Object.values(pacchi).filter(p => {
-        if (!p || typeof p !== 'object') return false;
-        if (p.corriere !== corriereSelezionato) return false;
-        if (p.ritirato === true || p.ritirato === "true") return false;
-        return true;
+    // Filtro esteso: se "TUTTI" prende l'intera giacenza, altrimenti filtra per corriere
+    const pacchiGiacenza = pacchi.filter(p => !p.ritirato && (corriereScelto === 'TUTTI' || p.corriere === corriereScelto));
+    
+    if (pacchiGiacenza.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding: 20px; color:#888;">Nessun pacco presente in giacenza.</div>';
+    } else {
+        let htmlList = "";
+        pacchiGiacenza.forEach(p => {
+            const isScanned = pacchiInventarioScansionati.has(p.id);
+            const tagCorriereTxt = corriereScelto === 'TUTTI' ? ` [${p.corriere}]` : '';
+            htmlList += `
+                <div class="pacco-inventario-item ${isScanned ? 'scansionato' : ''}" id="inv-item-${p.id}">
+                    <span><b>#${p.riconoscimento}</b> - ${p.cognome.toUpperCase()} ${p.nome.toUpperCase()}${tagCorriereTxt} <small style="display:inline-block; margin-left:8px; opacity:0.8;">(${p.codiceTracciabilita})</small></span>
+                    <span>${isScanned ? '✅ RISCONTRATO' : '⏳ DA VERIFICARE'}</span>
+                </div>
+            `;
+        });
+        container.innerHTML = htmlList;
+    }
+    
+    function aggiornaStatisticheInventario(pacchiGiacenza) {
+    if (!pacchiGiacenza) {
+        const corriereScelto = document.getElementById('inventarioCorriereSelect').value;
+        pacchiGiacenza = pacchi.filter(p => !p.ritirato && (corriereScelto === 'TUTTI' || p.corriere === corriereScelto));
+    }
+    
+    const totale = pacchiGiacenza.length;
+    let scansionatiCount = 0;
+    let mancanti = [];
+
+    pacchiGiacenza.forEach(p => {
+        if (pacchiInventarioScansionati.has(p.id)) {
+            scansionatiCount++;
+        } else {
+            mancanti.push(`#${p.riconoscimento} - ${p.cognome.toUpperCase()} ${p.nome.toUpperCase()} (${p.codiceTracciabilita})`);
+        }
     });
 
-    if (listaPacchiAttivi.length === 0) {
-        container.innerHTML = "<div style='text-align:center; color:#777; font-weight:bold; padding:15px;'>Nessun pacco in giacenza per questo corriere.</div>";
+    document.getElementById('invTotaleGiacenza').innerText = totale;
+    document.getElementById('invTotaleScansionati').innerText = scansionatiCount;
+    document.getElementById('invTotaleMancanti').innerText = totale - scansionatiCount;
+
+    const listaMancantiEl = document.getElementById('invListaMancantiText');
+    if (mancanti.length === 0) {
+        listaMancantiEl.innerHTML = '<li style="color:#166534;">Tutti i pacchi sono stati verificati correttamente! 🎉</li>';
     } else {
-        listaPacchiAttivi.forEach(p => {
-            const trkUpper = (p.codiceTracciabilita || "").trim().toUpperCase();
-            if (trkUpper === "" || trkUpper === "-") return; 
-
-            const divPacco = document.createElement('div');
-            divPacco.className = 'pacco-inventario-item';
-            divPacco.id = `inv-pacco-${trkUpper}`;
-            
-            if (trkScansionatiInventario.includes(trkUpper)) {
-                divPacco.classList.add('scansionato');
-            }
-
-            divPacco.innerHTML = `
-                <span>🆔 ID: ${p.riconoscimento || '-'} — TRK: <span style="letter-spacing:1px;">${trkUpper}</span></span>
-                <small style="font-style:italic;">(${p.cognome || ''} ${p.nome || ''})</small>
-            `;
-            container.appendChild(divPacco);
-        });
+        listaMancantiEl.innerHTML = mancanti.map(m => `<li>${m}</li>`).join('');
     }
-    aggiornaRiepiloghiInventario(listaPacchiAttivi);
 }
 
 function gestisciScansioneInventario() {
-    const inputField = document.getElementById('inventarioSearchInput');
-    const codiceLetto = inputField.value.trim().toUpperCase();
-    if (codiceLetto === "") return;
+    const inputEl = document.getElementById('inventarioSearchInput');
+    const val = inputEl.value.trim().toUpperCase();
+    if (!val) return;
 
-    const corriereSelezionato = document.getElementById('inventarioCorriereSelect').value;
+    const corriereScelto = document.getElementById('inventarioCorriereSelect').value;
+    const pacchiGiacenza = pacchi.filter(p => !p.ritirato && (corriereScelto === 'TUTTI' || p.corriere === corriereScelto));
     
-    const listaPacchiAttivi = Object.values(pacchi).filter(p => {
-        if (!p || typeof p !== 'object') return false;
-        if (p.corriere !== corriereSelezionato) return false;
-        if (p.ritirato === true || p.ritirato === "true") return false;
-        return true;
-    });
-
-    const trovato = listaPacchiAttivi.find(p => {
-        const trkPacco = (p.codiceTracciabilita || "").trim().toUpperCase();
-        const idPacco = String(p.riconoscimento || "").trim();
-        return trkPacco === codiceLetto || idPacco === codiceLetto;
-    });
+    const trovato = pacchiGiacenza.find(p => 
+        (p.codiceTracciabilita && p.codiceTracciabilita.toUpperCase() === val) || 
+        String(p.riconoscimento) === val
+    );
 
     if (trovato) {
-        riproduciBeepSuccesso();
-        const trkChiave = (trovato.codiceTracciabilita || "").trim().toUpperCase();
-
-        if (!trkScansionatiInventario.includes(trkChiave)) {
-            trkScansionatiInventario.push(trkChiave);
-            
-            const elementoGrafico = document.getElementById(`inv-pacco-${trkChiave}`);
-            if (elementoGrafico) {
-                elementoGrafico.classList.add('scansionato');
-            }
-            
-            // FAI COMPARIRE IL PULSANTE NON APPENA FA LA PRIMA SCANSIONE
-            const btnTermina = document.getElementById('btnTerminaInventario');
-            if (btnTermina) {
-                btnTermina.style.display = 'inline-block';
-            }
-            
-            aggiornaRiepiloghiInventario(listaPacchiAttivi);
+        pacchiInventarioScansionati.add(trovato.id);
+        
+        const itemEl = document.getElementById(`inv-item-${trovato.id}`);
+        if (itemEl) {
+            itemEl.classList.add('scansionato');
+            itemEl.querySelector('span:last-child').innerText = '✅ RISCONTRATO';
+            itemEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
-        inputField.value = "";
+        
+        inputEl.value = '';
+        aggiornaStatisticheInventario(pacchiGiacenza);
     }
 }
-
+    
 function aggiornaRiepiloghiInventario(listaPacchiAttivi) {
     const totaleGiacenza = listaPacchiAttivi.length;
     const scansionatiEInGiacenza = listaPacchiAttivi.filter(p => trkScansionatiInventario.includes((p.codiceTracciabilita || "").trim().toUpperCase()));
@@ -3294,16 +2770,26 @@ function scaricaPDFInventario() {
     }
 }
 function terminaInventarioConReport() {
-    // Controllo: assicuriamoci che il pulsante sia collegato
-    if (confirm("Vuoi scaricare il PDF dei mancanti e chiudere l'inventario?")) {
-        scaricaPDFInventario();
-        chiudiInventarioModal();
-    }
-}
+    const corriereScelto = document.getElementById('inventarioCorriereSelect').value;
+    const pacchiGiacenza = pacchi.filter(p => !p.ritirato && (corriereScelto === 'TUTTI' || p.corriere === corriereScelto));
+    
+    let mancanti = pacchiGiacenza.filter(p => !pacchiInventarioScansionati.has(p.id));
+    
+    let messaggio = `INVENTARIO COMPLETATO (${corriereScelto})\n\n`;
+    messaggio += `• Totale pacchi previsti: ${pacchiGiacenza.length}\n`;
+    messaggio += `• Pacchi verficiati: ${pacchiInventarioScansionati.size}\n`;
+    messaggio += `• Pacchi mancanti: ${mancanti.length}\n\n`;
 
-document.getElementById('inventarioSearchInput').addEventListener('change', function() {
-    gestisciScansioneInventario();
-});
+    if (mancanti.length > 0) {
+        messaggio += "LISTA PACCHI MANCANTI:\n";
+        mancanti.forEach(m => {
+            messaggio += `- #${m.riconoscimento} ${m.cognome.toUpperCase()} ${m.nome.toUpperCase()} [${m.corriere}] TRK: ${m.codiceTracciabilita}\n`;
+        });
+    }
+
+    alert(messaggio);
+    chiudiInventarioModal();
+}
 
 let listaCorrieriDinamica = [...corrieri];
 let listaScaffaliDinamica = [];
