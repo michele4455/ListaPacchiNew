@@ -4238,10 +4238,6 @@ function generaPdfListaPacchi() {
     }
 }
 
-    // ==========================================
-// LOGICA CHAT INTERNA TRA DISPOSITIVI
-// ==========================================
-
 let chatMessaggiUnread = 0;
 let chatAperta = false;
 let myDeviceId = localStorage.getItem('chat_device_id');
@@ -4252,30 +4248,45 @@ if (!myDeviceId) {
 }
 
 let myDeviceName = localStorage.getItem('chat_device_name') || ('Postazione-' + myDeviceId.substr(3));
+window.lastMsgSeenTimestamp = Date.now(); // Inizializza all'ora attuale per evitare notifica su messaggi vecchi
 
-// Suono Notifica Messaggio
+// Riproduzione Suono Notifica
 function riproduciSuonoNotificaChat() {
     try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const audioCtx = new AudioContext();
+        
+        // Se il browser ha messo in pausa l'audio, lo riattiviamo
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'sine';
         osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // Nota D5
         osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.1); // Nota A5
-        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         osc.start();
         osc.stop(audioCtx.currentTime + 0.3);
-    } catch(e) {}
+    } catch(e) {
+        console.log("Errore riproduzione audio chat:", e);
+    }
 }
 
 function inizializzaChatDispositivo() {
+    // 1. Mostra il pulsante della chat ora che il login è confermato
+    const btnChat = document.getElementById('chatHeaderBtn');
+    if (btnChat) btnChat.style.display = 'flex';
+
     const elInputName = document.getElementById('chatDeviceName');
     if (elInputName) elInputName.value = myDeviceName;
 
-    // Registra presenza dispositivo
+    // 2. Registra presenza dispositivo su Firebase
     const deviceRef = db.ref('chat_devices/' + myDeviceId);
     deviceRef.set({
         id: myDeviceId,
@@ -4284,7 +4295,7 @@ function inizializzaChatDispositivo() {
     });
     deviceRef.onDisconnect().remove();
 
-    // Sincronizza lista dispositivi attivi per il menu a tendina "Invia a:"
+    // 3. Sincronizza lista dispositivi per il menu "Invia a:"
     db.ref('chat_devices').on('value', (snapshot) => {
         const data = snapshot.val() || {};
         const select = document.getElementById('chatTargetSelect');
@@ -4304,7 +4315,7 @@ function inizializzaChatDispositivo() {
         select.value = currentVal;
     });
 
-    // Ascolto messaggi in tempo reale
+    // 4. Ascolto messaggi in tempo reale
     db.ref('chat_messages').on('value', (snapshot) => {
         const data = snapshot.val() || {};
         const container = document.getElementById('chatMessagesContainer');
@@ -4313,7 +4324,6 @@ function inizializzaChatDispositivo() {
         container.innerHTML = '';
         const oraLimite = Date.now() - (60 * 60 * 1000); // 1 ora fa
         let messaggiValidi = [];
-        let nuoviMessaggiNonLetti = false;
 
         Object.keys(data).forEach(key => {
             const m = data[key];
@@ -4352,10 +4362,10 @@ function inizializzaChatDispositivo() {
             container.appendChild(div);
         });
 
-        // Controlla se c'è un nuovo messaggio non letto
+        // Controlla se c'è un nuovo messaggio non letto arrivato ADESSO
         if (messaggiValidi.length > 0) {
             const ultimoMsg = messaggiValidi[messaggiValidi.length - 1];
-            if (ultimoMsg.senderId !== myDeviceId && ultimoMsg.timestamp > (window.lastMsgSeenTimestamp || 0)) {
+            if (ultimoMsg.senderId !== myDeviceId && ultimoMsg.timestamp > window.lastMsgSeenTimestamp) {
                 if (!chatAperta) {
                     chatMessaggiUnread++;
                     aggiornaBadgeChat();
@@ -4430,10 +4440,18 @@ function inviaMessaggioChat() {
     input.value = '';
 }
 
-// Avvio automatico al caricamento dell'autenticazione Firebase
+// Avvio automatico al login / Gestione disconnessione
 firebase.auth().onAuthStateChanged((user) => {
+    const btnChat = document.getElementById('chatHeaderBtn');
     if (user) {
+        // Utente Loggato: Inizializza chat e mostra l'icona
         inizializzaChatDispositivo();
+    } else {
+        // Utente Scollegato: Nascondi icona e chiudi finestra
+        if (btnChat) btnChat.style.display = 'none';
+        const modal = document.getElementById('chatBoxModal');
+        if (modal) modal.classList.remove('open');
+        chatAperta = false;
     }
 });
     
@@ -4441,7 +4459,7 @@ firebase.auth().onAuthStateChanged((user) => {
     <button id="bellBtn" class="alert-bell-btn" onclick="apriStoricoAlert()" title="Storico Avvisi" style="display: none;">
         🔔<span id="bellBadge" class="bell-badge" style="display: none;">0</span>
     </button>
-    <button class="chat-btn-header" onclick="toggleChatWindow()" title="Chat Interna">
+    <button id="chatHeaderBtn" class="chat-btn-header" onclick="toggleChatWindow()" title="Chat Interna" style="display: none;">
     💬
     <span id="chatBadge" class="chat-badge">0</span>
 </button>
