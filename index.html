@@ -3318,7 +3318,7 @@ let pacchiInventarioCorrente = [];
 let pacchiScansionatiInventario = new Set();
 let inventarioTerminato = false;
 
-// Audio Beep per scansione completata
+// Beep sonoro per la scansione
 function riproduciBeepScansione() {
     try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -3326,20 +3326,27 @@ function riproduciBeepScansione() {
         const gainNode = audioCtx.createGain();
 
         oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // Tono acuto
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
         gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
 
         oscillator.connect(gainNode);
         gainNode.connect(audioCtx.destination);
 
         oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.12); // Durata 120ms
+        oscillator.stop(audioCtx.currentTime + 0.12);
     } catch (e) {
-        console.log("Audio Web API non supportato");
+        console.log("Audio non supportato");
     }
 }
 
 function apriInventarioModal() {
+    const modal = document.getElementById('inventarioModal');
+    if (!modal) {
+        alert("Errore: Impossibile trovare la finestra 'inventarioModal' nell'HTML!");
+        return;
+    }
+
+    // Popola select corrieri
     const select = document.getElementById('inventarioCorriereSelect');
     if (select) {
         let opzioni = `<option value="TUTTI">-- TUTTI I CORRIERI (MAGAZZINO COMPLETO) --</option>`;
@@ -3354,23 +3361,37 @@ function apriInventarioModal() {
     pacchiScansionatiInventario.clear();
     inventarioTerminato = false;
     caricaPacchiInventario();
-    document.getElementById('inventarioModal').style.display = 'flex';
-    document.getElementById('inventarioSearchInput').value = '';
-    setTimeout(() => document.getElementById('inventarioSearchInput').focus(), 100);
+
+    // Mostra la finestra
+    modal.style.display = 'flex';
+
+    // Focus sull'input di ricerca
+    const inputSearch = document.getElementById('inventarioSearchInput');
+    if (inputSearch) {
+        inputSearch.value = '';
+        setTimeout(() => inputSearch.focus(), 150);
+    }
 }
 
 function chiudiInventarioModal() {
-    document.getElementById('inventarioModal').style.display = 'none';
+    const modal = document.getElementById('inventarioModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
 }
 
 function caricaPacchiInventario() {
-    const corriereSelezionato = document.getElementById('inventarioCorriereSelect').value;
+    const select = document.getElementById('inventarioCorriereSelect');
+    const corriereSelezionato = select ? select.value : "TUTTI";
     inventarioTerminato = false;
 
+    // Controllo sicurezza array pacchi
+    const listaPacchi = (typeof pacchi !== 'undefined') ? pacchi : [];
+
     if (corriereSelezionato === "TUTTI") {
-        pacchiInventarioCorrente = pacchi.filter(p => p && !p.ritirato && p.ritirato !== "true");
+        pacchiInventarioCorrente = listaPacchi.filter(p => p && !p.ritirato && p.ritirato !== "true");
     } else {
-        pacchiInventarioCorrente = pacchi.filter(p => p && !p.ritirato && p.ritirato !== "true" && p.corriere === corriereSelezionato);
+        pacchiInventarioCorrente = listaPacchi.filter(p => p && !p.ritirato && p.ritirato !== "true" && p.corriere === corriereSelezionato);
     }
 
     renderListaInventario();
@@ -3378,10 +3399,13 @@ function caricaPacchiInventario() {
 
 function renderListaInventario() {
     const container = document.getElementById('inventarioPacchiContainer');
-    const corriereSelezionato = document.getElementById('inventarioCorriereSelect').value;
+    if (!container) return;
+
+    const select = document.getElementById('inventarioCorriereSelect');
+    const corriereSelezionato = select ? select.value : "TUTTI";
     
     if (pacchiInventarioCorrente.length === 0) {
-        container.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding:30px; color:#64748b; font-weight:600;">Nessun pacco in giacenza per la selezione.</div>`;
+        container.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding:30px; color:#64748b; font-weight:600;">Nessun pacco in giacenza presente.</div>`;
     } else {
         container.innerHTML = pacchiInventarioCorrente.map(p => {
             const scansionato = pacchiScansionatiInventario.has(p.id);
@@ -3390,19 +3414,19 @@ function renderListaInventario() {
             let icona = '📦';
             
             if (scansionato) {
-                classeStato = 'scansionato'; // Verde
+                classeStato = 'scansionato';
                 icona = '✅';
             } else if (inventarioTerminato) {
-                classeStato = 'rosso-mancante'; // Rosso a fine inventario
+                classeStato = 'rosso-mancante';
                 icona = '❌';
             }
 
-            const infoCorriere = corriereSelezionato === "TUTTI" ? `<span class="pacco-tag">${p.corriere}</span>` : '';
+            const infoCorriere = corriereSelezionato === "TUTTI" ? `<span class="pacco-tag">${p.corriere || ''}</span>` : '';
             
             return `
                 <div class="pacco-card ${classeStato}" id="card-pacco-${p.id}">
                     <div class="pacco-icona">${icona}</div>
-                    <div class="pacco-destinatario">#${p.riconoscimento} - ${(p.cognome || '').toUpperCase()} ${(p.nome || '').toUpperCase()}</div>
+                    <div class="pacco-destinatario">#${p.riconoscimento || '-'} - ${(p.cognome || '').toUpperCase()} ${(p.nome || '').toUpperCase()}</div>
                     <div class="pacco-code">TRK: ${p.codiceTracciabilita || '-'}</div>
                     <div style="font-size:0.7rem; color:#64748b; margin-top:2px;">Scaffale: <strong>${p.scaffale || '-'}</strong></div>
                     ${infoCorriere}
@@ -3411,18 +3435,24 @@ function renderListaInventario() {
         }).join('');
     }
 
-    // Aggiornamento dati riepilogo
+    // Aggiornamento contatori
     const totale = pacchiInventarioCorrente.length;
     const scansionati = pacchiInventarioCorrente.filter(p => pacchiScansionatiInventario.has(p.id)).length;
     const mancanti = totale - scansionati;
 
-    document.getElementById('invTotaleGiacenza').innerText = totale;
-    document.getElementById('invTotaleScansionati').innerText = scansionati;
-    document.getElementById('invTotaleMancanti').innerText = mancanti;
+    const elTot = document.getElementById('invTotaleGiacenza');
+    const elScan = document.getElementById('invTotaleScansionati');
+    const elManc = document.getElementById('invTotaleMancanti');
+
+    if (elTot) elTot.innerText = totale;
+    if (elScan) elScan.innerText = scansionati;
+    if (elManc) elManc.innerText = mancanti;
 }
 
 function gestisciScansioneInventario() {
     const input = document.getElementById('inventarioSearchInput');
+    if (!input) return;
+
     const valore = input.value.trim().toUpperCase();
     if (!valore) return;
 
@@ -3434,137 +3464,22 @@ function gestisciScansioneInventario() {
     if (trovato) {
         if (!pacchiScansionatiInventario.has(trovato.id)) {
             pacchiScansionatiInventario.add(trovato.id);
-            riproduciBeepScansione(); // EMETTE IL SUONO
+            riproduciBeepScansione();
             renderListaInventario();
         }
         input.value = '';
     }
 }
 
-// Evidenzia in rosso i pacchi rimasti indietro
 function terminaEColoraMancanti() {
     inventarioTerminato = true;
     renderListaInventario();
     
     const mancanti = pacchiInventarioCorrente.length - pacchiScansionatiInventario.size;
     if(mancanti === 0) {
-        alert("🎉 INVENTARIO COMPLETO! Tutti i pacchi presenti in magazzino sono stati riscontrati.");
+        alert("🎉 INVENTARIO COMPLETO! Tutti i pacchi sono stati riscontrati.");
     } else {
-        alert(`⚠️ INVENTARIO TERMINATO!\n\nI ${mancanti} pacchi evidenziati in ROSSO non sono stati trovati durante la scansione.`);
-    }
-}
-
-function scaricaPDFInventario() {
-    try {
-        if (!window.jspdf) {
-            alert("Libreria jsPDF non disponibile.");
-            return;
-        }
-
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('p', 'mm', 'a4');
-        
-        const corriereSelezionato = document.getElementById('inventarioCorriereSelect').value;
-        const dataOggi = new Date().toLocaleDateString('it-IT') + ' ' + new Date().toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'});
-        
-        const scansionati = pacchiInventarioCorrente.filter(p => pacchiScansionatiInventario.has(p.id));
-        const mancanti = pacchiInventarioCorrente.filter(p => !pacchiScansionatiInventario.has(p.id));
-
-        // HEADER
-        doc.setFillColor(37, 99, 235);
-        doc.rect(0, 0, 210, 32, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(18);
-        doc.text("REPORT INVENTARIO MAGAZZINO", 15, 18);
-        doc.setFontSize(9);
-        doc.setFont("helvetica", "normal");
-        doc.text("Elaborato il: " + dataOggi + " | Selezione: " + (corriereSelezionato === "TUTTI" ? "TUTTI I CORRIERI" : corriereSelezionato), 15, 26);
-
-        // BOX STATISTICHE
-        doc.setTextColor(30, 41, 59);
-        doc.setFillColor(248, 250, 252);
-        doc.rect(15, 38, 180, 22, 'F');
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "bold");
-        doc.text(`Totale Attesi: ${pacchiInventarioCorrente.length}`, 22, 51);
-        doc.setTextColor(22, 101, 52);
-        doc.text(`Presenti: ${scansionati.length}`, 85, 51);
-        doc.setTextColor(185, 28, 28);
-        doc.text(`Mancanti: ${mancanti.length}`, 145, 51);
-
-        let yPos = 70;
-
-        // TABELLA PACCHI MANCANTI
-        if (mancanti.length > 0) {
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(11);
-            doc.setTextColor(185, 28, 28);
-            doc.text("PACCHI NON RISCONTRATI (MANCANTI):", 15, yPos);
-            yPos += 5;
-
-            doc.setFillColor(239, 68, 68);
-            doc.rect(15, yPos, 180, 7, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(9);
-            doc.text("ID", 18, yPos + 5);
-            doc.text("CORRIERE", 35, yPos + 5);
-            doc.text("CODICE TRACCIABILITÀ", 75, yPos + 5);
-            doc.text("DESTINATARIO", 135, yPos + 5);
-            yPos += 7;
-
-            doc.setTextColor(30, 41, 59);
-            doc.setFont("helvetica", "normal");
-
-            mancanti.forEach((p, i) => {
-                if (yPos > 270) { doc.addPage(); yPos = 20; }
-                if (i % 2 === 0) { doc.setFillColor(254, 242, 242); doc.rect(15, yPos, 180, 6, 'F'); }
-                doc.text(String(p.riconoscimento || '-'), 18, yPos + 4.5);
-                doc.text(String(p.corriere || '-'), 35, yPos + 4.5);
-                doc.text(String(p.codiceTracciabilita || '-').toUpperCase(), 75, yPos + 4.5);
-                doc.text(`${p.cognome || ''} ${p.nome || ''}`, 135, yPos + 4.5);
-                yPos += 6;
-            });
-            yPos += 10;
-        }
-
-        // TABELLA PACCHI PRESENTI
-        if (scansionati.length > 0) {
-            if (yPos > 250) { doc.addPage(); yPos = 20; }
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(11);
-            doc.setTextColor(22, 101, 52);
-            doc.text("PACCHI RISCONTRATI (PRESENTI):", 15, yPos);
-            yPos += 5;
-
-            doc.setFillColor(34, 197, 94);
-            doc.rect(15, yPos, 180, 7, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(9);
-            doc.text("ID", 18, yPos + 5);
-            doc.text("CORRIERE", 35, yPos + 5);
-            doc.text("CODICE TRACCIABILITÀ", 75, yPos + 5);
-            doc.text("DESTINATARIO", 135, yPos + 5);
-            yPos += 7;
-
-            doc.setTextColor(30, 41, 59);
-            doc.setFont("helvetica", "normal");
-
-            scansionati.forEach((p, i) => {
-                if (yPos > 280) { doc.addPage(); yPos = 20; }
-                if (i % 2 === 0) { doc.setFillColor(240, 253, 244); doc.rect(15, yPos, 180, 6, 'F'); }
-                doc.text(String(p.riconoscimento || '-'), 18, yPos + 4.5);
-                doc.text(String(p.corriere || '-'), 35, yPos + 4.5);
-                doc.text(String(p.codiceTracciabilita || '-').toUpperCase(), 75, yPos + 4.5);
-                doc.text(`${p.cognome || ''} ${p.nome || ''}`, 135, yPos + 4.5);
-                yPos += 6;
-            });
-        }
-
-        doc.save(`Inventario_${corriereSelezionato}_${new Date().toLocaleDateString('it-IT').replace(/\//g,'-')}.pdf`);
-    } catch (e) {
-        console.error(e);
-        alert("Errore durante la generazione del PDF: " + e.message);
+        alert(`⚠️ INVENTARIO TERMINATO!\n\nI ${mancanti} pacchi evidenziati in ROSSO non sono stati trovati.`);
     }
 }
     
