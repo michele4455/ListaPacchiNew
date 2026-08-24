@@ -531,76 +531,106 @@
         }
 
         #inventarioModal {
-            display: none;
-            position: fixed; 
-            z-index: 1000; 
-            left: 0; top: 0; 
-            width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.8); 
-            align-items: center; 
-            justify-content: center; 
-            overflow-y: auto;
-            padding: 20px 0;
-        }
+    display: none;
+    position: fixed; 
+    z-index: 1000; 
+    left: 0; top: 0; 
+    width: 100%; height: 100%; 
+    background: rgba(0,0,0,0.8); 
+    align-items: center; 
+    justify-content: center; 
+    overflow-y: auto;
+    padding: 20px 0;
+}
 
-        .inventario-btn {
-            background: #00bcd4; /* Colore celeste richiesto */
-            color: white;
-            padding: 8px 15px;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-        }
+.inventario-btn {
+    background: #00bcd4;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+}
 
-        .inventario-grid-pacchi {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-height: 250px;
-            overflow-y: auto;
-            margin-top: 15px;
-            padding: 5px;
-            text-align: left;
-        }
+/* --- NUOVO STILE GRAFICO GRIGLIA E SCHEDE --- */
+.inventario-grid-pacchi {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    max-height: 380px;
+    overflow-y: auto;
+    margin-top: 15px;
+    padding: 8px;
+}
 
-        .pacco-inventario-item {
-            background: #e0e0e0; /* Grigio iniziale per tutti i pacchi */
-            color: #333;
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 0.9rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 5px solid #9e9e9e;
-            transition: background-color 0.3s, border-color 0.3s;
-        }
+.pacco-inventario-item {
+    background: #e9ecef;
+    color: #495057;
+    padding: 14px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    border: 2px solid #dee2e6;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
 
-        .pacco-inventario-item.scansionato {
-            background: var(--success) !important; /* Verde al riscontro positivo */
-            color: white !important;
-            border-left-color: #009432 !important;
-        }
+.pacco-inventario-item.scansionato {
+    background: #e6fcf5 !important;
+    color: #0ca678 !important;
+    border-color: #0ca678 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(12, 166, 120, 0.2);
+}
 
-        .riepilogo-inventario-box {
-            background: #f8f9fa;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 15px;
-            text-align: left;
-            font-size: 0.95rem;
-        }
+.pacco-inventario-item.mancante {
+    background: #fff5f5 !important;
+    color: #e03131 !important;
+    border-color: #e03131 !important;
+    box-shadow: 0 4px 8px rgba(224, 49, 49, 0.2);
+}
 
-        .riepilogo-inventario-box ul {
-            margin: 5px 0 0 0;
-            padding-left: 20px;
-            max-height: 100px;
-            overflow-y: auto;
-        }
+.inv-emoji {
+    font-size: 2rem;
+    margin-bottom: 6px;
+}
+
+.inv-destinatario {
+    font-weight: 700;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    word-break: break-word;
+}
+
+.inv-trk {
+    font-size: 0.78rem;
+    font-family: monospace;
+    opacity: 0.85;
+    word-break: break-all;
+}
+
+.riepilogo-inventario-box {
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 15px;
+    margin-top: 15px;
+    text-align: left;
+    font-size: 0.95rem;
+}
+
+.riepilogo-inventario-box ul {
+    margin: 5px 0 0 0;
+    padding-left: 20px;
+    max-height: 100px;
+    overflow-y: auto;
+}
 
         /* Pulsante Area Amministratore - Viola Intenso per differenziarsi */
         .admin-btn {
@@ -1323,39 +1353,49 @@
 <button id="cartBadgeBtn" class="cart-badge" onclick="handleRitira(null, false, true)" title="Mostra pacchi selezionati">📦 <span id="cartCount">0</span></button>
 <button id="scrollToTopBtn" class="scroll-top-btn" onclick="tornaSu()" title="Torna all'inizio">↑</button>
     
+Oltre alle regole CSS che abbiamo appena visto, devi aggiornare la struttura HTML della finestra e il codice JavaScript che gestisce la logica.
+
+Ecco i 2 passaggi rimanenti per completare l'aggiornamento:
+
+1. Modifica la Struttura HTML (La Finestra Modal)
+Cerca nel tuo file HTML il blocco <div id="inventarioModal"> e sostituisci tutto il suo contenuto con questo:
+
+HTML
+<!-- Modal Inventario Giacenze -->
 <div id="inventarioModal">
-    <div class="modal-content" style="max-width: 600px;">
-        <h3 style="color:var(--primary); margin:0 0 15px 0;">📦 Inventario Pacchi per Corriere</h3>
+    <div class="modal-content" style="max-width: 850px;">
+        <h2 style="color:var(--primary); margin-top:0;">📦 Inventario Giacenze per Corriere</h2>
         
-        <div style="margin-bottom: 12px;">
-            <label style="font-weight:bold; display:block; margin-bottom:5px; text-align:left;">Seleziona Corriere:</label>
-            <select id="inventarioCorriereSelect" onchange="caricaPacchiInventario()">
-                </select>
+        <div style="display:flex; gap:10px; margin-bottom:15px; justify-content:center; align-items:center; flex-wrap:wrap;">
+            <label><b>Seleziona Corriere:</b></label>
+            <select id="inventarioCorriereSelect" style="width:auto; padding:8px;" onchange="caricaPacchiInventario()"></select>
         </div>
 
-        <div class="input-with-icon" style="margin-bottom: 15px;">
-            <input type="text" id="inventarioSearchInput" placeholder="Scansiona o inserisci codice TRK..." oninput="gestisciScansioneInventario()" style="text-transform: uppercase;">
-            <span class="scanner-trigger" onclick="startScanner('inventarioSearchInput')">📸</span>
+        <div style="margin-bottom: 15px;">
+            <input type="text" id="inventarioSearchInput" placeholder="Scansiona o digita il Trk e premi Invio..." onkeydown="scansionaPaccoInventario(event)" style="text-align:center; font-size:1.1rem; font-weight:bold;">
         </div>
 
-        <h4 style="text-align:left; margin: 15px 0 5px 0; color: var(--primary);">Elenco Pacchi del Corriere:</h4>
-        <div class="inventario-grid-pacchi" id="inventarioPacchiContainer">
-            </div>
+        <!-- Griglia Grafica Pacchi -->
+        <div id="inventarioPacchiContainer" class="inventario-grid-pacchi"></div>
 
+        <!-- Box Riepilogo -->
         <div class="riepilogo-inventario-box">
-            <div style="margin-bottom: 5px;"><b>• Pacchi in inventario (totale a gestionale):</b> <span id="invTotaleGiacenza" style="font-weight:bold; color:var(--primary);">0</span></div>
-            <div style="margin-bottom: 5px;"><b>• Pacchi scansionati (presenti e verificati):</b> <span id="invTotaleScansionati" style="font-weight:bold; color:var(--success);">0</span></div>
-            <div style="margin-bottom: 5px;"><b>• Pacchi mancanti (non scansionati):</b> <span id="invTotaleMancanti" style="font-weight:bold; color:var(--warning);">0</span></div>
-            <div style="margin-top: 10px;">
-                <b>Lista codici mancanti:</b>
-                <ul id="invListaMancantiText" style="color:#c92a2a; font-weight:500;">
-                    </ul>
+            <b>Riepilogo Inventario:</b><br>
+            • Pacchi Attesi in Giacenza: <span id="invTotaleGiacenza">0</span><br>
+            • Pacchi Trovati (Scansionati): <b style="color:var(--success);"><span id="invTotaleScansionati">0</span></b><br>
+            • Pacchi Non Ancora Trovati: <b style="color:var(--warning);"><span id="invTotaleMancanti">0</span></b>
+            
+            <div style="margin-top:10px;">
+                <b>Elenco Pacchi Mancanti:</b>
+                <ul id="invListaMancantiText"></ul>
             </div>
         </div>
 
-        <div style="margin-top:20px; display:flex; gap:10px;">
-    <button onclick="chiudiInventarioModal()" class="modal-btn" style="background:#e0e0e0; color:#333;">CHIUDI INVENTARIO</button>
-    <button id="btnTerminaInventario" onclick="terminaInventarioConReport()" class="modal-btn">TERMINA INVENTARIO</button></div>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px; flex-wrap:wrap;">
+            <button onclick="chiudiInventarioModal()" class="modal-btn" style="background:#e0e0e0; color:#333; width:auto;">Chiudi</button>
+            <button id="btnTerminaInventario" onclick="terminaInventario()" class="modal-btn" style="background:var(--warning); color:white; width:auto; display:none;">Termina Inventario</button>
+            <button id="btnPdfInventario" onclick="generaPDFInventario()" class="modal-btn" style="background:var(--success); color:white; width:auto; display:none;">📄 Scarica Report PDF</button>
+        </div>
     </div>
 </div>
 
@@ -3196,11 +3236,12 @@ function apriInventarioModal() {
     trkScansionatiInventario = [];
     document.getElementById('inventarioSearchInput').value = "";
     
-    // Nasconde sempre il pulsante termina all'inizio
+    // Nasconde i pulsanti di azione all'apertura
     const btnTermina = document.getElementById('btnTerminaInventario');
-    if (btnTermina) {
-        btnTermina.style.display = 'none';
-    }
+    if (btnTermina) btnTermina.style.display = 'none';
+
+    const btnPdf = document.getElementById('btnPdfInventario');
+    if (btnPdf) btnPdf.style.display = 'none';
     
     document.getElementById('inventarioModal').style.display = 'flex';
     caricaPacchiInventario(); 
@@ -3215,7 +3256,8 @@ function caricaPacchiInventario() {
     const corriereSelezionato = document.getElementById('inventarioCorriereSelect').value;
     const container = document.getElementById('inventarioPacchiContainer');
     container.innerHTML = ""; 
-    
+
+    // Mantenuto il tuo controllo rigido p.ritirato !== true
     const listaPacchiAttivi = Object.values(pacchi).filter(p => {
         if (!p || typeof p !== 'object') return false;
         if (p.corriere !== corriereSelezionato) return false;
@@ -3224,7 +3266,7 @@ function caricaPacchiInventario() {
     });
 
     if (listaPacchiAttivi.length === 0) {
-        container.innerHTML = "<div style='text-align:center; color:#777; font-weight:bold; padding:15px;'>Nessun pacco in giacenza per questo corriere.</div>";
+        container.innerHTML = "<div style='grid-column: 1/-1; text-align:center; color:#777; font-weight:bold; padding:20px;'>Nessun pacco in giacenza per questo corriere.</div>";
     } else {
         listaPacchiAttivi.forEach(p => {
             const trkUpper = (p.codiceTracciabilita || "").trim().toUpperCase();
@@ -3238,14 +3280,27 @@ function caricaPacchiInventario() {
                 divPacco.classList.add('scansionato');
             }
 
+            const nomeDestinatario = `${p.cognome || ''} ${p.nome || ''}`.trim() || 'N/D';
+            const idRiconoscimento = p.riconoscimento ? `ID: ${p.riconoscimento}` : '';
+
+            // Nuova struttura grafica a card / box
             divPacco.innerHTML = `
-                <span>🆔 ID: ${p.riconoscimento || '-'} — TRK: <span style="letter-spacing:1px;">${trkUpper}</span></span>
-                <small style="font-style:italic;">(${p.cognome || ''} ${p.nome || ''})</small>
+                <div class="inv-emoji">📦</div>
+                <div class="inv-destinatario">${nomeDestinatario}</div>
+                <div class="inv-trk">${trkUpper}</div>
+                ${idRiconoscimento ? `<small style="margin-top:4px; opacity:0.7;">${idRiconoscimento}</small>` : ''}
             `;
             container.appendChild(divPacco);
         });
     }
     aggiornaRiepiloghiInventario(listaPacchiAttivi);
+}
+
+function scansionaPaccoInventario(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        gestisciScansioneInventario();
+    }
 }
 
 function gestisciScansioneInventario() {
@@ -3264,12 +3319,13 @@ function gestisciScansioneInventario() {
 
     const trovato = listaPacchiAttivi.find(p => {
         const trkPacco = (p.codiceTracciabilita || "").trim().toUpperCase();
-        const idPacco = String(p.riconoscimento || "").trim();
+        const idPacco = String(p.riconoscimento || "").trim().toUpperCase();
         return trkPacco === codiceLetto || idPacco === codiceLetto;
     });
 
     if (trovato) {
-        riproduciBeepSuccesso();
+        if (typeof riproduciBeepSuccesso === "function") riproduciBeepSuccesso();
+        
         const trkChiave = (trovato.codiceTracciabilita || "").trim().toUpperCase();
 
         if (!trkScansionatiInventario.includes(trkChiave)) {
@@ -3278,17 +3334,77 @@ function gestisciScansioneInventario() {
             const elementoGrafico = document.getElementById(`inv-pacco-${trkChiave}`);
             if (elementoGrafico) {
                 elementoGrafico.classList.add('scansionato');
+                elementoGrafico.classList.remove('mancante');
             }
             
-            // FAI COMPARIRE IL PULSANTE NON APPENA FA LA PRIMA SCANSIONE
             const btnTermina = document.getElementById('btnTerminaInventario');
-            if (btnTermina) {
-                btnTermina.style.display = 'inline-block';
-            }
+            if (btnTermina) btnTermina.style.display = 'inline-block';
             
             aggiornaRiepiloghiInventario(listaPacchiAttivi);
         }
-        inputField.value = "";
+    } else {
+        if (typeof showAlert === "function") {
+            showAlert("⚠️ Pacco NON presente nella giacenza di questo corriere o già ritirato!");
+        } else {
+            alert("⚠️ Pacco NON presente nella giacenza di questo corriere o già ritirato!");
+        }
+    }
+    inputField.value = "";
+}
+
+function aggiornaRiepiloghiInventario(listaPacchiAttivi) {
+    const totaleGiacenza = listaPacchiAttivi.length;
+    const scansionatiEInGiacenza = listaPacchiAttivi.filter(p => trkScansionatiInventario.includes((p.codiceTracciabilita || "").trim().toUpperCase()));
+    const totaleScansionati = scansionatiEInGiacenza.length;
+    const pacchiMancanti = listaPacchiAttivi.filter(p => !trkScansionatiInventario.includes((p.codiceTracciabilita || "").trim().toUpperCase()));
+    const totaleMancanti = pacchiMancanti.length;
+
+    document.getElementById('invTotaleGiacenza').innerText = totaleGiacenza;
+    document.getElementById('invTotaleScansionati').innerText = totaleScansionati;
+    document.getElementById('invTotaleMancanti').innerText = totaleMancanti;
+
+    const listaMancantiUl = document.getElementById('invListaMancantiText');
+    if (listaMancantiUl) {
+        listaMancantiUl.innerHTML = "";
+        if (pacchiMancanti.length === 0 && totaleGiacenza > 0) {
+            listaMancantiUl.innerHTML = "<li style='color:var(--success); font-weight:bold; list-style:none;'>🎉 Inventario completato! Tutti i pacchi sono presenti.</li>";
+        } else {
+            pacchiMancanti.forEach(pm => {
+                let li = document.createElement('li');
+                li.innerHTML = `<b>${(pm.codiceTracciabilita || "").toUpperCase()}</b> - ${pm.cognome || ''} ${pm.nome || ''}`;
+                listaMancantiUl.appendChild(li);
+            });
+        }
+    }
+}
+
+function terminaInventario() {
+    const corriereSelezionato = document.getElementById('inventarioCorriereSelect').value;
+    const listaPacchiAttivi = Object.values(pacchi).filter(p => {
+        if (!p || typeof p !== 'object') return false;
+        if (p.corriere !== corriereSelezionato) return false;
+        if (p.ritirato === true || p.ritirato === "true") return false;
+        return true;
+    });
+
+    // Colora di rosso le schede dei pacchi non scansionati
+    listaPacchiAttivi.forEach(p => {
+        const trkUpper = (p.codiceTracciabilita || "").trim().toUpperCase();
+        if (!trkScansionatiInventario.includes(trkUpper)) {
+            const elementoGrafico = document.getElementById(`inv-pacco-${trkUpper}`);
+            if (elementoGrafico) {
+                elementoGrafico.classList.add('mancante');
+            }
+        }
+    });
+
+    const btnPdf = document.getElementById('btnPdfInventario');
+    if (btnPdf) btnPdf.style.display = 'inline-block';
+
+    if (typeof showAlert === "function") {
+        showAlert("✅ Inventario terminato! I pacchi non trovati sono stati evidenziati in rosso. Puoi scaricare il PDF.");
+    } else {
+        alert("✅ Inventario terminato! I pacchi non trovati sono stati evidenziati in rosso. Puoi scaricare il PDF.");
     }
 }
 
