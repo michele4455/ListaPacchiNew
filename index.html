@@ -1324,13 +1324,14 @@
 <button id="scrollToTopBtn" class="scroll-top-btn" onclick="tornaSu()" title="Torna all'inizio">↑</button>
     
 <div id="inventarioModal">
-    <div class="modal-content" style="max-width: 600px;">
-        <h3 style="color:var(--primary); margin:0 0 15px 0;">📦 Inventario Pacchi per Corriere</h3>
+    <div class="modal-content" style="max-width: 650px;">
+        <h3 style="color:var(--primary); margin:0 0 15px 0;">📦 Inventario Pacchi Presenti</h3>
         
         <div style="margin-bottom: 12px;">
-            <label style="font-weight:bold; display:block; margin-bottom:5px; text-align:left;">Seleziona Corriere:</label>
+            <label style="font-weight:bold; display:block; margin-bottom:5px; text-align:left;">Seleziona Corriere o Filtro:</label>
             <select id="inventarioCorriereSelect" onchange="caricaPacchiInventario()">
-                </select>
+                <!-- Popolato da JS -->
+            </select>
         </div>
 
         <div class="input-with-icon" style="margin-bottom: 15px;">
@@ -1338,24 +1339,26 @@
             <span class="scanner-trigger" onclick="startScanner('inventarioSearchInput')">📸</span>
         </div>
 
-        <h4 style="text-align:left; margin: 15px 0 5px 0; color: var(--primary);">Elenco Pacchi del Corriere:</h4>
-        <div class="inventario-grid-pacchi" id="inventarioPacchiContainer">
-            </div>
+        <h4 style="text-align:left; margin: 15px 0 5px 0; color: var(--primary);">Elenco Pacchi in Giacenza:</h4>
+        
+        <!-- NUOVA GRIGLIA A CARD/QUADRATI -->
+        <div class="inventario-grid-cards" id="inventarioPacchiContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; max-height: 280px; overflow-y: auto; margin-top: 15px; padding: 5px;">
+        </div>
 
         <div class="riepilogo-inventario-box">
-            <div style="margin-bottom: 5px;"><b>• Pacchi in inventario (totale a gestionale):</b> <span id="invTotaleGiacenza" style="font-weight:bold; color:var(--primary);">0</span></div>
-            <div style="margin-bottom: 5px;"><b>• Pacchi scansionati (presenti e verificati):</b> <span id="invTotaleScansionati" style="font-weight:bold; color:var(--success);">0</span></div>
-            <div style="margin-bottom: 5px;"><b>• Pacchi mancanti (non scansionati):</b> <span id="invTotaleMancanti" style="font-weight:bold; color:var(--warning);">0</span></div>
+            <div style="margin-bottom: 5px;"><b>• Pacchi in inventario:</b> <span id="invTotaleGiacenza" style="font-weight:bold; color:var(--primary);">0</span></div>
+            <div style="margin-bottom: 5px;"><b>• Pacchi scansionati:</b> <span id="invTotaleScansionati" style="font-weight:bold; color:var(--success);">0</span></div>
+            <div style="margin-bottom: 5px;"><b>• Pacchi mancanti:</b> <span id="invTotaleMancanti" style="font-weight:bold; color:var(--warning);">0</span></div>
             <div style="margin-top: 10px;">
                 <b>Lista codici mancanti:</b>
-                <ul id="invListaMancantiText" style="color:#c92a2a; font-weight:500;">
-                    </ul>
+                <ul id="invListaMancantiText" style="color:#c92a2a; font-weight:500;"></ul>
             </div>
         </div>
 
         <div style="margin-top:20px; display:flex; gap:10px;">
-    <button onclick="chiudiInventarioModal()" class="modal-btn" style="background:#e0e0e0; color:#333;">CHIUDI INVENTARIO</button>
-    <button id="btnTerminaInventario" onclick="terminaInventarioConReport()" class="modal-btn">TERMINA INVENTARIO</button></div>
+            <button onclick="chiudiInventarioModal()" class="modal-btn" style="background:#e0e0e0; color:#333;">CHIUDI INVENTARIO</button>
+            <button id="btnTerminaInventario" onclick="terminaInventarioConReport()" class="modal-btn" style="background:var(--primary); color:white;">TERMINA INVENTARIO</button>
+        </div>
     </div>
 </div>
 
@@ -3216,6 +3219,14 @@ function caricaPacchiInventario() {
     const container = document.getElementById('inventarioPacchiContainer');
     container.innerHTML = ""; 
     
+    // Impostiamo il layout a griglia (card) nel container
+    container.style.display = "grid";
+    container.style.gridTemplateColumns = "repeat(auto-fill, minmax(130px, 1fr))";
+    container.style.gap = "10px";
+    container.style.maxHeight = "280px";
+    container.style.overflowY = "auto";
+    container.style.padding = "5px";
+    
     const listaPacchiAttivi = Object.values(pacchi).filter(p => {
         if (!p || typeof p !== 'object') return false;
         if (p.corriere !== corriereSelezionato) return false;
@@ -3224,24 +3235,44 @@ function caricaPacchiInventario() {
     });
 
     if (listaPacchiAttivi.length === 0) {
+        container.style.display = "block";
         container.innerHTML = "<div style='text-align:center; color:#777; font-weight:bold; padding:15px;'>Nessun pacco in giacenza per questo corriere.</div>";
     } else {
         listaPacchiAttivi.forEach(p => {
             const trkUpper = (p.codiceTracciabilita || "").trim().toUpperCase();
             if (trkUpper === "" || trkUpper === "-") return; 
 
+            const isScansionato = trkScansionatiInventario.includes(trkUpper);
+            const dataArrivo = p.dataTestoInserimento ? p.dataTestoInserimento.split(' ')[0] : '-';
+
             const divPacco = document.createElement('div');
-            divPacco.className = 'pacco-inventario-item';
             divPacco.id = `inv-pacco-${trkUpper}`;
+            divPacco.className = `pacco-inventario-item ${isScansionato ? 'scansionato' : ''}`;
             
-            if (trkScansionatiInventario.includes(trkUpper)) {
-                divPacco.classList.add('scansionato');
-            }
+            // STILE A CARD / QUADRATO (Grigio se da scansionare, Verde se scansionato)
+            divPacco.style.cssText = `
+                background-color: ${isScansionato ? '#2b8a3e' : '#6c757d'};
+                color: white;
+                border-radius: 10px;
+                padding: 10px;
+                text-align: center;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                min-height: 110px;
+                transition: background-color 0.3s ease, transform 0.2s ease;
+            `;
 
             divPacco.innerHTML = `
-                <span>🆔 ID: ${p.riconoscimento || '-'} — TRK: <span style="letter-spacing:1px;">${trkUpper}</span></span>
-                <small style="font-style:italic;">(${p.cognome || ''} ${p.nome || ''})</small>
+                <div style="font-size: 1.3rem;">📦</div>
+                <div style="font-weight: bold; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${p.cognome || ''} ${p.nome || ''}">
+                    ${p.cognome || ''} ${p.nome || ''}
+                </div>
+                <div style="font-size: 0.75rem;">N°: <b>#${p.riconoscimento || '-'}</b></div>
+                <div style="font-size: 0.7rem; opacity: 0.85;">📅 ${dataArrivo}</div>
             `;
+            
             container.appendChild(divPacco);
         });
     }
@@ -3269,18 +3300,20 @@ function gestisciScansioneInventario() {
     });
 
     if (trovato) {
-        riproduciBeepSuccesso();
+        if (typeof riproduciBeepSuccesso === "function") riproduciBeepSuccesso();
         const trkChiave = (trovato.codiceTracciabilita || "").trim().toUpperCase();
 
         if (!trkScansionatiInventario.includes(trkChiave)) {
             trkScansionatiInventario.push(trkChiave);
             
+            // AGGIORNA LA CARD A VERDE QUANDO VIENE SCANSIONATA
             const elementoGrafico = document.getElementById(`inv-pacco-${trkChiave}`);
             if (elementoGrafico) {
                 elementoGrafico.classList.add('scansionato');
+                elementoGrafico.style.backgroundColor = '#2b8a3e'; // Verde successo
             }
             
-            // FAI COMPARIRE IL PULSANTE NON APPENA FA LA PRIMA SCANSIONE
+            // Fai comparire il pulsante termina alla prima scansione
             const btnTermina = document.getElementById('btnTerminaInventario');
             if (btnTermina) {
                 btnTermina.style.display = 'inline-block';
@@ -3409,7 +3442,7 @@ function scaricaPDFInventario() {
         yPos += 10;
 
         // --- TABELLA 2: PACCHI PRESENTI ---
-        if (yPos > 260) { // Se lo spazio sulla pagina sta per terminare, inizia la tabella dei presenti in una nuova pagina
+        if (yPos > 260) {
             doc.addPage();
             yPos = 20;
         }
@@ -3421,7 +3454,7 @@ function scaricaPDFInventario() {
             doc.text("DETTAGLIO PACCHI PRESENTI (SCANSIONATI):", 15, yPos);
             yPos += 5;
             
-            // Header Tabella Presenti (Stessa grafica blu)
+            // Header Tabella Presenti
             doc.setFillColor(0, 51, 153);
             doc.rect(15, yPos, 180, 8, 'F');
             doc.setTextColor(255, 255, 255);
@@ -3434,11 +3467,10 @@ function scaricaPDFInventario() {
             doc.setFont("helvetica", "normal");
             
             scansionati.forEach((p, i) => {
-                if (yPos > 280) { // Nuova pagina se finisce lo spazio
+                if (yPos > 280) {
                     doc.addPage();
                     yPos = 20;
                 }
-                // Righe alternate per leggibilità
                 if (i % 2 === 0) {
                     doc.setFillColor(245, 245, 245);
                     doc.rect(15, yPos, 180, 7, 'F');
@@ -3458,14 +3490,15 @@ function scaricaPDFInventario() {
         alert("Errore durante la generazione del PDF.");
     }
 }
+
 function terminaInventarioConReport() {
-    // Controllo: assicuriamoci che il pulsante sia collegato
     if (confirm("Vuoi scaricare il PDF dei mancanti e chiudere l'inventario?")) {
         scaricaPDFInventario();
         chiudiInventarioModal();
     }
 }
 
+// Event listener per la ricerca / scansione
 document.getElementById('inventarioSearchInput').addEventListener('change', function() {
     gestisciScansioneInventario();
 });
