@@ -3242,16 +3242,17 @@ function scaricaPDFInventario() {
         doc.text(`Pacchi Mancanti: ${mancanti.length}`, 20, 72);
         doc.setTextColor(0, 0, 0);
 
-        // --- LAYOUT SCHEDE/TESSERE CON DETTAGLI (3 PER RIGA) ---
+        // --- SCHEDE GRANDI (2 COLONNE PER RIGA CON TUTTI I DATI) ---
         const startX = 15;
         let x = startX;
         let yPos = 85;
         
-        // Dimensioni adatte per contenere ID, Destinatario, Tracking e Stato
-        const boxWidth = 57;
+        // Dimensioni scheda: ampiezza 87mm, altezza 28mm (entra perfettamente in 2 colonne)
+        const boxWidth = 87;
         const boxHeight = 28;
-        const gap = 4.5;
-        const maxColumns = 3;
+        const gapX = 6;
+        const gapY = 5;
+        const maxColumns = 2;
         let col = 0;
 
         if (listaPacchiAttivi.length > 0) {
@@ -3262,7 +3263,7 @@ function scaricaPDFInventario() {
 
                 let testoStato = "";
 
-                // SELEZIONE COLORE DI SFONDO
+                // GESTIONE COLORE DI SFONDO E STATO
                 if (isPresente) {
                     doc.setFillColor(46, 125, 50); // VERDE
                     testoStato = "TROVATO";
@@ -3275,48 +3276,47 @@ function scaricaPDFInventario() {
                 }
 
                 // Disegna rettangolo colorato
-                doc.roundedRect(x, yPos, boxWidth, boxHeight, 2, 2, 'F');
+                doc.roundedRect(x, yPos, boxWidth, boxHeight, 3, 3, 'F');
 
-                // --- TESTI INTERNI ALLA CARD ---
+                // --- SCRITTURA DATI DENTRO LA CARD ---
                 doc.setTextColor(255, 255, 255);
                 
-                // 1. ID Riconoscimento (In alto a sinistra)
+                // 1. Numero di Riconoscimento ID
                 doc.setFont("helvetica", "bold");
-                doc.setFontSize(11);
-                doc.text(`#${p.riconoscimento || '-'}`, x + 4, yPos + 7);
+                doc.setFontSize(12);
+                doc.text(`#${p.riconoscimento || '-'}`, x + 5, yPos + 7.5);
 
-                // 2. Stato (In alto a destra)
-                doc.setFontSize(7);
-                doc.text(testoStato, x + boxWidth - 4, yPos + 6.5, { align: 'right' });
-
-                // 3. Destinatario (Nome e Cognome)
-                doc.setFont("helvetica", "bold");
+                // 2. Etichetta Stato (TROVATO / IN SCADENZA / MANCANTE)
                 doc.setFontSize(8);
-                const clienteNome = `${p.cognome || ''} ${p.nome || ''}`.trim().toUpperCase();
-                doc.text(clienteNome.substring(0, 26) || 'CLIENTE N.D.', x + 4, yPos + 14);
+                doc.text(testoStato, x + boxWidth - 5, yPos + 7, { align: 'right' });
+
+                // 3. Nome e Cognome Destinatario
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(9.5);
+                const cognomeNome = `${p.cognome || ''} ${p.nome || ''}`.trim().toUpperCase();
+                doc.text(cognomeNome.substring(0, 35) || 'CLIENTE N.D.', x + 5, yPos + 14.5);
 
                 // 4. Codice Tracciabilità / Tracking
                 doc.setFont("helvetica", "normal");
-                doc.setFontSize(7);
-                const trackingStr = `TRK: ${trk || '-'}`;
-                doc.text(trackingStr.substring(0, 30), x + 4, yPos + 20);
+                doc.setFontSize(8);
+                const trkTesto = `TRK: ${trk || '-'}`;
+                doc.text(trkTesto.substring(0, 42), x + 5, yPos + 20.5);
 
-                // 5. Corriere (facoltativo, in basso)
-                if(p.corriere) {
-                    doc.setFontSize(6.5);
-                    doc.text(String(p.corriere).toUpperCase().substring(0, 25), x + 4, yPos + 25);
-                }
+                // 5. Nome Corriere
+                doc.setFontSize(7.5);
+                const corriereTesto = `CORRIERE: ${(p.corriere || '-').toUpperCase()}`;
+                doc.text(corriereTesto.substring(0, 42), x + 5, yPos + 25.5);
 
-                // GESTIONE POSIZIONE GRIGLIA
+                // AVANZAMENTO GRIGLIA
                 col++;
                 if (col < maxColumns) {
-                    x += boxWidth + gap;
+                    x += boxWidth + gapX;
                 } else {
                     col = 0;
                     x = startX;
-                    yPos += boxHeight + gap;
+                    yPos += boxHeight + gapY;
 
-                    // Salto Pagina
+                    // Cambio Pagina Automatico
                     if (yPos > 260) {
                         doc.addPage();
                         yPos = 20;
