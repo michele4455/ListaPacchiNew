@@ -4460,6 +4460,12 @@ function inizializzaChatDispositivo() {
     const btnChat = document.getElementById('chatHeaderBtn');
     if (btnChat) btnChat.style.display = 'flex';
 
+    // Assicuriamoci che all'inizio il modal della chat rimanga CHIUSO
+    const modal = document.getElementById('chatBoxModal');
+    if (modal && !chatAperta) {
+        modal.classList.remove('open');
+    }
+
     const elInputName = document.getElementById('chatDeviceName');
     if (elInputName) elInputName.value = myDeviceName;
 
@@ -4610,7 +4616,7 @@ function aggiornaBadgeChat() {
 }
 
 function inviaMessaggioChat() {
-    // Controllo se l'utente è loggato
+    // Controllo Autenticazione: se NON è loggato, mostra l'avviso e apri il login
     const user = firebase.auth().currentUser;
     if (!user) {
         alert("Devi effettuare il login per poter inviare messaggi in chat!");
@@ -4640,8 +4646,10 @@ function inviaMessaggioChat() {
     input.value = '';
 }
 
-// Avvio immediato della chat all'apertura della pagina
-inizializzaChatDispositivo();
+// Inizializza la chat solo quando il documento HTML è del tutto caricato
+document.addEventListener('DOMContentLoaded', () => {
+    inizializzaChatDispositivo();
+});
 
 firebase.auth().onAuthStateChanged((user) => {
     const btnChat = document.getElementById('chatHeaderBtn');
