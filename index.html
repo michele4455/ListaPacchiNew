@@ -3189,6 +3189,13 @@ function apriInventarioModal() {
     const selectCorriere = document.getElementById('inventarioCorriereSelect');
     selectCorriere.innerHTML = ""; 
     
+    // 1. Opzione per Inventario Globale
+    let optTutti = document.createElement('option');
+    optTutti.value = "TUTTI";
+    optTutti.innerText = "📦 TUTTI I CORRIERI";
+    selectCorriere.appendChild(optTutti);
+
+    // 2. Opzioni singoli corrieri
     corrieri.forEach(corriere => {
         let opt = document.createElement('option');
         opt.value = corriere;
@@ -3199,7 +3206,6 @@ function apriInventarioModal() {
     trkScansionatiInventario = [];
     document.getElementById('inventarioSearchInput').value = "";
     
-    // Nasconde sempre il pulsante termina all'inizio
     const btnTermina = document.getElementById('btnTerminaInventario');
     if (btnTermina) {
         btnTermina.style.display = 'none';
@@ -3219,7 +3225,7 @@ function caricaPacchiInventario() {
     const container = document.getElementById('inventarioPacchiContainer');
     container.innerHTML = ""; 
     
-    // Impostiamo il layout a griglia (card) nel container
+    // Layout griglia card
     container.style.display = "grid";
     container.style.gridTemplateColumns = "repeat(auto-fill, minmax(140px, 1fr))";
     container.style.gap = "10px";
@@ -3229,14 +3235,15 @@ function caricaPacchiInventario() {
     
     const listaPacchiAttivi = Object.values(pacchi).filter(p => {
         if (!p || typeof p !== 'object') return false;
-        if (p.corriere !== corriereSelezionato) return false;
+        // Se è selezionato "TUTTI", prende tutti i corrieri, altrimenti filtra per corriere specifico
+        if (corriereSelezionato !== "TUTTI" && p.corriere !== corriereSelezionato) return false;
         if (p.ritirato === true || p.ritirato === "true") return false;
         return true;
     });
 
     if (listaPacchiAttivi.length === 0) {
         container.style.display = "block";
-        container.innerHTML = "<div style='text-align:center; color:#777; font-weight:bold; padding:15px;'>Nessun pacco in giacenza per questo corriere.</div>";
+        container.innerHTML = "<div style='text-align:center; color:#777; font-weight:bold; padding:15px;'>Nessun pacco in giacenza per la selezione.</div>";
     } else {
         listaPacchiAttivi.forEach(p => {
             const trkUpper = (p.codiceTracciabilita || "").trim().toUpperCase();
@@ -3244,12 +3251,13 @@ function caricaPacchiInventario() {
 
             const isScansionato = trkScansionatiInventario.includes(trkUpper);
             const dataArrivo = p.dataTestoInserimento ? p.dataTestoInserimento.split(' ')[0] : '-';
+            const nomeCompleto = `${p.cognome || ''} ${p.nome || ''}`.trim();
 
             const divPacco = document.createElement('div');
             divPacco.id = `inv-pacco-${trkUpper}`;
             divPacco.className = `pacco-inventario-item ${isScansionato ? 'scansionato' : ''}`;
             
-            // STILE CARD CON CODICE TRACCIA
+            // Stile Card
             divPacco.style.cssText = `
                 background-color: ${isScansionato ? '#2b8a3e' : '#6c757d'};
                 color: white;
@@ -3260,16 +3268,18 @@ function caricaPacchiInventario() {
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
-                min-height: 130px;
+                min-height: 135px;
+                box-sizing: border-box;
+                overflow: hidden;
                 transition: background-color 0.3s ease, transform 0.2s ease;
             `;
 
             divPacco.innerHTML = `
                 <div style="font-size: 1.2rem;">📦</div>
-                <div style="font-weight: bold; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${p.cognome || ''} ${p.nome || ''}">
-                    ${p.cognome || ''} ${p.nome || ''}
+                <div style="font-weight: bold; font-size: 0.85rem; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;" title="${nomeCompleto}">
+                    ${nomeCompleto}
                 </div>
-                <div style="font-size: 0.75rem; word-break: break-all; opacity: 0.95; margin: 3px 0;" title="${trkUpper}">
+                <div style="font-size: 0.73rem; word-break: break-all; opacity: 0.95; margin: 3px 0;" title="${trkUpper}">
                     🏷️ <b>${trkUpper}</b>
                 </div>
                 <div style="font-size: 0.75rem;">N°: <b>#${p.riconoscimento || '-'}</b></div>
@@ -3291,7 +3301,7 @@ function gestisciScansioneInventario() {
     
     const listaPacchiAttivi = Object.values(pacchi).filter(p => {
         if (!p || typeof p !== 'object') return false;
-        if (p.corriere !== corriereSelezionato) return false;
+        if (corriereSelezionato !== "TUTTI" && p.corriere !== corriereSelezionato) return false;
         if (p.ritirato === true || p.ritirato === "true") return false;
         return true;
     });
@@ -3309,14 +3319,12 @@ function gestisciScansioneInventario() {
         if (!trkScansionatiInventario.includes(trkChiave)) {
             trkScansionatiInventario.push(trkChiave);
             
-            // AGGIORNA LA CARD A VERDE QUANDO VIENE SCANSIONATA
             const elementoGrafico = document.getElementById(`inv-pacco-${trkChiave}`);
             if (elementoGrafico) {
                 elementoGrafico.classList.add('scansionato');
-                elementoGrafico.style.backgroundColor = '#2b8a3e'; // Verde successo
+                elementoGrafico.style.backgroundColor = '#2b8a3e';
             }
             
-            // Fai comparire il pulsante termina alla prima scansione
             const btnTermina = document.getElementById('btnTerminaInventario');
             if (btnTermina) {
                 btnTermina.style.display = 'inline-block';
@@ -3348,7 +3356,7 @@ function aggiornaRiepiloghiInventario(listaPacchiAttivi) {
         pacchiMancanti.forEach(p => {
             let li = document.createElement('li');
             li.style.marginBottom = "3px";
-            li.innerText = `TRK: ${(p.codiceTracciabilita || "").toUpperCase()} (ID: #${p.riconoscimento || '-'} — ${p.cognome || ''})`;
+            li.innerText = `[${p.corriere || 'N/D'}] TRK: ${(p.codiceTracciabilita || "").toUpperCase()} (ID: #${p.riconoscimento || '-'} — ${p.cognome || ''})`;
             listaMancantiUl.appendChild(li);
         });
     }
@@ -3360,17 +3368,20 @@ function scaricaPDFInventario() {
         const doc = new jsPDF('p', 'mm', 'a4');
         
         const corriereSelezionato = document.getElementById('inventarioCorriereSelect').value;
+        const nomeCorrierePDF = corriereSelezionato === "TUTTI" ? "TUTTI I CORRIERI" : corriereSelezionato;
         const dataOggi = new Date().toLocaleDateString('it-IT') + ' ' + new Date().toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'});
         
         const listaPacchiAttivi = Object.values(pacchi).filter(p => {
-            return p && p.corriere === corriereSelezionato && p.ritirato !== true && p.ritirato !== "true";
+            if (!p || p.ritirato === true || p.ritirato === "true") return false;
+            if (corriereSelezionato !== "TUTTI" && p.corriere !== corriereSelezionato) return false;
+            return true;
         });
         
         const scansionati = listaPacchiAttivi.filter(p => trkScansionatiInventario.includes((p.codiceTracciabilita || "").trim().toUpperCase()));
         const mancanti = listaPacchiAttivi.filter(p => !trkScansionatiInventario.includes((p.codiceTracciabilita || "").trim().toUpperCase()));
 
-        // --- GRAFICA HEADER ---
-        doc.setFillColor(0, 51, 153); // Blu istituzionale
+        // --- HEADER PDF ---
+        doc.setFillColor(0, 51, 153);
         doc.rect(0, 0, 210, 35, 'F');
         doc.setTextColor(255, 255, 255);
         doc.setFont("helvetica", "bold");
@@ -3384,9 +3395,9 @@ function scaricaPDFInventario() {
         doc.setTextColor(26, 26, 26);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(12);
-        doc.text("CORRIERE: " + corriereSelezionato, 15, 45);
+        doc.text("CORRIERE: " + nomeCorrierePDF, 15, 45);
         
-        doc.setFillColor(240, 240, 240); // Grigio chiaro per box stats
+        doc.setFillColor(240, 240, 240);
         doc.rect(15, 50, 180, 25, 'F');
         doc.setFontSize(10);
         doc.setFont("helvetica", "normal");
@@ -3405,32 +3416,32 @@ function scaricaPDFInventario() {
             doc.text("DETTAGLIO PACCHI MANCANTI:", 15, yPos);
             yPos += 5;
             
-            // Header Tabella
             doc.setFillColor(0, 51, 153);
             doc.rect(15, yPos, 180, 8, 'F');
             doc.setTextColor(255, 255, 255);
             doc.text("ID", 17, yPos + 6);
-            doc.text("CODICE TRACCIABILITÀ", 40, yPos + 6);
-            doc.text("DESTINATARIO", 110, yPos + 6);
+            doc.text("CORRIERE", 35, yPos + 6);
+            doc.text("CODICE TRACCIABILITÀ", 70, yPos + 6);
+            doc.text("DESTINATARIO", 135, yPos + 6);
             yPos += 8;
             
             doc.setTextColor(0, 0, 0);
             doc.setFont("helvetica", "normal");
             
             mancanti.forEach((p, i) => {
-                if (yPos > 280) { // Nuova pagina se finisce lo spazio
+                if (yPos > 280) {
                     doc.addPage();
                     yPos = 20;
                 }
-                // Righe alternate per leggibilità
                 if (i % 2 === 0) {
                     doc.setFillColor(245, 245, 245);
                     doc.rect(15, yPos, 180, 7, 'F');
                 }
                 
                 doc.text(String(p.riconoscimento || '-'), 17, yPos + 5);
-                doc.text(String(p.codiceTracciabilita || '-').toUpperCase(), 40, yPos + 5);
-                doc.text(`${p.cognome || ''} ${p.nome || ''}`, 110, yPos + 5);
+                doc.text(String(p.corriere || '-'), 35, yPos + 5);
+                doc.text(String(p.codiceTracciabilita || '-').toUpperCase(), 70, yPos + 5);
+                doc.text(`${p.cognome || ''} ${p.nome || ''}`, 135, yPos + 5);
                 
                 yPos += 7;
             });
@@ -3441,7 +3452,6 @@ function scaricaPDFInventario() {
             yPos += 15;
         }
 
-        // Spazio di stacco tra le due tabelle
         yPos += 10;
 
         // --- TABELLA 2: PACCHI PRESENTI ---
@@ -3457,13 +3467,13 @@ function scaricaPDFInventario() {
             doc.text("DETTAGLIO PACCHI PRESENTI (SCANSIONATI):", 15, yPos);
             yPos += 5;
             
-            // Header Tabella Presenti
             doc.setFillColor(0, 51, 153);
             doc.rect(15, yPos, 180, 8, 'F');
             doc.setTextColor(255, 255, 255);
             doc.text("ID", 17, yPos + 6);
-            doc.text("CODICE TRACCIABILITÀ", 40, yPos + 6);
-            doc.text("DESTINATARIO", 110, yPos + 6);
+            doc.text("CORRIERE", 35, yPos + 6);
+            doc.text("CODICE TRACCIABILITÀ", 70, yPos + 6);
+            doc.text("DESTINATARIO", 135, yPos + 6);
             yPos += 8;
             
             doc.setTextColor(0, 0, 0);
@@ -3480,14 +3490,15 @@ function scaricaPDFInventario() {
                 }
                 
                 doc.text(String(p.riconoscimento || '-'), 17, yPos + 5);
-                doc.text(String(p.codiceTracciabilita || '-').toUpperCase(), 40, yPos + 5);
-                doc.text(`${p.cognome || ''} ${p.nome || ''}`, 110, yPos + 5);
+                doc.text(String(p.corriere || '-'), 35, yPos + 5);
+                doc.text(String(p.codiceTracciabilita || '-').toUpperCase(), 70, yPos + 5);
+                doc.text(`${p.cognome || ''} ${p.nome || ''}`, 135, yPos + 5);
                 
                 yPos += 7;
             });
         }
 
-        doc.save(`Inventario_${corriereSelezionato}_${new Date().toLocaleDateString('it-IT').replace(/\//g,'-')}.pdf`);
+        doc.save(`Inventario_${nomeCorrierePDF.replace(/\s+/g, '_')}_${new Date().toLocaleDateString('it-IT').replace(/\//g,'-')}.pdf`);
     } catch (e) {
         console.error(e);
         alert("Errore durante la generazione del PDF.");
