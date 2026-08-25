@@ -3242,45 +3242,72 @@ function scaricaPDFInventario() {
         doc.text(`Pacchi Mancanti: ${mancanti.length}`, 20, 72);
         doc.setTextColor(0, 0, 0);
 
-        // --- GRIGLIA A QUADRATI (VISUALE) ---
+        // --- LAYOUT SCHEDE/TESSERE CON DETTAGLI (3 PER RIGA) ---
         const startX = 15;
         let x = startX;
         let yPos = 85;
         
-        // Parametri layout griglia (5 quadrati per riga)
-        const boxWidth = 33;
-        const boxHeight = 22;
-        const gap = 3.7;
-        const maxColumns = 5;
+        // Dimensioni adatte per contenere ID, Destinatario, Tracking e Stato
+        const boxWidth = 57;
+        const boxHeight = 28;
+        const gap = 4.5;
+        const maxColumns = 3;
         let col = 0;
 
         if (listaPacchiAttivi.length > 0) {
             listaPacchiAttivi.forEach((p) => {
                 const trk = (p.codiceTracciabilita || "").trim().toUpperCase();
                 const isPresente = trkScansionatiInventario.includes(trk);
+                const inScadenza = p.isScaduto === true || p.isScaduto === "true" || p.inScadenza === true;
 
-                // Colore di sfondo: Verde (#2E7D32) per i presenti, Rosso (#C62828) per i mancanti
+                let testoStato = "";
+
+                // SELEZIONE COLORE DI SFONDO
                 if (isPresente) {
-                    doc.setFillColor(46, 125, 50);
+                    doc.setFillColor(46, 125, 50); // VERDE
+                    testoStato = "TROVATO";
+                } else if (inScadenza) {
+                    doc.setFillColor(243, 156, 18); // GIALLO
+                    testoStato = "IN SCADENZA";
                 } else {
-                    doc.setFillColor(198, 40, 40);
+                    doc.setFillColor(198, 40, 40); // ROSSO
+                    testoStato = "MANCANTE";
                 }
 
-                // Disegna la tessera con angoli leggermente arrotondati
+                // Disegna rettangolo colorato
                 doc.roundedRect(x, yPos, boxWidth, boxHeight, 2, 2, 'F');
 
-                // Testo interno al quadrato (ID Riconoscimento e Stato)
+                // --- TESTI INTERNI ALLA CARD ---
                 doc.setTextColor(255, 255, 255);
+                
+                // 1. ID Riconoscimento (In alto a sinistra)
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(11);
-                doc.text(`#${p.riconoscimento || '-'}`, x + (boxWidth / 2), yPos + 9, { align: 'center' });
+                doc.text(`#${p.riconoscimento || '-'}`, x + 4, yPos + 7);
 
+                // 2. Stato (In alto a destra)
+                doc.setFontSize(7);
+                doc.text(testoStato, x + boxWidth - 4, yPos + 6.5, { align: 'right' });
+
+                // 3. Destinatario (Nome e Cognome)
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(8);
+                const clienteNome = `${p.cognome || ''} ${p.nome || ''}`.trim().toUpperCase();
+                doc.text(clienteNome.substring(0, 26) || 'CLIENTE N.D.', x + 4, yPos + 14);
+
+                // 4. Codice Tracciabilità / Tracking
                 doc.setFont("helvetica", "normal");
                 doc.setFontSize(7);
-                const testoStato = isPresente ? "TROVATO" : "MANCANTE";
-                doc.text(testoStato, x + (boxWidth / 2), yPos + 16, { align: 'center' });
+                const trackingStr = `TRK: ${trk || '-'}`;
+                doc.text(trackingStr.substring(0, 30), x + 4, yPos + 20);
 
-                // Gestione righe e colonne della griglia
+                // 5. Corriere (facoltativo, in basso)
+                if(p.corriere) {
+                    doc.setFontSize(6.5);
+                    doc.text(String(p.corriere).toUpperCase().substring(0, 25), x + 4, yPos + 25);
+                }
+
+                // GESTIONE POSIZIONE GRIGLIA
                 col++;
                 if (col < maxColumns) {
                     x += boxWidth + gap;
@@ -3289,8 +3316,8 @@ function scaricaPDFInventario() {
                     x = startX;
                     yPos += boxHeight + gap;
 
-                    // Salto pagina se si raggiunge il margine inferiore
-                    if (yPos > 265) {
+                    // Salto Pagina
+                    if (yPos > 260) {
                         doc.addPage();
                         yPos = 20;
                     }
