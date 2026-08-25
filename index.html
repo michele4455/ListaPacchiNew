@@ -3221,9 +3221,9 @@ function caricaPacchiInventario() {
     
     // Impostiamo il layout a griglia (card) nel container
     container.style.display = "grid";
-    container.style.gridTemplateColumns = "repeat(auto-fill, minmax(130px, 1fr))";
+    container.style.gridTemplateColumns = "repeat(auto-fill, minmax(140px, 1fr))";
     container.style.gap = "10px";
-    container.style.maxHeight = "280px";
+    container.style.maxHeight = "320px";
     container.style.overflowY = "auto";
     container.style.padding = "5px";
     
@@ -3249,7 +3249,7 @@ function caricaPacchiInventario() {
             divPacco.id = `inv-pacco-${trkUpper}`;
             divPacco.className = `pacco-inventario-item ${isScansionato ? 'scansionato' : ''}`;
             
-            // STILE A CARD / QUADRATO (Grigio se da scansionare, Verde se scansionato)
+            // STILE CARD CON CODICE TRACCIA
             divPacco.style.cssText = `
                 background-color: ${isScansionato ? '#2b8a3e' : '#6c757d'};
                 color: white;
@@ -3260,14 +3260,17 @@ function caricaPacchiInventario() {
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
-                min-height: 110px;
+                min-height: 130px;
                 transition: background-color 0.3s ease, transform 0.2s ease;
             `;
 
             divPacco.innerHTML = `
-                <div style="font-size: 1.3rem;">📦</div>
+                <div style="font-size: 1.2rem;">📦</div>
                 <div style="font-weight: bold; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${p.cognome || ''} ${p.nome || ''}">
                     ${p.cognome || ''} ${p.nome || ''}
+                </div>
+                <div style="font-size: 0.75rem; word-break: break-all; opacity: 0.95; margin: 3px 0;" title="${trkUpper}">
+                    🏷️ <b>${trkUpper}</b>
                 </div>
                 <div style="font-size: 0.75rem;">N°: <b>#${p.riconoscimento || '-'}</b></div>
                 <div style="font-size: 0.7rem; opacity: 0.85;">📅 ${dataArrivo}</div>
