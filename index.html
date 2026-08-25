@@ -865,8 +865,8 @@
 .pdf-link-content:hover {
     color: var(--primary-dark);
 }
-        /* --- CHAT INTERNA TRA DISPOSITIVI --- */
-.chat-btn-header {
+        /* ---  INTERNA TRA DISPOSITIVI --- */
+.-btn-header {
     position: absolute;
     top: 20px;
     left: 75px; /* Posizionato subito a destra della campanella degli alert */
@@ -885,10 +885,10 @@
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     transition: transform 0.2s;
 }
-.chat-btn-header:hover {
+.-btn-header:hover {
     transform: scale(1.1);
 }
-.chat-badge {
+.-badge {
     position: absolute;
     top: -5px;
     right: -5px;
@@ -901,8 +901,8 @@
     display: none;
 }
 
-/* Finestra Chat Popup */
-.chat-box-window {
+/* Finestra  Popup */
+.-box-window {
     display: none;
     position: fixed;
     top: 75px;
@@ -920,10 +920,10 @@
     overflow: hidden;
     font-family: inherit;
 }
-.chat-box-window.open {
+.-box-window.open {
     display: flex;
 }
-.chat-header {
+.-header {
     background: var(--primary);
     color: white;
     padding: 10px 12px;
@@ -933,7 +933,7 @@
     font-size: 0.9rem;
     font-weight: bold;
 }
-.chat-device-name-input {
+.-device-name-input {
     background: rgba(255,255,255,0.2);
     border: 1px solid rgba(255,255,255,0.5);
     color: white;
@@ -943,9 +943,9 @@
     width: 110px;
     text-transform: none !important;
 }
-.chat-device-name-input::placeholder { color: #ddd; }
+.-device-name-input::placeholder { color: #ddd; }
 
-.chat-messages-container {
+.-messages-container {
     flex: 1;
     padding: 10px;
     overflow-y: auto;
@@ -954,7 +954,7 @@
     flex-direction: column;
     gap: 8px;
 }
-.chat-msg-bubble {
+.-msg-bubble {
     max-width: 82%;
     padding: 8px 10px;
     border-radius: 10px;
@@ -964,20 +964,20 @@
     position: relative;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
-.chat-msg-sent {
+.-msg-sent {
     align-self: flex-end;
     background: #003399;
     color: white;
     border-bottom-right-radius: 2px;
 }
-.chat-msg-received {
+.-msg-received {
     align-self: flex-start;
     background: #ffffff;
     color: #333;
     border: 1px solid #ddd;
     border-bottom-left-radius: 2px;
 }
-.chat-msg-meta {
+.-msg-meta {
     font-size: 0.68rem;
     opacity: 0.75;
     margin-bottom: 2px;
@@ -985,14 +985,14 @@
     justify-content: space-between;
     gap: 5px;
 }
-.chat-msg-time {
+.-msg-time {
     font-size: 0.65rem;
     text-align: right;
     margin-top: 4px;
     opacity: 0.7;
 }
 
-.chat-footer {
+.-footer {
     padding: 8px;
     background: #fff;
     border-top: 1px solid #ddd;
@@ -1000,18 +1000,18 @@
     flex-direction: column;
     gap: 6px;
 }
-.chat-target-select {
+.-target-select {
     padding: 4px 8px !important;
     font-size: 0.78rem !important;
     border-radius: 6px !important;
     border: 1px solid var(--primary) !important;
     height: auto !important;
 }
-.chat-input-row {
+.-input-row {
     display: flex;
     gap: 6px;
 }
-.chat-input-field {
+.-input-field {
     flex: 1;
     padding: 8px !important;
     font-size: 0.85rem !important;
@@ -1019,7 +1019,7 @@
     border: 1px solid #ccc !important;
     text-transform: none !important;
 }
-.chat-send-btn {
+.-send-btn {
     background: var(--primary);
     color: white;
     border: none;
@@ -4272,23 +4272,23 @@ function generaPdfListaPacchi() {
 }
 
 // ==========================================
-// CHAT INTERNA CON NOTIFICHE NATIVE DI CHROME
+//  INTERNA CON NOTIFICHE NATIVE DI CHROME
 // ==========================================
 
 // ==========================================
-// CHAT INTERNA CON NOTIFICHE CHROME RIGENERATE E SBLOCCATE
+//  INTERNA CON NOTIFICHE CHROME RIGENERATE E SBLOCCATE
 // ==========================================
 
-let chatMessaggiUnread = 0;
-let chatAperta = false;
-let myDeviceId = localStorage.getItem('chat_device_id');
+let MessaggiUnread = 0;
+let Aperta = false;
+let myDeviceId = localStorage.getItem('_device_id');
 
 if (!myDeviceId) {
     myDeviceId = 'PC_' + Math.random().toString(36).substr(2, 6).toUpperCase();
-    localStorage.setItem('chat_device_id', myDeviceId);
+    localStorage.setItem('_device_id', myDeviceId);
 }
 
-let myDeviceName = localStorage.getItem('chat_device_name') || ('Postazione-' + myDeviceId.substr(3));
+let myDeviceName = localStorage.getItem('_device_name') || ('Postazione-' + myDeviceId.substr(3));
 
 // Variabili notifiche visive e tracciamento
 let titoloOriginaleDocumento = document.title;
@@ -4607,6 +4607,15 @@ function aggiornaBadgeChat() {
 }
 
 function inviaMessaggioChat() {
+    // Controllo se l'utente è loggato
+    const user = firebase.auth().currentUser;
+    if (!user) {
+        alert("Devi effettuare il login per poter inviare messaggi in chat!");
+        const loginPage = document.getElementById('loginPage');
+        if (loginPage) loginPage.style.display = 'flex';
+        return;
+    }
+
     const input = document.getElementById('chatInputMsg');
     const select = document.getElementById('chatTargetSelect');
     const testo = input.value.trim();
@@ -4628,15 +4637,14 @@ function inviaMessaggioChat() {
     input.value = '';
 }
 
+// Avvio immediato della chat all'apertura della pagina
+inizializzaChatDispositivo();
+
 firebase.auth().onAuthStateChanged((user) => {
     const btnChat = document.getElementById('chatHeaderBtn');
-    if (user) {
-        inizializzaChatDispositivo();
-    } else {
-        if (btnChat) btnChat.style.display = 'none';
-        const modal = document.getElementById('chatBoxModal');
-        if (modal) modal.classList.remove('open');
-        chatAperta = false;
+    if (btnChat) btnChat.style.display = 'flex';
+
+    if (!user) {
         fermaLampeggioTitolo();
     }
 });
