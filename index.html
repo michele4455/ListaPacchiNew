@@ -865,15 +865,15 @@
 .pdf-link-content:hover {
     color: var(--primary-dark);
 }
-        /* ---  INTERNA TRA DISPOSITIVI --- */
-.-btn-header {
+       /* --- STILI CHAT COMPLETI E CORRETTI --- */
+.chat-btn-header {
     position: absolute;
     top: 20px;
-    left: 75px; /* Posizionato subito a destra della campanella degli alert */
+    left: 75px;
     z-index: 1002;
-    background-color: var(--accent);
-    color: var(--primary);
-    border: 2px solid var(--primary);
+    background-color: var(--accent, #f39c12);
+    color: var(--primary, #2c3e50);
+    border: 2px solid var(--primary, #2c3e50);
     width: 45px;
     height: 45px;
     border-radius: 50%;
@@ -885,14 +885,16 @@
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     transition: transform 0.2s;
 }
-.-btn-header:hover {
+
+.chat-btn-header:hover {
     transform: scale(1.1);
 }
-.-badge {
+
+.chat-badge {
     position: absolute;
     top: -5px;
     right: -5px;
-    background: var(--warning);
+    background: var(--warning, #e74c3c);
     color: white;
     font-size: 0.7rem;
     padding: 3px 7px;
@@ -901,8 +903,7 @@
     display: none;
 }
 
-/* Finestra  Popup */
-.-box-window {
+.chat-box-window {
     display: none;
     position: fixed;
     top: 75px;
@@ -912,7 +913,7 @@
     height: 420px;
     max-height: calc(100vh - 100px);
     background: white;
-    border: 3px solid var(--primary);
+    border: 3px solid var(--primary, #2c3e50);
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     z-index: 3500;
@@ -920,11 +921,13 @@
     overflow: hidden;
     font-family: inherit;
 }
-.-box-window.open {
-    display: flex;
+
+.chat-box-window.open {
+    display: flex !important;
 }
-.-header {
-    background: var(--primary);
+
+.chat-header {
+    background: var(--primary, #2c3e50);
     color: white;
     padding: 10px 12px;
     display: flex;
@@ -933,7 +936,8 @@
     font-size: 0.9rem;
     font-weight: bold;
 }
-.-device-name-input {
+
+.chat-device-name-input {
     background: rgba(255,255,255,0.2);
     border: 1px solid rgba(255,255,255,0.5);
     color: white;
@@ -943,9 +947,12 @@
     width: 110px;
     text-transform: none !important;
 }
-.-device-name-input::placeholder { color: #ddd; }
 
-.-messages-container {
+.chat-device-name-input::placeholder {
+    color: #ddd;
+}
+
+.chat-messages-container {
     flex: 1;
     padding: 10px;
     overflow-y: auto;
@@ -954,7 +961,8 @@
     flex-direction: column;
     gap: 8px;
 }
-.-msg-bubble {
+
+.chat-msg-bubble {
     max-width: 82%;
     padding: 8px 10px;
     border-radius: 10px;
@@ -964,20 +972,23 @@
     position: relative;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
-.-msg-sent {
+
+.chat-msg-sent {
     align-self: flex-end;
     background: #003399;
     color: white;
     border-bottom-right-radius: 2px;
 }
-.-msg-received {
+
+.chat-msg-received {
     align-self: flex-start;
     background: #ffffff;
     color: #333;
     border: 1px solid #ddd;
     border-bottom-left-radius: 2px;
 }
-.-msg-meta {
+
+.chat-msg-meta {
     font-size: 0.68rem;
     opacity: 0.75;
     margin-bottom: 2px;
@@ -985,14 +996,15 @@
     justify-content: space-between;
     gap: 5px;
 }
-.-msg-time {
+
+.chat-msg-time {
     font-size: 0.65rem;
     text-align: right;
     margin-top: 4px;
     opacity: 0.7;
 }
 
-.-footer {
+.chat-footer {
     padding: 8px;
     background: #fff;
     border-top: 1px solid #ddd;
@@ -1000,18 +1012,21 @@
     flex-direction: column;
     gap: 6px;
 }
-.-target-select {
+
+.chat-target-select {
     padding: 4px 8px !important;
     font-size: 0.78rem !important;
     border-radius: 6px !important;
-    border: 1px solid var(--primary) !important;
+    border: 1px solid var(--primary, #2c3e50) !important;
     height: auto !important;
 }
-.-input-row {
+
+.chat-input-row {
     display: flex;
     gap: 6px;
 }
-.-input-field {
+
+.chat-input-field {
     flex: 1;
     padding: 8px !important;
     font-size: 0.85rem !important;
@@ -1019,8 +1034,9 @@
     border: 1px solid #ccc !important;
     text-transform: none !important;
 }
-.-send-btn {
-    background: var(--primary);
+
+.chat-send-btn {
+    background: var(--primary, #2c3e50);
     color: white;
     border: none;
     padding: 8px 12px !important;
@@ -4601,17 +4617,18 @@ function aggiornaNomeDispositivo(nuovoNome) {
 }
 
 function toggleChatWindow() {
-    const modal = document.getElementById('chatBoxModal');
-    chatAperta = !modal.classList.contains('open');
-    if (chatAperta) {
-        modal.classList.add('open');
-        chatMessaggiUnread = 0;
-        aggiornaBadgeChat();
-        fermaLampeggioTitolo();
-        const container = document.getElementById('chatMessagesContainer');
-        if (container) container.scrollTop = container.scrollHeight;
-    } else {
-        modal.classList.remove('open');
+    const win = document.getElementById('chatBoxModal');
+    if (win) {
+        win.classList.toggle('open');
+        if (win.classList.contains('open')) {
+            const badge = document.getElementById('chatBadge');
+            if (badge) {
+                badge.style.display = 'none';
+                badge.innerText = '0';
+            }
+            const container = document.getElementById('chatMessagesContainer');
+            if (container) container.scrollTop = container.scrollHeight;
+        }
     }
 }
 
