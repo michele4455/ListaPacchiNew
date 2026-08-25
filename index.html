@@ -4365,7 +4365,7 @@ function mostraNotificaNativaChrome(mittente, testo) {
 
             notifica.onclick = () => {
                 window.focus();
-                if (!chatAperta) toggleChatWindow();
+                if (!chatAperta) ();
                 notifica.close();
             };
         } catch(e) {
@@ -4483,6 +4483,22 @@ function fermaLampeggioTitolo() {
 }
 
 // INIZIALIZZAZIONE CHAT
+// ==========================================
+// --- GESTIONE CHAT TRA DISPOSITIVI ---
+// ==========================================
+
+// Variabili di Stato Globali Chat
+let myDeviceId = localStorage.getItem('chat_device_id') || 'dev_' + Math.random().toString(36).substr(2, 9);
+localStorage.setItem('chat_device_id', myDeviceId);
+
+let myDeviceName = localStorage.getItem('chat_device_name') || ('Dispositivo ' + myDeviceId.substr(-4));
+localStorage.setItem('chat_device_name', myDeviceName);
+
+let chatAperta = false;
+let chatMessaggiUnread = 0;
+let chatProntaPerNotificare = false;
+let messaggiGiaProcessati = new Set();
+
 function inizializzaChatDispositivo() {
     const btnChat = document.getElementById('chatHeaderBtn');
     if (btnChat) btnChat.style.display = 'flex';
@@ -4531,7 +4547,7 @@ function inizializzaChatDispositivo() {
         if (!container) return;
 
         container.innerHTML = '';
-        const oraLimite = Date.now() - (60 * 60 * 1000);
+        const oraLimite = Date.now() - (60 * 60 * 1000); // Messaggi dell'ultima ora
         let messaggiValidi = [];
 
         Object.keys(data).forEach(key => {
@@ -4578,7 +4594,7 @@ function inizializzaChatDispositivo() {
         container.scrollTop = container.scrollHeight;
     });
 
-    // Ascolto "child_added" ISTANTANEO
+    // Ascolto "child_added" ISTANTANEO per notifiche
     db.ref('chat_messages').on('child_added', (snapshot) => {
         const key = snapshot.key;
         const m = snapshot.val();
@@ -4592,10 +4608,11 @@ function inizializzaChatDispositivo() {
                 if (!chatAperta) {
                     chatMessaggiUnread++;
                     aggiornaBadgeChat();
-                    riproduciSuonoForteNotifica();
-                    mostraBannerNotifica(m.senderName, m.testo);
-                    mostraNotificaNativaChrome(m.senderName, m.testo);
-                    avviaLampeggioTitolo();
+                    
+                    if (typeof riproduciSuonoForteNotifica === 'function') riproduciSuonoForteNotifica();
+                    if (typeof mostraBannerNotifica === 'function') mostraBannerNotifica(m.senderName, m.testo);
+                    if (typeof mostraNotificaNativaChrome === 'function') mostraNotificaNativaChrome(m.senderName, m.testo);
+                    if (typeof avviaLampeggioTitolo === 'function') avviaLampeggioTitolo();
                 }
             }
         }
@@ -4610,7 +4627,7 @@ function escapeHtmlChat(str) {
 }
 
 function aggiornaNomeDispositivo(nuovoNome) {
-    if (!nuovoNome.trim()) return;
+    if (!nuovoNome || !nuovoNome.trim()) return;
     myDeviceName = nuovoNome.trim();
     localStorage.setItem('chat_device_name', myDeviceName);
     db.ref('chat_devices/' + myDeviceId).update({ nome: myDeviceName });
@@ -4620,12 +4637,13 @@ function toggleChatWindow() {
     const win = document.getElementById('chatBoxModal');
     if (win) {
         win.classList.toggle('open');
-        if (win.classList.contains('open')) {
-            const badge = document.getElementById('chatBadge');
-            if (badge) {
-                badge.style.display = 'none';
-                badge.innerText = '0';
-            }
+        chatAperta = win.classList.contains('open');
+
+        if (chatAperta) {
+            chatMessaggiUnread = 0;
+            aggiornaBadgeChat();
+            if (typeof fermaLampeggioTitolo === 'function') fermaLampeggioTitolo();
+
             const container = document.getElementById('chatMessagesContainer');
             if (container) container.scrollTop = container.scrollHeight;
         }
@@ -4639,12 +4657,13 @@ function aggiornaBadgeChat() {
         badge.innerText = chatMessaggiUnread;
         badge.style.display = 'block';
     } else {
+        badge.innerText = '0';
         badge.style.display = 'none';
     }
 }
 
 function inviaMessaggioChat() {
-    // Controllo Autenticazione: se NON è loggato, mostra l'avviso e apri il login
+    // Controllo Autenticazione Firebase
     const user = firebase.auth().currentUser;
     if (!user) {
         alert("Devi effettuare il login per poter inviare messaggi in chat!");
@@ -4653,13 +4672,18 @@ function inviaMessaggioChat() {
         return;
     }
 
-    const input = document.getElementById('chatInputMsg');
+    // Supporta sia 'chatInputMsg' che 'chatInputField'
+    const input = document.getElementById('chatInputMsg') || document.getElementById('chatInputField');
     const select = document.getElementById('chatTargetSelect');
+    
+    if (!input) return;
     const testo = input.value.trim();
     if (!testo) return;
 
-    const targetId = select.value;
-    const targetName = select.options[select.selectedIndex].text.replace('💻 ', '');
+    const targetId = select ? select.value : 'TUTTI';
+    const targetName = (select && select.options[select.selectedIndex]) 
+        ? select.options[select.selectedIndex].text.replace('💻 ', '').replace('📢 Invia a: ', '') 
+        : 'TUTTI';
 
     const record = {
         senderId: myDeviceId,
@@ -4674,16 +4698,17 @@ function inviaMessaggioChat() {
     input.value = '';
 }
 
-// Inizializza la chat solo quando il documento HTML è del tutto caricato
+// Inizializza la chat al caricamento del DOM
 document.addEventListener('DOMContentLoaded', () => {
     inizializzaChatDispositivo();
 });
 
+// Listener Firebase Auth
 firebase.auth().onAuthStateChanged((user) => {
     const btnChat = document.getElementById('chatHeaderBtn');
     if (btnChat) btnChat.style.display = 'flex';
 
-    if (!user) {
+    if (!user && typeof fermaLampeggioTitolo === 'function') {
         fermaLampeggioTitolo();
     }
 });
