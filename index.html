@@ -12,6 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
     <style>
@@ -865,6 +866,50 @@
 .pdf-link-content:hover {
     color: var(--primary-dark);
 }
+
+.verifica-ritiro-box {
+    background: #f0f4f9;
+    border: 2px dashed var(--primary);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+.btn-verifica-opt {
+    background: #eef2ff;
+    color: var(--primary);
+    border: 1.5px solid var(--primary);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-verifica-opt:hover {
+    background: var(--primary);
+    color: white;
+}
+.otp-container-inputs {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-top: 10px;
+}
+.otp-input-box {
+    width: 40px !important;
+    height: 45px !important;
+    text-align: center;
+    font-size: 1.2rem !important;
+    font-weight: bold;
+    padding: 0 !important;
+    border: 2px solid var(--primary) !important;
+    border-radius: 8px !important;
+}
+.otp-input-box:focus {
+    border-color: var(--accent) !important;
+    background-color: #fff9db !important;
+}
         
     </style>
     <script>
@@ -1128,6 +1173,48 @@
             </div>
 
             <div class="modal-right" id="firmaSide" style="position: relative; z-index: 1005;">
+
+                <!-- 🛡️ SEZIONE VERIFICA OPZIONALE RITIRO -->
+                <div class="verifica-ritiro-box">
+                    <label style="font-weight:bold; color:var(--primary); display:block; margin-bottom:8px; font-size:0.9rem;">🛡️ Verifica Identità Cliente (Opzionale)</label>
+                    <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+                        <button type="button" class="btn-verifica-opt" onclick="selezionaModalitaVerifica('foto')">📸 Foto Documento</button>
+                        <button type="button" class="btn-verifica-opt" onclick="selezionaModalitaVerifica('otp')">📱 Codice OTP (WhatsApp)</button>
+                    </div>
+
+                    <!-- Sotto-sezione Foto Documento (QR Code) -->
+                    <div id="sezioneVerificaFoto" style="display:none; margin-top:12px;">
+                        <p style="font-size:0.8rem; margin:5px 0; color:#555;">Inquadra il QR Code col cellulare per scattare/caricare il documento:</p>
+                        <div id="qrcodeVerificaContainer" style="display:flex; justify-content:center; margin:10px 0;"></div>
+                        <p id="statoCaricamentoFoto" style="font-size:0.85rem; font-weight:bold; color:var(--warning); margin:0;">In attesa di foto dallo smartphone...</p>
+                    </div>
+
+                    <!-- Sotto-sezione OTP WhatsApp -->
+                    <div id="sezioneVerificaOtp" style="display:none; margin-top:12px;">
+                        <div style="display:flex; gap:5px; margin-bottom:8px;">
+                            <input type="text" id="otpTelefonoInput" placeholder="Num. Telefono Cliente" style="padding:8px; font-size:0.85rem;">
+                            <button type="button" onclick="generaEInviaOTP()" style="width:auto; padding:8px 12px; background:var(--primary); color:white; border:none; border-radius:8px; font-weight:bold; font-size:0.8rem; cursor:pointer;">INVIA OTP</button>
+                        </div>
+                        
+                        <div id="otpBoxCopiaMessage" style="display:none; margin-bottom:10px;">
+                            <button type="button" onclick="copiaMessaggioOtpWhatsApp()" style="background:#25D366; color:white; border:none; padding:8px 12px; border-radius:8px; font-weight:bold; font-size:0.8rem; cursor:pointer; width:100%;">📋 COPIA MESSAGGIO WHATSAPP</button>
+                            <p style="font-size:0.75rem; color:#666; margin:4px 0 0 0;">Incolla il messaggio su WhatsApp per inviarlo al cliente.</p>
+                            
+                            <p style="font-weight:bold; font-size:0.85rem; color:var(--primary); margin:10px 0 5px 0;">Inserisci il codice a 6 cifre comunicato dal cliente:</p>
+                            <div class="otp-container-inputs">
+                                <input type="text" maxlength="1" class="otp-input-box" id="otp1" oninput="spostaFocusOtp(this, 'otp2')">
+                                <input type="text" maxlength="1" class="otp-input-box" id="otp2" oninput="spostaFocusOtp(this, 'otp3')">
+                                <input type="text" maxlength="1" class="otp-input-box" id="otp3" oninput="spostaFocusOtp(this, 'otp4')">
+                                <input type="text" maxlength="1" class="otp-input-box" id="otp4" oninput="spostaFocusOtp(this, 'otp5')">
+                                <input type="text" maxlength="1" class="otp-input-box" id="otp5" oninput="spostaFocusOtp(this, 'otp6')">
+                                <input type="text" maxlength="1" class="otp-input-box" id="otp6" oninput="spostaFocusOtp(this, '')">
+                            </div>
+                            <p id="statoVerificaOtp" style="font-size:0.85rem; font-weight:bold; margin-top:8px;"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEZIONE FIRMA ORIGINALE -->
                 <label><b>Firma qui sotto:</b></label>
                 <canvas id="signature-pad" width="360" height="180" style="display: block; margin: 0 auto;"></canvas>
                 <button onclick="clearCanvas()" style="font-size:10px; background:#666; color:white; margin-top:5px; padding:5px 10px; width: auto; border:none; border-radius:5px;">PULISCI FIRMA</button>
@@ -2332,36 +2419,40 @@ function handleRitira(id, forzaScaduto = false, usaCarrello = false) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     document.getElementById('modalConfirmBtn').onclick = () => {
-        const selectedIds = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked')).map(cb => parseInt(cb.dataset.id));
-        if (selectedIds.length === 0) return showAlert("Seleziona almeno un pacco!");
+    // 🛡️ CONTROLLO NUOVO: Blocco se è stata avviata una verifica non completata
+    if (typeof verificaInCorso !== 'undefined' && verificaInCorso && !statoVerificaSuperato) {
+        return showAlert("Completare prima la verifica del documento/OTP oppure procedere senza attivare la verifica.");
+    }
 
-        const tipo = document.getElementById('tipoUscita').value;
-        const firmaData = canvas.toDataURL();
-        const dataAttuale = new Date().toLocaleString();
-        const ritiratoDa = document.getElementById('modalInput').value.toUpperCase();
-        const pagato = document.getElementById('checkPagamento').checked;
-        const dataScad = document.getElementById('dataScadenzaRimozione').value.split("-").reverse().join("/");
+    const selectedIds = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked')).map(cb => parseInt(cb.dataset.id));
+    if (selectedIds.length === 0) return showAlert("Seleziona almeno un pacco!");
 
-        if (tipo === 'cliente') {
-            let totaleContrassegno = 0;
-            selectedIds.forEach(sid => {
-                let px = pacchi.find(x => x.id === sid);
-                if(px && px.isContrassegno && px.importoContrassegno) {
-                    totaleContrassegno += parseFloat(px.importoContrassegno);
-                }
-            });
-            if (totaleContrassegno > 0) {
-                mostraConfermaContrassegnoGrafica(totaleContrassegno, () => {
-                    eseguiRitiroPacchi(selectedIds, tipo, ritiratoDa, pagato, dataScad, firmaData, dataAttuale);
-                });
-                return;
+    const tipo = document.getElementById('tipoUscita').value;
+    const firmaData = canvas.toDataURL();
+    const dataAttuale = new Date().toLocaleString();
+    const ritiratoDa = document.getElementById('modalInput').value.toUpperCase();
+    const pagato = document.getElementById('checkPagamento').checked;
+    const dataScad = document.getElementById('dataScadenzaRimozione').value.split("-").reverse().join("/");
+
+    if (tipo === 'cliente') {
+        let totaleContrassegno = 0;
+        selectedIds.forEach(sid => {
+            let px = pacchi.find(x => x.id === sid);
+            if(px && px.isContrassegno && px.importoContrassegno) {
+                totaleContrassegno += parseFloat(px.importoContrassegno);
             }
+        });
+        if (totaleContrassegno > 0) {
+            mostraConfermaContrassegnoGrafica(totaleContrassegno, () => {
+                eseguiRitiroPacchi(selectedIds, tipo, ritiratoDa, pagato, dataScad, firmaData, dataAttuale);
+            });
+            return;
         }
-        
-        eseguiRitiroPacchi(selectedIds, tipo, ritiratoDa, pagato, dataScad, firmaData, dataAttuale);
-    };
-}
-
+    }
+    
+    eseguiRitiroPacchi(selectedIds, tipo, ritiratoDa, pagato, dataScad, firmaData, dataAttuale);
+};
+    
 function mostraConfermaContrassegnoGrafica(totale, callbackSuccesso) {
     const modal = document.getElementById('beautifyAlert');
     const titolo = document.getElementById('alertTitle');
@@ -2669,12 +2760,17 @@ function toggleCampiUscita() {
 }
 
 function closeModal() {
+    // 🛡️ RESET STATO VERIFICA RITIRO
+    if (typeof resetStatoVerifica === 'function') resetStatoVerifica();
+
     document.getElementById('customModal').style.display = 'none';
-    document.getElementById('cartBadgeBtn').setAttribute('data-aperto', 'false'); // <-- Aggiungi questa riga
+    document.getElementById('cartBadgeBtn').setAttribute('data-aperto', 'false');
 }
+
 function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 function toggleSezioneRitirati() { const s = document.getElementById('sezioneRitirati'); s.style.display = s.style.display === 'none' ? 'block' : 'none'; }
 function setTab(t){ tabAttiva = t; aggiornaVista(); }
+
 // Gestione Cestino / Backup temporaneo dei pacchi eliminati
 function inizializzaSincronizzazioneCestino() {
     db.ref('cestinoPacchi').on('value', (snapshot) => {
@@ -2682,7 +2778,7 @@ function inizializzaSincronizzazioneCestino() {
         renderCestinoVista(pacchiCestino);
     });
 }
-
+    
 function renderCestinoVista(pacchiCestino) {
     let sezioneCestino = document.getElementById('sezioneCestinoRecupero');
     if (!sezioneCestino) {
@@ -4113,6 +4209,127 @@ function generaPdfListaPacchi() {
     } catch (error) {
         console.error("Errore Generazione PDF:", error);
         alert("Si è verificato un errore durante la generazione del PDF: " + error.message);
+    }
+}
+
+// --- VARIABILI PER VERIFICA RITIRO ---
+let codiceOtpGenerato = "";
+let statoVerificaSuperato = false; // Sarà true solo se si completa l'OTP o il caricamento foto
+let verificaInCorso = false; // Indica se l'operatore ha cliccato su uno dei 2 metodi di verifica
+
+// --- FUNZIONI VERIFICA RITIRO ---
+
+function resetStatoVerifica() {
+    codiceOtpGenerato = "";
+    statoVerificaSuperato = false;
+    verificaInCorso = false;
+    document.getElementById('sezioneVerificaFoto').style.display = 'none';
+    document.getElementById('sezioneVerificaOtp').style.display = 'none';
+    document.getElementById('otpBoxCopiaMessage').style.display = 'none';
+    document.getElementById('statoCaricamentoFoto').innerText = "In attesa di foto dallo smartphone...";
+    document.getElementById('statoCaricamentoFoto').style.color = "var(--warning)";
+    document.getElementById('statoVerificaOtp').innerText = "";
+    for(let i=1; i<=6; i++) {
+        const el = document.getElementById('otp'+i);
+        if(el) el.value = "";
+    }
+}
+
+function selezionaModalitaVerifica(tipo) {
+    resetStatoVerifica();
+    verificaInCorso = true;
+
+    if (tipo === 'foto') {
+        document.getElementById('sezioneVerificaFoto').style.display = 'block';
+        generaQrCodePerFoto();
+    } else if (tipo === 'otp') {
+        document.getElementById('sezioneVerificaOtp').style.display = 'block';
+        // Precompila il numero di telefono prendendolo dal cliente se disponibile
+        if (paccoInScrittura && paccoInScrittura.telefono) {
+            document.getElementById('otpTelefonoInput').value = paccoInScrittura.telefono;
+        } else if (elementiSelezionatiMultipli && elementiSelezionatiMultipli.length > 0) {
+            document.getElementById('otpTelefonoInput').value = elementiSelezionatiMultipli[0].telefono || '';
+        }
+    }
+}
+
+// 1. GESTIONE FOTO TRAMITE QR CODE
+function generaQrCodePerFoto() {
+    const container = document.getElementById('qrcodeVerificaContainer');
+    container.innerHTML = "";
+    
+    // Genera un ID univoco per la sessione di caricamento
+    const sessionId = "DOC_" + Date.now();
+    
+    // Link che lo smartphone aprirà per scattare/selezionare la foto
+    // N.B.: Puoi sostituire l'URL con una tua pagina personalizzata di upload se disponibile
+    const uploadUrl = window.location.origin + window.location.pathname + "?uploadSession=" + sessionId;
+
+    new QRCode(container, {
+        text: uploadUrl,
+        width: 120,
+        height: 120
+    });
+
+    // Ascolta il caricamento della foto su Firebase Realtime Database
+    firebase.database().ref('sessioni_upload/' + sessionId).on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.fotoUrl) {
+            statoVerificaSuperato = true;
+            document.getElementById('statoCaricamentoFoto').innerText = "✅ Foto ricevuta con successo!";
+            document.getElementById('statoCaricamentoFoto').style.color = "var(--success)";
+        }
+    });
+}
+
+// 2. GESTIONE OTP WHATSAPP
+function generaEInviaOTP() {
+    const tel = document.getElementById('otpTelefonoInput').value.trim();
+    if (!tel) {
+        mostraBeautifyAlert("Inserisci un numero di telefono valido!");
+        return;
+    }
+
+    // Genera OTP casuale a 6 cifre
+    codiceOtpGenerato = Math.floor(100000 + Math.random() * 900000).toString();
+    document.getElementById('otpBoxCopiaMessage').style.display = 'block';
+    
+    // Pulisce le caselle
+    for(let i=1; i<=6; i++) document.getElementById('otp'+i).value = "";
+    document.getElementById('statoVerificaOtp').innerText = "";
+    document.getElementById('otp1').focus();
+}
+
+function copiaMessaggioOtpWhatsApp() {
+    const msg = `Il tuo codice di verifica OTP per il ritiro del pacco presso Centro Post@ Anaclerio è: *${codiceOtpGenerato}*`;
+    navigator.clipboard.writeText(msg).then(() => {
+        mostraBeautifyAlert("Messaggio copiato! Ora puoi incollarlo ed inviarlo al cliente su WhatsApp.");
+    });
+}
+
+function spostaFocusOtp(currentInput, nextId) {
+    if (currentInput.value.length >= 1 && nextId) {
+        document.getElementById(nextId).focus();
+    }
+    verificaCodiceOtpInserito();
+}
+
+function verificaCodiceOtpInserito() {
+    let codiceInserito = "";
+    for (let i = 1; i <= 6; i++) {
+        codiceInserito += document.getElementById('otp' + i).value;
+    }
+
+    if (codiceInserito.length === 6) {
+        if (codiceInserito === codiceOtpGenerato) {
+            statoVerificaSuperato = true;
+            document.getElementById('statoVerificaOtp').innerText = "✅ Codice OTP corretto! Puoi procedere al ritiro.";
+            document.getElementById('statoVerificaOtp').style.color = "var(--success)";
+        } else {
+            statoVerificaSuperato = false;
+            document.getElementById('statoVerificaOtp').innerText = "❌ Codice errato, riprova!";
+            document.getElementById('statoVerificaOtp').style.color = "var(--warning)";
+        }
     }
 }
 
