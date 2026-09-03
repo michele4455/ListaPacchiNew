@@ -4190,26 +4190,28 @@ function toggleSezioneOtp() {
 function generaEInviaOTP() {
     const telInput = document.getElementById('otpTelefono').value.trim();
     if (!telInput) {
-        showAlert("Inserisci manualmente il numero di telefono del cliente.");
+        showAlert("Inserisci il numero di telefono del cliente!");
         return;
     }
 
-    // Genera un codice casuale di 6 cifre
-    otpGenerato = Math.floor(100000 + Math.random() * 900000).toString();
-    otpStatoVerifica = "in_attesa";
+    // Genera un codice OTP casuale a 6 cifre
+    const otpGenerato = Math.floor(100000 + Math.random() * 900000).toString();
+    window.otpCorrenteValido = otpGenerato;
 
-    // Genera il testo pronto per essere mandato su WhatsApp
-    const messaggioWA = `Gentile cliente, per completare il ritiro del suo pacco presso Centro Post@ Anaclerio, il suo codice di verifica univoco è: *${otpGenerato}*.\n\nComunichi questo codice all'operatore al momento del ritiro. Grazie!`;
-    
-    document.getElementById('testoWhatsapp').value = messaggioWA;
+    // Testo del messaggio WhatsApp formattato ed elegante
+    const messaggio = `📦 *CENTRO POST@ ANACLERIO*\n\n` +
+                      `Gentile Cliente,\n` +
+                      `Il tuo codice di sicurezza per autorizzare il ritiro del pacco è:\n\n` +
+                      `🔑 *${otpGenerato}*\n\n` +
+                      `Comunicaci questo codice allo sportello per completare la consegna. Grazie!`;
+
+    document.getElementById('testoWhatsapp').value = messaggio;
     document.getElementById('boxMessaggioWhatsapp').style.display = 'block';
-    
-    // Mostra il campo di inserimento a 6 caselle per la verifica
     document.getElementById('boxInputOtp').style.display = 'block';
-    resetCampiInputOtp();
-    
-    document.getElementById('otpFeedback').innerText = "Codice generato! Copia il messaggio ed invialo su WhatsApp al cliente.";
-    document.getElementById('otpFeedback').style.color = "var(--primary)";
+
+    // Apri automaticamente WhatsApp Web / App se il numero è inserito
+    const urlWa = `https://wa.me/${telInput.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(messaggio)}`;
+    window.open(urlWa, '_blank');
 }
 
 function copiaTestoWhatsapp() {
