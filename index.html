@@ -1110,50 +1110,6 @@
             <option value="scaduto">Pacco Scaduto (Reso)</option>
         </select>
 
-        <!-- ACCORDION VERIFICA FACOLTATIVA -->
-        <div style="margin-bottom: 15px; border: 1px solid #ccc; border-radius: 8px; overflow: hidden;">
-            <button type="button" onclick="toggleVerificaAccordion()" style="width: 100%; background: #f8f9fa; border: none; padding: 10px 15px; text-align: left; font-weight: bold; color: var(--primary); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                <span>🔐 Verifica Identità (Facoltativa)</span>
-                <span id="frecciaAccordion">►</span>
-            </button>
-            
-            <div id="corpoVerificaAccordion" style="display: none; padding: 12px; background: #fff; border-top: 1px solid #ccc;">
-                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                    <button type="button" onclick="selezionaModalitaVerifica('doc')" class="modal-btn" style="background: var(--primary); color: white; padding: 8px; font-size: 0.85rem;">Foto Documento</button>
-                    <button type="button" onclick="selezionaModalitaVerifica('otp')" class="modal-btn" style="background: var(--primary); color: white; padding: 8px; font-size: 0.85rem;">Codice OTP (WhatsApp)</button>
-                </div>
-
-                <!-- OPT 1: SCATTO / UPLOAD FOTO DOCUMENTO -->
-                <div id="boxVerificaDoc" style="display: none; text-align: center; background: #f0f4f8; padding: 12px; border-radius: 8px; border: 1px dashed var(--primary);">
-                    <label style="font-size: 0.85rem; display: block; margin-bottom: 8px; font-weight: bold;">Acquisisci o carica foto del documento:</label>
-                    <input type="file" id="inputFotoDoc" accept="image/*" capture="environment" onchange="gestisciFotoCaricata(this)" style="display: none;">
-                    <button type="button" onclick="document.getElementById('inputFotoDoc').click()" class="modal-btn" style="background: var(--primary); color: white; padding: 8px 15px; font-size: 0.85rem;">📸 Scatta o Scegli Foto</button>
-                    <div id="statoCaricamentoDoc" style="font-size: 0.85rem; color: var(--success); font-weight: bold; display: none; margin-top: 8px;">✓ Documento acquisito correttamente!</div>
-                </div>
-
-                <!-- OPT 2: OTP WHATSAPP -->
-                <div id="boxVerificaOTP" style="display: none; background: #f0f4f8; padding: 12px; border-radius: 8px; border: 1px dashed var(--primary);">
-                    <label style="font-size: 0.8rem; font-weight: bold;">Numero di Telefono Cliente:</label>
-                    <input type="text" id="otpTelefonoCliente" placeholder="Es. 3331234567" style="margin-top: 4px; margin-bottom: 8px; padding: 8px; width: 100%; box-sizing: border-box;">
-                    
-                    <button type="button" onclick="generaECopiaMessaggioOTP()" class="modal-btn" style="background: var(--accent); color: var(--primary); padding: 8px; font-size: 0.85rem; font-weight: bold; margin-bottom: 10px; width: 100%;">📋 Invia / Copia Messaggio WhatsApp</button>
-
-                    <div id="boxQuadratiOTP" style="display: none; margin-top: 10px;">
-                        <label style="font-size: 0.8rem; font-weight: bold; display: block; margin-bottom: 5px;">Inserisci le 6 cifre del codice OTP:</label>
-                        <div style="display: flex; gap: 5px; justify-content: center; margin-bottom: 10px;">
-                            <input type="text" maxlength="1" class="otp-digit" style="width: 38px; height: 42px; text-align: center; font-size: 1.2rem; font-weight: bold;" oninput="spostaFocusOTP(this, 0)">
-                            <input type="text" maxlength="1" class="otp-digit" style="width: 38px; height: 42px; text-align: center; font-size: 1.2rem; font-weight: bold;" oninput="spostaFocusOTP(this, 1)">
-                            <input type="text" maxlength="1" class="otp-digit" style="width: 38px; height: 42px; text-align: center; font-size: 1.2rem; font-weight: bold;" oninput="spostaFocusOTP(this, 2)">
-                            <input type="text" maxlength="1" class="otp-digit" style="width: 38px; height: 42px; text-align: center; font-size: 1.2rem; font-weight: bold;" oninput="spostaFocusOTP(this, 3)">
-                            <input type="text" maxlength="1" class="otp-digit" style="width: 38px; height: 42px; text-align: center; font-size: 1.2rem; font-weight: bold;" oninput="spostaFocusOTP(this, 4)">
-                            <input type="text" maxlength="1" class="otp-digit" style="width: 38px; height: 42px; text-align: center; font-size: 1.2rem; font-weight: bold;" oninput="spostaFocusOTP(this, 5)">
-                        </div>
-                        <button type="button" onclick="convalidaOTPManuale()" class="modal-btn" style="background: var(--success, #28a745); color: white; padding: 8px; font-size: 0.85rem; font-weight: bold; width: 100%;">✓ Verifica Codice OTP</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="modal-body-flex">
             <div class="modal-left">
                 <div id="modalText" style="margin-bottom: 15px; font-size: 1rem; background: #f0f4f8; padding: 10px; border-radius: 10px; max-height: 250px; overflow-y: auto; text-align: left;"></div>
@@ -1184,6 +1140,7 @@
         </div>
     </div>
 </div>
+
 <div id="loginPage">
     <div class="login-box">
         <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp" width="120">
@@ -2713,8 +2670,7 @@ function toggleCampiUscita() {
 
 function closeModal() {
     document.getElementById('customModal').style.display = 'none';
-    document.getElementById('cartBadgeBtn').setAttribute('data-aperto', 'false');
-    resetSezioneVerifica();
+    document.getElementById('cartBadgeBtn').setAttribute('data-aperto', 'false'); // <-- Aggiungi questa riga
 }
 function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 function toggleSezioneRitirati() { const s = document.getElementById('sezioneRitirati'); s.style.display = s.style.display === 'none' ? 'block' : 'none'; }
@@ -4160,128 +4116,7 @@ function generaPdfListaPacchi() {
     }
 }
 
-et codiceOTPGenerato = "";
-let modalitaVerificaAttiva = null;
-let otpVerificatoConSuccesso = false;
 
-function toggleVerificaAccordion() {
-    const corpo = document.getElementById('corpoVerificaAccordion');
-    const freccia = document.getElementById('frecciaAccordion');
-    if (corpo.style.display === 'none') {
-        corpo.style.display = 'block';
-        freccia.innerHTML = '▼';
-    } else {
-        corpo.style.display = 'none';
-        freccia.innerHTML = '►';
-    }
-}
-
-function selezionaModalitaVerifica(tipo) {
-    modalitaVerificaAttiva = tipo;
-    const boxDoc = document.getElementById('boxVerificaDoc');
-    const boxOTP = document.getElementById('boxVerificaOTP');
-
-    if (tipo === 'doc') {
-        boxDoc.style.display = 'block';
-        boxOTP.style.display = 'none';
-    } else if (tipo === 'otp') {
-        boxDoc.style.display = 'none';
-        boxOTP.style.display = 'block';
-
-        const primoChkp = document.querySelector('.chk-multi-ritiro:checked');
-        if (primoChkp) {
-            const pId = parseInt(primoChkp.dataset.id);
-            const pObj = pacchi.find(x => x.id === pId);
-            if (pObj) {
-                const keyAnag = `${pObj.cognome.toUpperCase()}_${pObj.nome.toUpperCase()}`;
-                if (anagraficaClienti[keyAnag] && anagraficaClienti[keyAnag].telefono && anagraficaClienti[keyAnag].telefono !== '-') {
-                    document.getElementById('otpTelefonoCliente').value = anagraficaClienti[keyAnag].telefono;
-                }
-            }
-        }
-    }
-}
-
-function gestisciFotoCaricata(input) {
-    if (input.files && input.files[0]) {
-        document.getElementById('statoCaricamentoDoc').style.display = 'block';
-    }
-}
-
-function generaECopiaMessaggioOTP() {
-    let tel = document.getElementById('otpTelefonoCliente').value.trim();
-    if (!tel) {
-        return showAlert("Inserisci prima il numero di telefono del cliente!");
-    }
-
-    codiceOTPGenerato = Math.floor(100000 + Math.random() * 900000).toString();
-    otpVerificatoConSuccesso = false;
-
-    // Testo Formattato e Professionale
-    const testoMessaggio = `📍 *Centro Post@ Anaclerio*\n\nGentile cliente, il codice di sicurezza univoco per autorizzare il ritiro del suo pacco è:\n\n🔑 *${codiceOTPGenerato}*\n\nSi prega di comunicare questo codice all'operatore di cassa.`;
-
-    // Pulizia numero per link WhatsApp
-    let cleanTel = tel.replace(/\D/g, '');
-    if (!cleanTel.startsWith('39') && cleanTel.length === 10) {
-        cleanTel = '39' + cleanTel;
-    }
-
-    const waUrl = `https://wa.me/${cleanTel}?text=${encodeURIComponent(testoMessaggio)}`;
-    window.open(waUrl, '_blank');
-
-    document.getElementById('boxQuadratiOTP').style.display = 'block';
-    const inputs = document.querySelectorAll('.otp-digit');
-    inputs.forEach(i => i.value = '');
-    inputs[0].focus();
-}
-
-function spostaFocusOTP(elemento, indice) {
-    elemento.value = elemento.value.replace(/[^0-9]/g, '');
-    const inputs = document.querySelectorAll('.otp-digit');
-    if (elemento.value.length === 1 && indice < 5) {
-        inputs[indice + 1].focus();
-    }
-}
-
-function convalidaOTPManuale() {
-    const inputs = document.querySelectorAll('.otp-digit');
-    let codiceInserito = "";
-    inputs.forEach(i => codiceInserito += i.value);
-
-    if (codiceInserito.length < 6) {
-        showAlert("Inserisci tutte le 6 cifre del codice OTP!");
-        return false;
-    }
-
-    if (codiceInserito !== codiceOTPGenerato) {
-        otpVerificatoConSuccesso = false;
-        showAlert("Codice OTP errato!", "Errore");
-        return false;
-    }
-
-    otpVerificatoConSuccesso = true;
-    showAlert("Codice OTP Corretto! Ritiro Autorizzato.", "Verificato");
-    return true;
-}
-
-// RESET COMPLETO DEI CAMPI ALLA CHIUSURA DEL MODAL
-function resetSezioneVerifica() {
-    codiceOTPGenerato = "";
-    modalitaVerificaAttiva = null;
-    otpVerificatoConSuccesso = false;
-
-    document.getElementById('otpTelefonoCliente').value = "";
-    document.getElementById('corpoVerificaAccordion').style.display = 'none';
-    document.getElementById('frecciaAccordion').innerHTML = '►';
-    document.getElementById('boxVerificaDoc').style.display = 'none';
-    document.getElementById('boxVerificaOTP').style.display = 'none';
-    document.getElementById('boxQuadratiOTP').style.display = 'none';
-    document.getElementById('statoCaricamentoDoc').style.display = 'none';
-    document.getElementById('inputFotoDoc').value = "";
-
-    const inputs = document.querySelectorAll('.otp-digit');
-    inputs.forEach(i => i.value = '');
-}
     
 </script>
     <button id="bellBtn" class="alert-bell-btn" onclick="apriStoricoAlert()" title="Storico Avvisi" style="display: none;">
