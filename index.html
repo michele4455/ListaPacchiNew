@@ -4203,31 +4203,47 @@ function toggleSezioneOtp() {
 
 function generaEInviaOTP() {
     const telInput = document.getElementById('otpTelefono').value.trim();
-    if (!telInput) {
-        showAlert("Inserisci il numero di telefono del cliente!");
-        return;
-    }
-
-    // Genera un codice OTP casuale a 6 cifre
-    const otpGenerato = Math.floor(100000 + Math.random() * 900000).toString();
-    window.otpCorrenteValido = otpGenerato;
-
-    // Testo del messaggio WhatsApp formattato ed elegante
+    
+    // Genera OTP e popola la tua variabile globale
+    otpGenerato = Math.floor(100000 + Math.random() * 900000).toString();
+    
     const messaggio = `📦 *CENTRO POST@ ANACLERIO*\n\n` +
                       `Gentile Cliente,\n` +
                       `Il tuo codice di sicurezza per autorizzare il ritiro del pacco è:\n\n` +
                       `🔑 *${otpGenerato}*\n\n` +
                       `Comunicaci questo codice allo sportello per completare la consegna. Grazie!`;
 
-    document.getElementById('testoWhatsapp').value = messaggio;
-    document.getElementById('boxMessaggioWhatsapp').style.display = 'block';
-    document.getElementById('boxInputOtp').style.display = 'block';
+    // Copia direttamente negli appunti
+    navigator.clipboard.writeText(messaggio).then(() => {
+        showAlert("Messaggio copiato negli appunti! Incollalo su WhatsApp.");
+    }).catch(() => {
+        const temp = document.createElement("textarea");
+        temp.value = messaggio;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        document.body.removeChild(temp);
+        showAlert("Messaggio copiato negli appunti!");
+    });
 
-    // Apri automaticamente WhatsApp Web / App se il numero è inserito
-    const urlWa = `https://wa.me/${telInput.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(messaggio)}`;
-    window.open(urlWa, '_blank');
+    // Reset dello stato e sblocco caselle
+    otpStatoVerifica = "in_attesa";
+    const boxInput = document.getElementById('boxInputOtp');
+    if (boxInput) boxInput.style.display = 'block';
+    
+    // Pulisce eventuali cifre vecchie inserite
+    document.querySelectorAll('.otp-digit').forEach(i => {
+        i.value = '';
+        i.style.borderColor = "var(--primary)";
+    });
+    
+    const feedback = document.getElementById('otpFeedback');
+    if (feedback) {
+        feedback.innerText = "In attesa dell'inserimento delle 6 cifre...";
+        feedback.style.color = "var(--primary)";
+    }
 }
-
+    
 function copiaTestoWhatsapp() {
     const testoWA = document.getElementById('testoWhatsapp').value;
     if (!testoWA) return;
@@ -4267,25 +4283,32 @@ function gestisciBackspaceOtp(event, index) {
 function verificaOTPAutomatico() {
     const inputs = document.querySelectorAll('.otp-digit');
     let inserito = "";
-    inputs.forEach(i => inserito += i.value);
+    inputs.forEach(i => inserito += i.value.trim());
+
+    const feedback = document.getElementById('otpFeedback');
 
     if (inserito.length === 6) {
-        const feedback = document.getElementById('otpFeedback');
-        if (inserito === otpGenerato) {
+        if (typeof otpGenerato !== 'undefined' && otpGenerato && inserito === otpGenerato) {
             otpStatoVerifica = "corretto";
-            feedback.innerText = "✅ Codice OTP Corretto!";
-            feedback.style.color = "var(--success)";
+            if (feedback) {
+                feedback.innerText = "✅ Codice OTP Corretto!";
+                feedback.style.color = "var(--success)";
+            }
             inputs.forEach(i => i.style.borderColor = "var(--success)");
         } else {
             otpStatoVerifica = "errato";
-            feedback.innerText = "❌ Codice OTP Errato! Riprova.";
-            feedback.style.color = "var(--warning)";
+            if (feedback) {
+                feedback.innerText = "❌ Codice OTP Errato! Riprova.";
+                feedback.style.color = "var(--warning)";
+            }
             inputs.forEach(i => i.style.borderColor = "var(--warning)");
         }
     } else {
         otpStatoVerifica = "in_attesa";
-        document.getElementById('otpFeedback').innerText = "In attesa dell'inserimento delle 6 cifre...";
-        document.getElementById('otpFeedback').style.color = "var(--primary)";
+        if (feedback) {
+            feedback.innerText = "In attesa dell'inserimento delle 6 cifre...";
+            feedback.style.color = "var(--primary)";
+        }
         inputs.forEach(i => i.style.borderColor = "var(--primary)");
     }
 }
