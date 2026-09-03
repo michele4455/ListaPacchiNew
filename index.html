@@ -1110,6 +1110,43 @@
             <option value="scaduto">Pacco Scaduto (Reso)</option>
         </select>
 
+        <!-- SEZIONE VERIFICA FACOLTATIVA (DOCUMENTO O OTP) -->
+        <div id="sezioneVerificaFacoltativa" style="margin-bottom: 15px; padding: 12px; background: #eef2f5; border-radius: 10px; border: 1px solid var(--primary); text-align: left;">
+            <label style="font-weight: bold; color: var(--primary); display: block; margin-bottom: 8px;">🔐 Verifica Identità (Facoltativa)</label>
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <button type="button" onclick="selezionaModalitaVerifica('doc')" class="modal-btn" style="background: var(--primary); color: white; padding: 8px; font-size: 0.85rem;">Foto Documento (QR)</button>
+                <button type="button" onclick="selezionaModalitaVerifica('otp')" class="modal-btn" style="background: var(--primary); color: white; padding: 8px; font-size: 0.85rem;">Codice OTP (WhatsApp)</button>
+            </div>
+
+            <!-- OPZIONE 1: FOTO DOCUMENTO CON QR CODE -->
+            <div id="boxVerificaDoc" style="display: none; text-align: center; background: white; padding: 10px; border-radius: 8px; border: 1px dashed var(--primary);">
+                <p style="font-size: 0.85rem; margin: 0 0 5px 0;">Inquadra il QR Code con il telefono per scattare e inviare la foto:</p>
+                <img id="qrCodeDoc" src="" alt="QR Code Documento" style="max-width: 150px; height: auto; display: block; margin: 0 auto;">
+                <span id="statoCaricamentoDoc" style="font-size: 0.8rem; color: var(--success); font-weight: bold; display: none; margin-top: 5px;">✓ Foto Documento Ricevuta!</span>
+            </div>
+
+            <!-- OPZIONE 2: OTP WHATSAPP -->
+            <div id="boxVerificaOTP" style="display: none; background: white; padding: 10px; border-radius: 8px; border: 1px dashed var(--primary);">
+                <label style="font-size: 0.8rem; font-weight: bold;">Numero di Telefono Cliente:</label>
+                <input type="text" id="otpTelefonoCliente" placeholder="Es. 3331234567" style="margin-top: 4px; margin-bottom: 8px; padding: 8px;">
+                
+                <button type="button" onclick="generaECopiaMessaggioOTP()" class="modal-btn" style="background: var(--accent); color: var(--primary); padding: 8px; font-size: 0.85rem; font-weight: bold; margin-bottom: 10px;">📋 Copia messaggio WhatsApp</button>
+
+                <!-- INPUT 6 CIFRE OTP -->
+                <div id="boxQuadratiOTP" style="display: none;">
+                    <label style="font-size: 0.8rem; font-weight: bold; display: block; margin-bottom: 5px;">Inserisci le 6 cifre del codice OTP:</label>
+                    <div style="display: flex; gap: 5px; justify-content: center;" id="otpInputsContainer">
+                        <input type="text" maxlength="1" class="otp-digit" style="width: 40px; height: 45px; text-align: center; font-size: 1.2rem; font-weight: bold;" oninput="spostaFocusOTP(this, 0)">
+                        <input type="text" maxlength="1" class="otp-digit" style="width: 40px; height: 45px; text-align: center; font-size: 1.2rem; font-weight: bold;" oninput="spostaFocusOTP(this, 1)">
+                        <input type="text" maxlength="1" class="otp-digit" style="width: 40px; height: 45px; text-align: center; font-size: 1.2rem; font-weight: bold;" oninput="spostaFocusOTP(this, 2)">
+                        <input type="text" maxlength="1" class="otp-digit" style="width: 40px; height: 45px; text-align: center; font-size: 1.2rem; font-weight: bold;" oninput="spostaFocusOTP(this, 3)">
+                        <input type="text" maxlength="1" class="otp-digit" style="width: 40px; height: 45px; text-align: center; font-size: 1.2rem; font-weight: bold;" oninput="spostaFocusOTP(this, 4)">
+                        <input type="text" maxlength="1" class="otp-digit" style="width: 40px; height: 45px; text-align: center; font-size: 1.2rem; font-weight: bold;" oninput="spostaFocusOTP(this, 5)">
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="modal-body-flex">
             <div class="modal-left">
                 <div id="modalText" style="margin-bottom: 15px; font-size: 1rem; background: #f0f4f8; padding: 10px; border-radius: 10px; max-height: 250px; overflow-y: auto; text-align: left;"></div>
@@ -4116,6 +4153,94 @@ function generaPdfListaPacchi() {
     }
 }
 
+    // VARIABILI GLOBALI DEDICATE ALLA VERIFICA
+let codiceOTPGenerato = "";
+let modalitaVerificaAttiva = null; // 'doc' oppure 'otp'
+
+function selezionaModalitaVerifica(tipo) {
+    modalitaVerificaAttiva = tipo;
+    const boxDoc = document.getElementById('boxVerificaDoc');
+    const boxOTP = document.getElementById('boxVerificaOTP');
+
+    if (tipo === 'doc') {
+        boxDoc.style.display = 'block';
+        boxOTP.style.display = 'none';
+        
+        // Genera QR Code dinamico tramite API con URL di upload (modificabile se hai un'app/pagina dedicata)
+        const urlUpload = encodeURIComponent(`https://gestionale-anaclerio.web.app/upload.html?session=${Date.now()}`);
+        document.getElementById('qrCodeDoc').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${urlUpload}`;
+    } else if (tipo === 'otp') {
+        boxDoc.style.display = 'none';
+        boxOTP.style.display = 'block';
+
+        // Tenta l'autocompilazione del telefono dal primo pacco selezionato
+        const primoChkp = document.querySelector('.chk-multi-ritiro:checked');
+        if (primoChkp) {
+            const pId = parseInt(primoChkp.dataset.id);
+            const pObj = pacchi.find(x => x.id === pId);
+            if (pObj) {
+                const keyAnag = `${pObj.cognome.toUpperCase()}_${pObj.nome.toUpperCase()}`;
+                if (anagraficaClienti[keyAnag] && anagraficaClienti[keyAnag].telefono && anagraficaClienti[keyAnag].telefono !== '-') {
+                    document.getElementById('otpTelefonoCliente').value = anagraficaClienti[keyAnag].telefono;
+                }
+            }
+        }
+    }
+}
+
+function generaECopiaMessaggioOTP() {
+    const tel = document.getElementById('otpTelefonoCliente').value.trim();
+    if (!tel) {
+        return showAlert("Inserisci prima il numero di telefono del cliente!");
+    }
+
+    // Genera un codice casuale di 6 cifre
+    codiceOTPGenerato = Math.floor(100000 + Math.random() * 900000).toString();
+
+    const testoMessaggio = `Gentile cliente, il suo codice di verifica per il ritiro del pacco presso Centro Post@ Anaclerio è: ${codiceOTPGenerato}`;
+
+    navigator.clipboard.writeText(testoMessaggio).then(() => {
+        showAlert(`Messaggio copiato negli appunti!\nCodice generato: ${codiceOTPGenerato}`, "Copiato");
+        document.getElementById('boxQuadratiOTP').style.display = 'block';
+        
+        // Reset dei campi di testo delle 6 cifre
+        const inputs = document.querySelectorAll('.otp-digit');
+        inputs.forEach(i => i.value = '');
+        inputs[0].focus();
+    });
+}
+
+function spostaFocusOTP(elemento, indice) {
+    // Pulisce e accetta solo numeri
+    elemento.value = elemento.value.replace(/[^0-9]/g, '');
+    const inputs = document.querySelectorAll('.otp-digit');
+    if (elemento.value.length === 1 && indice < 5) {
+        inputs[indice + 1].focus();
+    }
+}
+
+function verificaCodiceOTPInserito() {
+    if (!modalitaVerificaAttiva || modalitaVerificaAttiva !== 'otp') return true;
+    
+    // Se la sezione OTP non è stata aperta, la verifica non è obbligatoria
+    if (document.getElementById('boxVerificaOTP').style.display === 'none') return true;
+
+    const inputs = document.querySelectorAll('.otp-digit');
+    let codiceInserito = "";
+    inputs.forEach(i => codiceInserito += i.value);
+
+    if (codiceInserito.length < 6) {
+        showAlert("Inserisci tutte le 6 cifre del codice OTP!");
+        return false;
+    }
+
+    if (codiceInserito !== codiceOTPGenerato) {
+        showAlert("Codice OTP errato! Il ritiro non è consentito.", "Errore Verifica");
+        return false;
+    }
+
+    return true;
+}
 
     
 </script>
