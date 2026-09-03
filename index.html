@@ -2608,16 +2608,6 @@ function mostraFirma(id) {
     const p = pacchi.find(x => x.id == id);
     const pacchiSessione = p.sessioneRitiro ? pacchi.filter(px => px.sessioneRitiro === p.sessioneRitiro) : [p];
     const win = window.open("", "Firma", "width=700,height=900");
-    
-    // Controllo se l'OTP è stato verificato per questo pacco
-    const otpBadgeHTML = p.otpVerificato 
-        ? `<div style="background:#d4edda; color:#155724; border:1px solid #c3e6cb; padding:10px; border-radius:8px; font-weight:bold; font-size:0.9rem; text-align:center; margin-bottom:20px;">
-             ✔ RITIRO AUTORIZZATO CON VERIFICA OTP
-           </div>`
-        : `<div style="background:#f8f9fa; color:#6c757d; border:1px solid #e2e8f0; padding:8px; border-radius:8px; font-size:0.85rem; text-align:center; margin-bottom:20px;">
-             Modalità autorizzazione: Firma Standard
-           </div>`;
-
     let righeTabella = pacchiSessione.map(px => {
         let detContr = (px.isContrassegno && px.importoContrassegno) ? `<span style="background:#ffe3e3; color:#c92a2a; padding:4px 8px; border-radius:5px; font-weight:bold; font-size:0.7rem; margin-left:5px;">CONTR. € ${px.importoContrassegno}</span>` : '';
         return `
@@ -2631,7 +2621,6 @@ function mostraFirma(id) {
             </tr>
         `;
     }).join('');
-
     win.document.write(`
         <!DOCTYPE html>
         <html>
@@ -2643,7 +2632,7 @@ function mostraFirma(id) {
                 .header { text-align: center; border-bottom: 2px solid #eee; padding-bottom: 25px; margin-bottom: 25px; }
                 .header img { max-width: 100px; margin-bottom: 10px; }
                 .header h1 { color: #003399; margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: 1px; }
-                .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; background: #f8fafc; padding: 20px; border-radius: 10px; }
+                .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; background: #f8fafc; padding: 20px; border-radius: 10px; }
                 .info-item label { display: block; font-size: 11px; color: #666; text-transform: uppercase; font-weight: bold; }
                 .info-item span { font-size: 16px; font-weight: 600; color: #003399; }
                 table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
@@ -2667,9 +2656,6 @@ function mostraFirma(id) {
                     <div class="info-item"><label>Ritirato da</label><span>${p.ritiratoDa.toUpperCase()}</span></div>
                     <div class="info-item"><label>Totale Pacchi</label><span>${pacchiSessione.length}</span></div>
                 </div>
-
-                ${otpBadgeHTML}
-
                 <table>
                     <thead><tr><th>ID</th><th>Corriere</th><th>Tracking Number</th><th>Servizi</th></tr></thead>
                     <tbody>${righeTabella}</tbody>
@@ -2678,7 +2664,7 @@ function mostraFirma(id) {
                     <p style="margin:0; font-weight:bold; color:#666;">Firma per Ricevuta</p>
                     <div class="signature-box"><img src="${p.firma}" style="width:100%; height:auto; display:block;"></div>
                 </div>
-                <div class="footer">Centro Post@ Anaclerio - Grazie per averci scelto!</div>
+                <div class="footer">Centro Post@ Anaclerio - Grazie per haverci scelto!</div>
                 <button onclick="window.print()" class="btn-print">🖨️ STAMPA RICEVUTA</button>
             </div>
         </body>
@@ -4203,47 +4189,29 @@ function toggleSezioneOtp() {
 
 function generaEInviaOTP() {
     const telInput = document.getElementById('otpTelefono').value.trim();
-    
-    // Genera OTP e popola la tua variabile globale
-    otpGenerato = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    const messaggio = `📦 *CENTRO POST@ ANACLERIO*\n\n` +
-                      `Gentile Cliente,\n` +
-                      `Il tuo codice di sicurezza per autorizzare il ritiro del pacco è:\n\n` +
-                      `🔑 *${otpGenerato}*\n\n` +
-                      `Comunicaci questo codice allo sportello per completare la consegna. Grazie!`;
-
-    // Copia direttamente negli appunti
-    navigator.clipboard.writeText(messaggio).then(() => {
-        showAlert("Messaggio copiato negli appunti! Incollalo su WhatsApp.");
-    }).catch(() => {
-        const temp = document.createElement("textarea");
-        temp.value = messaggio;
-        document.body.appendChild(temp);
-        temp.select();
-        document.execCommand("copy");
-        document.body.removeChild(temp);
-        showAlert("Messaggio copiato negli appunti!");
-    });
-
-    // Reset dello stato e sblocco caselle
-    otpStatoVerifica = "in_attesa";
-    const boxInput = document.getElementById('boxInputOtp');
-    if (boxInput) boxInput.style.display = 'block';
-    
-    // Pulisce eventuali cifre vecchie inserite
-    document.querySelectorAll('.otp-digit').forEach(i => {
-        i.value = '';
-        i.style.borderColor = "var(--primary)";
-    });
-    
-    const feedback = document.getElementById('otpFeedback');
-    if (feedback) {
-        feedback.innerText = "In attesa dell'inserimento delle 6 cifre...";
-        feedback.style.color = "var(--primary)";
+    if (!telInput) {
+        showAlert("Inserisci manualmente il numero di telefono del cliente.");
+        return;
     }
-}
+
+    // Genera un codice casuale di 6 cifre
+    otpGenerato = Math.floor(100000 + Math.random() * 900000).toString();
+    otpStatoVerifica = "in_attesa";
+
+    // Genera il testo pronto per essere mandato su WhatsApp
+    const messaggioWA = `Gentile cliente, per completare il ritiro del suo pacco presso Centro Post@ Anaclerio, il suo codice di verifica univoco è: *${otpGenerato}*.\n\nComunichi questo codice all'operatore al momento del ritiro. Grazie!`;
     
+    document.getElementById('testoWhatsapp').value = messaggioWA;
+    document.getElementById('boxMessaggioWhatsapp').style.display = 'block';
+    
+    // Mostra il campo di inserimento a 6 caselle per la verifica
+    document.getElementById('boxInputOtp').style.display = 'block';
+    resetCampiInputOtp();
+    
+    document.getElementById('otpFeedback').innerText = "Codice generato! Copia il messaggio ed invialo su WhatsApp al cliente.";
+    document.getElementById('otpFeedback').style.color = "var(--primary)";
+}
+
 function copiaTestoWhatsapp() {
     const testoWA = document.getElementById('testoWhatsapp').value;
     if (!testoWA) return;
@@ -4283,32 +4251,25 @@ function gestisciBackspaceOtp(event, index) {
 function verificaOTPAutomatico() {
     const inputs = document.querySelectorAll('.otp-digit');
     let inserito = "";
-    inputs.forEach(i => inserito += i.value.trim());
-
-    const feedback = document.getElementById('otpFeedback');
+    inputs.forEach(i => inserito += i.value);
 
     if (inserito.length === 6) {
-        if (typeof otpGenerato !== 'undefined' && otpGenerato && inserito === otpGenerato) {
+        const feedback = document.getElementById('otpFeedback');
+        if (inserito === otpGenerato) {
             otpStatoVerifica = "corretto";
-            if (feedback) {
-                feedback.innerText = "✅ Codice OTP Corretto!";
-                feedback.style.color = "var(--success)";
-            }
+            feedback.innerText = "✅ Codice OTP Corretto!";
+            feedback.style.color = "var(--success)";
             inputs.forEach(i => i.style.borderColor = "var(--success)");
         } else {
             otpStatoVerifica = "errato";
-            if (feedback) {
-                feedback.innerText = "❌ Codice OTP Errato! Riprova.";
-                feedback.style.color = "var(--warning)";
-            }
+            feedback.innerText = "❌ Codice OTP Errato! Riprova.";
+            feedback.style.color = "var(--warning)";
             inputs.forEach(i => i.style.borderColor = "var(--warning)");
         }
     } else {
         otpStatoVerifica = "in_attesa";
-        if (feedback) {
-            feedback.innerText = "In attesa dell'inserimento delle 6 cifre...";
-            feedback.style.color = "var(--primary)";
-        }
+        document.getElementById('otpFeedback').innerText = "In attesa dell'inserimento delle 6 cifre...";
+        document.getElementById('otpFeedback').style.color = "var(--primary)";
         inputs.forEach(i => i.style.borderColor = "var(--primary)");
     }
 }
