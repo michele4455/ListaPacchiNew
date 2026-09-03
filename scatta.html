@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acquisizione Documento</title>
+    <!-- Librerie Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f6f8; margin: 0; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto; }
+        input[type="file"] { display: none; }
+        .btn-scatta { background: #003399; color: white; padding: 15px 20px; border-radius: 8px; font-weight: bold; font-size: 1rem; width: 100%; cursor: pointer; display: block; box-sizing: border-box; }
+        #statoInvio { margin-top: 15px; font-weight: bold; color: #003399; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>📷 Foto Documento</h2>
+        <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">Scatta la foto al documento del cliente per inviarla direttamente al gestionale sul PC.</p>
+        
+        <label for="inputFotocamera" class="btn-scatta">📸 APRI FOTOCAMERA</label>
+        <input type="file" id="inputFotocamera" accept="image/*" capture="environment" onchange="inviaFoto(this)">
+        
+        <div id="statoInvio"></div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyA9hwljJQARUJTCbGRSGt77AsOLKEeFZGY",
+            authDomain: "gestionale-anaclerio.firebaseapp.com",
+            databaseURL: "https://gestionale-anaclerio-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "gestionale-anaclerio",
+            storageBucket: "gestionale-anaclerio.firebasestorage.app",
+            messagingSenderId: "437363404417",
+            appId: "1:437363404417:web:67f2a8d4d12c6fca1fa780"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // Recupera l'ID sessione dall'URL generato dal PC
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session');
+
+        function inviaFoto(input) {
+            if (input.files && input.files[0]) {
+                document.getElementById('statoInvio').innerText = "⏳ Invio della foto in corso...";
+                const reader = new FileReader();
+                
+                reader.onload = function (e) {
+                    const imgBase64 = e.target.result;
+                    
+                    // Invia la foto al Database Firebase
+                    db.ref(`sessioniFoto/${sessionId}`).set({
+                        foto: imgBase64,
+                        timestamp: Date.now()
+                    }).then(() => {
+                        document.getElementById('statoInvio').innerText = "✅ Foto inviata con successo sul PC! Puoi chiudere questa pagina.";
+                    }).catch(err => {
+                        document.getElementById('statoInvio').innerText = "❌ Errore durante l'invio. Riprova.";
+                    });
+                };
+                
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
+</body>
+</html>
