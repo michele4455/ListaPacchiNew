@@ -1113,52 +1113,9 @@
         <div class="modal-body-flex">
             <div class="modal-left">
                 <div id="modalText" style="margin-bottom: 15px; font-size: 1rem; background: #f0f4f8; padding: 10px; border-radius: 10px; max-height: 250px; overflow-y: auto; text-align: left;"></div>
-                
                 <div id="boxRitiroDettagli">
                     <label><b>Chi ritira?</b></label>
                     <input type="text" id="modalInput" style="margin-top:5px; margin-bottom:15px; width:100%" placeholder="Nome di chi ritira">
-                    
-                    <!-- PRIMO METODO: SCANSIONE DA SMARTPHONE PER DOCUMENTO -->
-                    <div style="background:#e8f4fd; border:1px solid #003399; padding:12px; border-radius:10px; margin-bottom:15px; text-align:left;">
-                        <label style="font-weight:bold; color:var(--primary); display:block; margin-bottom:5px;">📸 Metodo 1: Acquisizione Documento tramite Fotocamera</label>
-                        <p style="font-size:0.8rem; margin:0 0 10px 0; color:#555;">Scansiona il QR Code con il telefono per aprire direttamente la fotocamera del dispositivo e scattare la foto al documento.</p>
-                        
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <input type="file" id="cameraInputDoc" accept="image/*" capture="environment" style="display:none;" onchange="gestisciFotoDocumentoInviata(event)">
-                            <button onclick="document.getElementById('cameraInputDoc').click()" style="background:var(--primary); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%;">📷 SCATTA E INVIA DOCUMENTO</button>
-                        </div>
-                        <div id="statoInvioDoc" style="font-size:0.85rem; font-weight:bold; color:var(--success); margin-top:8px; display:none;">
-                            ✓ Foto del documento acquisita e inviata correttamente!
-                        </div>
-                    </div>
-
-                    <!-- SECONDO METODO: VERIFICA OTP A SCOMPARSA CON FRECCETTA -->
-                    <div style="border:1px solid #ccc; border-radius:10px; overflow:hidden; margin-bottom:15px;">
-                        <div onclick="toggleSezioneOTP()" style="background:#f0f2f5; padding:12px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; font-weight:bold; color:var(--primary);">
-                            <span>📱 Metodo 2: Verifica tramite Codice OTP (Opzionale)</span>
-                            <span id="frecciaOTP">▼</span>
-                        </div>
-                        
-                        <div id="sezioneAccordionOTP" style="display:none; padding:15px; background:white; text-align:left;">
-                            <label style="font-size:0.85rem; font-weight:bold;">Numero di Telefono Cliente:</label>
-                            <div style="display:flex; gap:8px; margin-top:5px; margin-bottom:10px;">
-                                <input type="tel" id="otpTelefono" placeholder="3331234567" style="flex:1;">
-                                <button onclick="generaEInviaOTP()" style="background:var(--success); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; white-space:nowrap;">✉️ INVIA CODICE</button>
-                            </div>
-
-                            <label style="font-size:0.85rem; font-weight:bold; display:block; margin-bottom:5px;">Inserisci Codice OTP Ricevuto (6 cifre):</label>
-                            <div style="display:flex; gap:5px; justify-content:center; margin-bottom:10px;" id="otpSquareContainer">
-                                <input type="text" maxlength="1" class="otp-square" oninput="spostaFocusOTP(this, 1)" style="width:40px; height:45px; text-align:center; font-size:1.2rem; font-weight:bold; border:2px solid var(--primary); border-radius:8px;">
-                                <input type="text" maxlength="1" class="otp-square" oninput="spostaFocusOTP(this, 2)" style="width:40px; height:45px; text-align:center; font-size:1.2rem; font-weight:bold; border:2px solid var(--primary); border-radius:8px;">
-                                <input type="text" maxlength="1" class="otp-square" oninput="spostaFocusOTP(this, 3)" style="width:40px; height:45px; text-align:center; font-size:1.2rem; font-weight:bold; border:2px solid var(--primary); border-radius:8px;">
-                                <input type="text" maxlength="1" class="otp-square" oninput="spostaFocusOTP(this, 4)" style="width:40px; height:45px; text-align:center; font-size:1.2rem; font-weight:bold; border:2px solid var(--primary); border-radius:8px;">
-                                <input type="text" maxlength="1" class="otp-square" oninput="spostaFocusOTP(this, 5)" style="width:40px; height:45px; text-align:center; font-size:1.2rem; font-weight:bold; border:2px solid var(--primary); border-radius:8px;">
-                                <input type="text" maxlength="1" class="otp-square" oninput="spostaFocusOTP(this, 6)" style="width:40px; height:45px; text-align:center; font-size:1.2rem; font-weight:bold; border:2px solid var(--primary); border-radius:8px;">
-                            </div>
-                            <div id="otpStatusMessage" style="font-size:0.8rem; font-weight:bold; text-align:center;"></div>
-                        </div>
-                    </div>
-
                     <div id="boxPagamentoNoPudo" class="paga-box" style="display:none;">
                         <input type="checkbox" id="checkPagamento" style="width: auto; transform: scale(1.5); margin: 0 10px;">
                         <span>PAGAMENTO € 0.50 RICEVUTO</span>
@@ -1183,6 +1140,7 @@
         </div>
     </div>
 </div>
+
 <div id="loginPage">
     <div class="login-box">
         <img src="https://i.postimg.cc/G3y2rJB3/279906960-144981891431476-7263855552537817887-n-high.webp" width="120">
@@ -2712,10 +2670,7 @@ function toggleCampiUscita() {
 
 function closeModal() {
     document.getElementById('customModal').style.display = 'none';
-    document.getElementById('cartBadgeBtn').setAttribute('data-aperto', 'false'); // Mantiene la tua modifica
-    
-    // Esegue il reset di OTP, telefono e foto scattata
-    resetDatiVerificaOTP();
+    document.getElementById('cartBadgeBtn').setAttribute('data-aperto', 'false'); // <-- Aggiungi questa riga
 }
 function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
 function toggleSezioneRitirati() { const s = document.getElementById('sezioneRitirati'); s.style.display = s.style.display === 'none' ? 'block' : 'none'; }
@@ -4159,94 +4114,6 @@ function generaPdfListaPacchi() {
         console.error("Errore Generazione PDF:", error);
         alert("Si è verificato un errore durante la generazione del PDF: " + error.message);
     }
-}
-
-    // VARIABILI GLOBALI DEDICATE ALL'OTP E AL RESET
-let codiceOTPGenerato = null;
-let fotoDocumentoInviata = null;
-
-// MOSTRA / NASCONDE LA SEZIONE ACCORDION DELL'OTP CON LA FRECCIETTA
-function toggleSezioneOTP() {
-    const acc = document.getElementById('sezioneAccordionOTP');
-    const freccia = document.getElementById('frecciaOTP');
-    if (acc.style.display === 'none' || acc.style.display === '') {
-        acc.style.display = 'block';
-        freccia.innerText = '▲';
-    } else {
-        acc.style.display = 'none';
-        freccia.innerText = '▼';
-    }
-}
-
-// SPOSTAMENTO AUTOMATICO DEL FOCUS NEI 6 QUADRATI OTP
-function spostaFocusOTP(elemento, indice) {
-    elemento.value = elemento.value.replace(/[^0-9]/g, '');
-    const quadrati = document.querySelectorAll('.otp-square');
-    if (elemento.value.length === 1 && indice < 6) {
-        quadrati[indice].focus();
-    }
-}
-
-// GENERAZIONE E INVIO DEL CODICE OTP CON MESSAGGIO PROFESSIONALE
-function generaEInviaOTP() {
-    const tel = document.getElementById('otpTelefono').value.trim();
-    if (!tel || tel.length < 8) {
-        return showAlert("Inserire un numero di telefono valido per l'invio dell'OTP.");
-    }
-
-    // Generazione codice casuale a 6 cifre
-    codiceOTPGenerato = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Testo del messaggio Formattato e Professionale
-    const testoMessaggioProfessionale = `Gentile Cliente, il suo codice di verifica monouso per il ritiro del pacco presso Centro Post@ Anaclerio è: ${codiceOTPGenerato}. Si prega di comunicarlo all'operatore.`;
-
-    // Apertura invio messaggio precompilato (WhatsApp / SMS)
-    const urlWhatsApp = `https://api.whatsapp.com/send?phone=${encodeURIComponent(tel)}&text=${encodeURIComponent(testoMessaggioProfessionale)}`;
-    window.open(urlWhatsApp, '_blank');
-
-    const statusEl = document.getElementById('otpStatusMessage');
-    statusEl.style.color = "var(--success)";
-    statusEl.innerText = `Codice OTP generato e inviato al numero ${tel}`;
-}
-
-// GESTIONE DELLA FOTO DEL DOCUMENTO
-function gestisciFotoDocumentoInviata(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            fotoDocumentoInviata = e.target.result;
-            document.getElementById('statoInvioDoc').style.display = 'block';
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-// RESET COMPLETO DEI DATI DI VERIFICA (OTP E FOTO DOCUMENTO)
-function resetDatiVerificaOTP() {
-    codiceOTPGenerato = null;
-    fotoDocumentoInviata = null;
-    
-    // Reset campo telefono
-    const telInput = document.getElementById('otpTelefono');
-    if (telInput) telInput.value = '';
-
-    // Reset quadrati OTP
-    const quadrati = document.querySelectorAll('.otp-square');
-    quadrati.forEach(q => q.value = '');
-
-    // Reset messaggi di stato
-    const statusMsg = document.getElementById('otpStatusMessage');
-    if (statusMsg) statusMsg.innerText = '';
-    
-    const statusDoc = document.getElementById('statoInvioDoc');
-    if (statusDoc) statusDoc.style.display = 'none';
-
-    // Richiudi la sezione accordion
-    const acc = document.getElementById('sezioneAccordionOTP');
-    const freccia = document.getElementById('frecciaOTP');
-    if (acc) acc.style.display = 'none';
-    if (freccia) freccia.innerText = '▼';
 }
 
 
