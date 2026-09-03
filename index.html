@@ -1130,10 +1130,10 @@
                                 <button type="button" onclick="generaEInviaOTP()" style="width: auto; background: var(--primary); color: var(--accent); padding: 8px 12px; font-size: 0.8rem; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">INVIA OTP</button>
                             </div>
 
-                            <div id="boxMessaggioWhatsapp" style="display: none; background: #e8f5e9; border: 1px solid #4caf50; border-radius: 8px; padding: 10px; margin-bottom: 12px; text-align: left;">
-                                <span style="font-size: 0.8rem; font-weight: bold; color: #2e7d32; display: block; margin-bottom: 4px;">💬 Messaggio da inviare su WhatsApp:</span>
-                                <textarea id="testoWhatsapp" readonly style="width: 100%; height: 75px; font-size: 0.8rem; padding: 5px; box-sizing: border-box; border: 1px solid #a5d6a7; border-radius: 4px; resize: none; background: #fff;"></textarea>
-                                <button type="button" onclick="copiaTestoWhatsapp()" style="margin-top: 5px; background: #25d366; color: white; border: none; padding: 6px 12px; border-radius: 5px; font-size: 0.75rem; font-weight: bold; cursor: pointer;">📋 Copia Messaggio WhatsApp</button>
+                            <!-- CAMPO NASCOSTO PER IL TESTO E PULSANTE COPIA VISIBILE -->
+                            <div id="boxMessaggioWhatsapp" style="display: none; background: #e8f5e9; border: 1px solid #4caf50; border-radius: 8px; padding: 10px; margin-bottom: 12px; text-align: center;">
+                                <input type="hidden" id="testoWhatsapp">
+                                <button type="button" onclick="copiaTestoWhatsapp()" style="background: #25d366; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; width: 100%;">📋 Copia Messaggio WhatsApp</button>
                             </div>
 
                             <div id="boxInputOtp" style="display: none; text-align: center;">
