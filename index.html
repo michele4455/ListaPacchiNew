@@ -1116,6 +1116,41 @@
                 <div id="boxRitiroDettagli">
                     <label><b>Chi ritira?</b></label>
                     <input type="text" id="modalInput" style="margin-top:5px; margin-bottom:15px; width:100%" placeholder="Nome di chi ritira">
+                    
+                    <!-- SEZIONE A SCOMPARSA: VERIFICA OTP FACOLTATIVA -->
+                    <div style="border: 2px dashed var(--primary); border-radius: 10px; padding: 10px; margin-bottom: 15px; background: #fdfdfd;">
+                        <div onclick="toggleSezioneOtp()" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: var(--primary);">
+                            <span>🔐 Verifica OTP del Cliente (Facoltativa)</span>
+                            <span id="frecciaOtp">▼</span>
+                        </div>
+                        <div id="sezioneOtp" style="display: none; margin-top: 12px;">
+                            <label style="font-size: 0.85rem; font-weight: bold; color: #333;">Inserisci Numero di Telefono Cliente:</label>
+                            <div style="display: flex; gap: 8px; margin-top: 5px; margin-bottom: 10px;">
+                                <input type="text" id="otpTelefono" placeholder="Es. 3331234567" style="flex: 1; padding: 8px;">
+                                <button type="button" onclick="generaEInviaOTP()" style="width: auto; background: var(--primary); color: var(--accent); padding: 8px 12px; font-size: 0.8rem; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">INVIA OTP</button>
+                            </div>
+
+                            <div id="boxMessaggioWhatsapp" style="display: none; background: #e8f5e9; border: 1px solid #4caf50; border-radius: 8px; padding: 10px; margin-bottom: 12px; text-align: left;">
+                                <span style="font-size: 0.8rem; font-weight: bold; color: #2e7d32; display: block; margin-bottom: 4px;">💬 Messaggio da inviare su WhatsApp:</span>
+                                <textarea id="testoWhatsapp" readonly style="width: 100%; height: 75px; font-size: 0.8rem; padding: 5px; box-sizing: border-box; border: 1px solid #a5d6a7; border-radius: 4px; resize: none; background: #fff;"></textarea>
+                                <button type="button" onclick="copiaTestoWhatsapp()" style="margin-top: 5px; background: #25d366; color: white; border: none; padding: 6px 12px; border-radius: 5px; font-size: 0.75rem; font-weight: bold; cursor: pointer;">📋 Copia Messaggio WhatsApp</button>
+                            </div>
+
+                            <div id="boxInputOtp" style="display: none; text-align: center;">
+                                <label style="font-size: 0.85rem; font-weight: bold; color: #333; display: block; margin-bottom: 8px;">Inserisci il codice a 6 cifre fornito dal cliente:</label>
+                                <div style="display: flex; gap: 6px; justify-content: center;" id="otpContainerInputs">
+                                    <input type="text" maxlength="1" class="otp-digit" inputmode="numeric" oninput="gestisciInputOtp(this, 0)" onkeydown="gestisciBackspaceOtp(event, 0)" style="width: 38px; height: 42px; text-align: center; font-size: 1.2rem; font-weight: bold; padding: 0; border: 2px solid var(--primary); border-radius: 6px;">
+                                    <input type="text" maxlength="1" class="otp-digit" inputmode="numeric" oninput="gestisciInputOtp(this, 1)" onkeydown="gestisciBackspaceOtp(event, 1)" style="width: 38px; height: 42px; text-align: center; font-size: 1.2rem; font-weight: bold; padding: 0; border: 2px solid var(--primary); border-radius: 6px;">
+                                    <input type="text" maxlength="1" class="otp-digit" inputmode="numeric" oninput="gestisciInputOtp(this, 2)" onkeydown="gestisciBackspaceOtp(event, 2)" style="width: 38px; height: 42px; text-align: center; font-size: 1.2rem; font-weight: bold; padding: 0; border: 2px solid var(--primary); border-radius: 6px;">
+                                    <input type="text" maxlength="1" class="otp-digit" inputmode="numeric" oninput="gestisciInputOtp(this, 3)" onkeydown="gestisciBackspaceOtp(event, 3)" style="width: 38px; height: 42px; text-align: center; font-size: 1.2rem; font-weight: bold; padding: 0; border: 2px solid var(--primary); border-radius: 6px;">
+                                    <input type="text" maxlength="1" class="otp-digit" inputmode="numeric" oninput="gestisciInputOtp(this, 4)" onkeydown="gestisciBackspaceOtp(event, 4)" style="width: 38px; height: 42px; text-align: center; font-size: 1.2rem; font-weight: bold; padding: 0; border: 2px solid var(--primary); border-radius: 6px;">
+                                    <input type="text" maxlength="1" class="otp-digit" inputmode="numeric" oninput="gestisciInputOtp(this, 5)" onkeydown="gestisciBackspaceOtp(event, 5)" style="width: 38px; height: 42px; text-align: center; font-size: 1.2rem; font-weight: bold; padding: 0; border: 2px solid var(--primary); border-radius: 6px;">
+                                </div>
+                                <div id="otpFeedback" style="margin-top: 8px; font-weight: bold; font-size: 0.85rem;"></div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div id="boxPagamentoNoPudo" class="paga-box" style="display:none;">
                         <input type="checkbox" id="checkPagamento" style="width: auto; transform: scale(1.5); margin: 0 10px;">
                         <span>PAGAMENTO € 0.50 RICEVUTO</span>
@@ -2240,6 +2275,9 @@ function toggleInputNote(checked) {
 }
 
 function handleRitira(id, forzaScaduto = false, usaCarrello = false) {
+    // Reset dello stato OTP ad ogni apertura del modal
+    resetStatoOTP();
+
     // Registra se il modal è stato aperto dal carrello in basso a sinistra
     document.getElementById('cartBadgeBtn').setAttribute('data-aperto', usaCarrello ? 'true' : 'false');
 
@@ -2332,6 +2370,12 @@ function handleRitira(id, forzaScaduto = false, usaCarrello = false) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     document.getElementById('modalConfirmBtn').onclick = () => {
+        // Controllo di blocco se la verifica OTP è fallita o in corso
+        if (otpStatoVerifica === "in_attesa" || otpStatoVerifica === "errato") {
+            showAlert("Impossibile completare il ritiro: la verifica OTP è attiva ma il codice non è stato inserito correttamente.");
+            return;
+        }
+
         const selectedIds = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked')).map(cb => parseInt(cb.dataset.id));
         if (selectedIds.length === 0) return showAlert("Seleziona almeno un pacco!");
 
@@ -2670,11 +2714,24 @@ function toggleCampiUscita() {
 
 function closeModal() {
     document.getElementById('customModal').style.display = 'none';
-    document.getElementById('cartBadgeBtn').setAttribute('data-aperto', 'false'); // <-- Aggiungi questa riga
+    document.getElementById('cartBadgeBtn').setAttribute('data-aperto', 'false');
+    resetStatoOTP(); // Pulisce i dati dell'OTP alla chiusura del modal
 }
-function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
-function toggleSezioneRitirati() { const s = document.getElementById('sezioneRitirati'); s.style.display = s.style.display === 'none' ? 'block' : 'none'; }
-function setTab(t){ tabAttiva = t; aggiornaVista(); }
+
+function clearCanvas() { 
+    ctx.clearRect(0, 0, canvas.width, canvas.height); 
+}
+
+function toggleSezioneRitirati() { 
+    const s = document.getElementById('sezioneRitirati'); 
+    s.style.display = s.style.display === 'none' ? 'block' : 'none'; 
+}
+
+function setTab(t){ 
+    tabAttiva = t; 
+    aggiornaVista(); 
+}
+
 // Gestione Cestino / Backup temporaneo dei pacchi eliminati
 function inizializzaSincronizzazioneCestino() {
     db.ref('cestinoPacchi').on('value', (snapshot) => {
@@ -4115,7 +4172,122 @@ function generaPdfListaPacchi() {
         alert("Si è verificato un errore durante la generazione del PDF: " + error.message);
     }
 }
+let otpGenerato = "";
+let otpStatoVerifica = "non_richiesto"; // non_richiesto, in_attesa, corretto, errato
 
+function toggleSezioneOtp() {
+    const sezione = document.getElementById('sezioneOtp');
+    const freccia = document.getElementById('frecciaOtp');
+    if (sezione.style.display === 'none' || sezione.style.display === '') {
+        sezione.style.display = 'block';
+        freccia.innerText = '▲';
+    } else {
+        sezione.style.display = 'none';
+        freccia.innerText = '▼';
+    }
+}
+
+function generaEInviaOTP() {
+    const telInput = document.getElementById('otpTelefono').value.trim();
+    if (!telInput) {
+        showAlert("Inserisci manualmente il numero di telefono del cliente.");
+        return;
+    }
+
+    // Genera un codice casuale di 6 cifre
+    otpGenerato = Math.floor(100000 + Math.random() * 900000).toString();
+    otpStatoVerifica = "in_attesa";
+
+    // Genera il testo pronto per essere mandato su WhatsApp
+    const messaggioWA = `Gentile cliente, per completare il ritiro del suo pacco presso Centro Post@ Anaclerio, il suo codice di verifica univoco è: *${otpGenerato}*.\n\nComunichi questo codice all'operatore al momento del ritiro. Grazie!`;
+    
+    document.getElementById('testoWhatsapp').value = messaggioWA;
+    document.getElementById('boxMessaggioWhatsapp').style.display = 'block';
+    
+    // Mostra il campo di inserimento a 6 caselle per la verifica
+    document.getElementById('boxInputOtp').style.display = 'block';
+    resetCampiInputOtp();
+    
+    document.getElementById('otpFeedback').innerText = "Codice generato! Copia il messaggio ed invialo su WhatsApp al cliente.";
+    document.getElementById('otpFeedback').style.color = "var(--primary)";
+}
+
+function copiaTestoWhatsapp() {
+    const testoWA = document.getElementById('testoWhatsapp').value;
+    if (!testoWA) return;
+    
+    navigator.clipboard.writeText(testoWA).then(() => {
+        showAlert("Messaggio per WhatsApp copiato negli appunti!", "Copiato");
+    });
+}
+
+function resetCampiInputOtp() {
+    const inputs = document.querySelectorAll('.otp-digit');
+    inputs.forEach(input => {
+        input.value = "";
+        input.style.borderColor = "var(--primary)";
+    });
+    if (inputs.length > 0) inputs[0].focus();
+}
+
+function gestisciInputOtp(elemento, index) {
+    elemento.value = elemento.value.replace(/[^0-9]/g, '');
+    const inputs = document.querySelectorAll('.otp-digit');
+    
+    if (elemento.value && index < inputs.length - 1) {
+        inputs[index + 1].focus();
+    }
+
+    verificaOTPAutomatico();
+}
+
+function gestisciBackspaceOtp(event, index) {
+    const inputs = document.querySelectorAll('.otp-digit');
+    if (event.key === 'Backspace' && !inputs[index].value && index > 0) {
+        inputs[index - 1].focus();
+    }
+}
+
+function verificaOTPAutomatico() {
+    const inputs = document.querySelectorAll('.otp-digit');
+    let inserito = "";
+    inputs.forEach(i => inserito += i.value);
+
+    if (inserito.length === 6) {
+        const feedback = document.getElementById('otpFeedback');
+        if (inserito === otpGenerato) {
+            otpStatoVerifica = "corretto";
+            feedback.innerText = "✅ Codice OTP Corretto!";
+            feedback.style.color = "var(--success)";
+            inputs.forEach(i => i.style.borderColor = "var(--success)");
+        } else {
+            otpStatoVerifica = "errato";
+            feedback.innerText = "❌ Codice OTP Errato! Riprova.";
+            feedback.style.color = "var(--warning)";
+            inputs.forEach(i => i.style.borderColor = "var(--warning)");
+        }
+    } else {
+        otpStatoVerifica = "in_attesa";
+        document.getElementById('otpFeedback').innerText = "In attesa dell'inserimento delle 6 cifre...";
+        document.getElementById('otpFeedback').style.color = "var(--primary)";
+        inputs.forEach(i => i.style.borderColor = "var(--primary)");
+    }
+}
+
+function resetStatoOTP() {
+    otpGenerato = "";
+    otpStatoVerifica = "non_richiesto";
+    
+    if (document.getElementById('otpTelefono')) document.getElementById('otpTelefono').value = "";
+    if (document.getElementById('testoWhatsapp')) document.getElementById('testoWhatsapp').value = "";
+    if (document.getElementById('boxMessaggioWhatsapp')) document.getElementById('boxMessaggioWhatsapp').style.display = "none";
+    if (document.getElementById('boxInputOtp')) document.getElementById('boxInputOtp').style.display = "none";
+    if (document.getElementById('sezioneOtp')) document.getElementById('sezioneOtp').style.display = "none";
+    if (document.getElementById('frecciaOtp')) document.getElementById('frecciaOtp').innerText = "▼";
+    if (document.getElementById('otpFeedback')) document.getElementById('otpFeedback').innerText = "";
+    
+    resetCampiInputOtp();
+}
 
     
 </script>
