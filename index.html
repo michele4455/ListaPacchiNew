@@ -4196,25 +4196,13 @@ function generaEInviaOTP() {
         return;
     }
 
-    // Genera un codice casuale di 6 cifre
+    // Genera il codice OTP a 6 cifre
     otpGenerato = Math.floor(100000 + Math.random() * 900000).toString();
     otpStatoVerifica = "in_attesa";
 
-    // Lettura dei dati reali dai tuoi campi HTML
-    const elCognome = document.getElementById('cognome');
-    const elNome = document.getElementById('nome');
+    // 1. Lettura del Corriere dalla select
     const elCorriere = document.getElementById('corriereSelect');
-    const elTracking = document.getElementById('codiceTracciabilita');
-
-    const cognome = elCognome ? elCognome.value.trim().toUpperCase() : '';
-    const nome = elNome ? elNome.value.trim().toUpperCase() : '';
-    
-    // Unisce Nome e Cognome
-    let nomeCliente = `${cognome} ${nome}`.trim();
-    if (!nomeCliente) nomeCliente = 'CLIENTE';
-
-    // Recupera la descrizione del corriere selezionato
-    let corrierePacco = 'N/D';
+    let corrierePacco = '';
     if (elCorriere) {
         if (elCorriere.tagName === 'SELECT' && elCorriere.selectedIndex >= 0) {
             corrierePacco = elCorriere.options[elCorriere.selectedIndex].text.trim().toUpperCase();
@@ -4223,12 +4211,41 @@ function generaEInviaOTP() {
         }
     }
 
-    const trackingPacco = elTracking && elTracking.value ? elTracking.value.trim().toUpperCase() : 'N/D';
+    // 2. Lettura FORZATA del Tracking dall'input #codiceTracciabilita
+    let trackingPacco = '';
+    const tuttiTrackingInputs = document.querySelectorAll('#codiceTracciabilita');
+    
+    // Scansiona gli input per trovare quello compilato
+    tuttiTrackingInputs.forEach(input => {
+        if (input.value && input.value.trim() !== '') {
+            trackingPacco = input.value.trim().toUpperCase();
+        }
+    });
 
-    // Messaggio WhatsApp con i dati letti direttamente dal form
+    // Fallback: se ancora vuoto, cerca nell'array di memoria se il pacco è stato già salvato
+    if (!trackingPacco) {
+        let pacchiAttivi = [];
+        if (typeof pacchiSelezionati !== 'undefined' && pacchiSelezionati.length > 0) {
+            pacchiAttivi = pacchiSelezionati;
+        } else if (typeof pacchi !== 'undefined') {
+            pacchiAttivi = pacchi.filter(p => p.selezionato || p.inRitiro);
+        }
+
+        if (pacchiAttivi.length > 0) {
+            const p = pacchiAttivi[0];
+            trackingPacco = (p.codiceTracciabilita || p.tracking || p.riconoscimento || '').toUpperCase();
+            if (!corrierePacco) corrierePacco = (p.corriere || '').toUpperCase();
+        }
+    }
+
+    // Valori predefiniti di sicurezza
+    if (!corrierePacco || corrierePacco === 'SELEZIONA CORRIERE...') corrierePacco = 'N/D';
+    if (!trackingPacco) trackingPacco = 'N/D';
+
+    // Messaggio pulito per WhatsApp
     const messaggioWA = `🔒 *CENTRO POST@ ANACLERIO*\n` +
 `----------------------------------------\n` +
-`Gentile *${nomeCliente}*,\n\n` +
+`Gentile Cliente,\n\n` +
 `Dettagli spedizione in consegna:\n` +
 `📦 *Corriere:* ${corrierePacco}\n` +
 `🔎 *Tracking:* ${trackingPacco}\n\n` +
@@ -4242,7 +4259,7 @@ function generaEInviaOTP() {
     document.getElementById('testoWhatsapp').value = messaggioWA;
     document.getElementById('boxMessaggioWhatsapp').style.display = 'block';
     
-    // Mostra il campo di inserimento a 6 caselle per la verifica
+    // Mostra il box dell'OTP per la verifica a 6 cifre
     document.getElementById('boxInputOtp').style.display = 'block';
     resetCampiInputOtp();
     
