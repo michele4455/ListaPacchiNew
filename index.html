@@ -2606,11 +2606,8 @@ function generaReport() {
 
 function mostraFirma(id) {
     const p = pacchi.find(x => x.id == id);
-    if (!p) return;
-
     const pacchiSessione = p.sessioneRitiro ? pacchi.filter(px => px.sessioneRitiro === p.sessioneRitiro) : [p];
     const win = window.open("", "Firma", "width=700,height=900");
-
     let righeTabella = pacchiSessione.map(px => {
         let detContr = (px.isContrassegno && px.importoContrassegno) ? `<span style="background:#ffe3e3; color:#c92a2a; padding:4px 8px; border-radius:5px; font-weight:bold; font-size:0.7rem; margin-left:5px;">CONTR. € ${px.importoContrassegno}</span>` : '';
         return `
@@ -2624,22 +2621,6 @@ function mostraFirma(id) {
             </tr>
         `;
     }).join('');
-
-    // Verifica se la sessione o il pacco hanno la validazione OTP
-    const isOtpVerified = p.otpVerificato || p.metodoValidazione === 'OTP';
-    
-    // Contenuto per il blocco di firma / certificazione
-    let firmaHtml = '';
-    if (p.firma) {
-        firmaHtml = `<div class="signature-box"><img src="${p.firma}" style="width:100%; height:auto; display:block;"></div>`;
-    }
-
-    let certificazioneOtpHtml = isOtpVerified ? `
-        <div style="margin-top:15px; background:#e7f5ff; border:1px solid #a5d8ff; padding:10px; border-radius:8px; color:#1864ab; font-size:0.85rem; font-weight:bold;">
-            ✔ Ritiro autorizzato e certificato tramite verifica OTP WhatsApp
-        </div>
-    ` : '';
-
     win.document.write(`
         <!DOCTYPE html>
         <html>
@@ -2680,11 +2661,10 @@ function mostraFirma(id) {
                     <tbody>${righeTabella}</tbody>
                 </table>
                 <div class="signature-section">
-                    <p style="margin:0; font-weight:bold; color:#666;">Firma / Validazione per Ricevuta</p>
-                    ${firmaHtml}
-                    ${certificazioneOtpHtml}
+                    <p style="margin:0; font-weight:bold; color:#666;">Firma per Ricevuta</p>
+                    <div class="signature-box"><img src="${p.firma}" style="width:100%; height:auto; display:block;"></div>
                 </div>
-                <div class="footer">Centro Post@ Anaclerio - Grazie per averci scelto!</div>
+                <div class="footer">Centro Post@ Anaclerio - Grazie per haverci scelto!</div>
                 <button onclick="window.print()" class="btn-print">🖨️ STAMPA RICEVUTA</button>
             </div>
         </body>
@@ -4208,40 +4188,32 @@ function toggleSezioneOtp() {
 }
 
 function generaEInviaOTP() {
-    const telInput = document.getElementById('otpTelefono');
-    const tel = telInput ? telInput.value.trim() : '';
-
-    if (!tel) {
+    const telInput = document.getElementById('otpTelefono').value.trim();
+    if (!telInput) {
         showAlert("Inserisci manualmente il numero di telefono del cliente.");
         return;
     }
 
-    // Genera un codice casuale di 6 cifre e imposta lo stato
-    window.otpGenerato = Math.floor(100000 + Math.random() * 900000).toString();
-    window.otpStatoVerifica = "in_attesa";
+    // Genera un codice casuale di 6 cifre
+    otpGenerato = Math.floor(100000 + Math.random() * 900000).toString();
+    otpStatoVerifica = "in_attesa";
 
-    // Genera il testo per WhatsApp
-    const messaggioWA = `Gentile cliente, per completare il ritiro del suo pacco presso Centro Post@ Anaclerio, il suo codice di verifica univoco è: *${window.otpGenerato}*.\n\nComunichi questo codice all'operatore al momento del ritiro. Grazie!`;
+    // Genera il testo pronto per essere mandato su WhatsApp
+    const messaggioWA = `Gentile cliente, per completare il ritiro del suo pacco presso Centro Post@ Anaclerio, il suo codice di verifica univoco è: *${otpGenerato}*.\n\nComunichi questo codice all'operatore al momento del ritiro. Grazie!`;
     
     document.getElementById('testoWhatsapp').value = messaggioWA;
     document.getElementById('boxMessaggioWhatsapp').style.display = 'block';
     
-    // Mostra il campo di inserimento a 6 caselle
+    // Mostra il campo di inserimento a 6 caselle per la verifica
     document.getElementById('boxInputOtp').style.display = 'block';
+    resetCampiInputOtp();
     
-    if (typeof resetCampiInputOtp === 'function') {
-        resetCampiInputOtp();
-    }
-    
-    const feedback = document.getElementById('otpFeedback');
-    if (feedback) {
-        feedback.innerText = "Codice generato! Copia il messaggio ed invialo su WhatsApp al cliente.";
-        feedback.style.color = "var(--primary)";
-    }
+    document.getElementById('otpFeedback').innerText = "Codice generato! Copia il messaggio ed invialo su WhatsApp al cliente.";
+    document.getElementById('otpFeedback').style.color = "var(--primary)";
 }
 
 function copiaTestoWhatsapp() {
-    const testoWA = document.getElementById('testoWhatsapp') ? document.getElementById('testoWhatsapp').value : '';
+    const testoWA = document.getElementById('testoWhatsapp').value;
     if (!testoWA) return;
     
     navigator.clipboard.writeText(testoWA).then(() => {
