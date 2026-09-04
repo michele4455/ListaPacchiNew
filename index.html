@@ -4188,7 +4188,9 @@ function toggleSezioneOtp() {
 }
 
 function generaEInviaOTP() {
-    const telInput = document.getElementById('otpTelefono').value.trim();
+    const elTel = document.getElementById('otpTelefono');
+    const telInput = elTel ? elTel.value.trim() : '';
+    
     if (!telInput) {
         showAlert("Inserisci manualmente il numero di telefono del cliente.");
         return;
@@ -4199,7 +4201,15 @@ function generaEInviaOTP() {
     otpStatoVerifica = "in_attesa";
 
     // Genera il testo pronto per essere mandato su WhatsApp
-    const messaggioWA = `Gentile cliente, per completare il ritiro del suo pacco presso Centro Post@ Anaclerio, il suo codice di verifica univoco è: *${otpGenerato}*.\n\nComunichi questo codice all'operatore al momento del ritiro. Grazie!`;
+    const messaggioWA = `🔒 *CENTRO POST@ ANACLERIO*\n` +
+`----------------------------------------\n` +
+`Gentile Cliente,\n\n` +
+`Il tuo codice di verifica per il *ritiro del pacco* è:\n\n` +
+`👉 *${otpGenerato}*\n\n` +
+`Comunichi questo codice all'operatore al momento del ritiro.\n` +
+`----------------------------------------\n` +
+`ℹ️ *AVVISO PACCHI EXTRA:*\n` +
+`Per il ritiro di pacchi appartenenti a circuiti extra (*iMile, Paack, Amazon NON Hub, InPost NO PUDO*), è previsto un contributo di gestione pari a *€ 0,50* per pacco.`;
     
     document.getElementById('testoWhatsapp').value = messaggioWA;
     document.getElementById('boxMessaggioWhatsapp').style.display = 'block';
@@ -4288,7 +4298,6 @@ function resetStatoOTP() {
     
     resetCampiInputOtp();
 }
-
     
 </script>
     <button id="bellBtn" class="alert-bell-btn" onclick="apriStoricoAlert()" title="Storico Avvisi" style="display: none;">
