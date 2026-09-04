@@ -4200,16 +4200,32 @@ function generaEInviaOTP() {
     otpGenerato = Math.floor(100000 + Math.random() * 900000).toString();
     otpStatoVerifica = "in_attesa";
 
-    // Recupero dinamico dei dati del pacco/cliente dai campi dell'interfaccia
-    const elNome = document.getElementById('ritiroNome') || document.getElementById('nome') || document.getElementById('cognome');
-    const elCorriere = document.getElementById('ritiroCorriere') || document.getElementById('corriere');
-    const elTracking = document.getElementById('ritiroTracking') || document.getElementById('codiceTracciabilita') || document.getElementById('tracking');
+    // Lettura dei dati reali dai tuoi campi HTML
+    const elCognome = document.getElementById('cognome');
+    const elNome = document.getElementById('nome');
+    const elCorriere = document.getElementById('corriereSelect');
+    const elTracking = document.getElementById('codiceTracciabilita');
 
-    const nomeCliente = elNome && elNome.value ? elNome.value.trim().toUpperCase() : 'CLIENTE';
-    const corrierePacco = elCorriere && elCorriere.value ? elCorriere.value.trim().toUpperCase() : 'N/D';
+    const cognome = elCognome ? elCognome.value.trim().toUpperCase() : '';
+    const nome = elNome ? elNome.value.trim().toUpperCase() : '';
+    
+    // Unisce Nome e Cognome
+    let nomeCliente = `${cognome} ${nome}`.trim();
+    if (!nomeCliente) nomeCliente = 'CLIENTE';
+
+    // Recupera la descrizione del corriere selezionato
+    let corrierePacco = 'N/D';
+    if (elCorriere) {
+        if (elCorriere.tagName === 'SELECT' && elCorriere.selectedIndex >= 0) {
+            corrierePacco = elCorriere.options[elCorriere.selectedIndex].text.trim().toUpperCase();
+        } else if (elCorriere.value) {
+            corrierePacco = elCorriere.value.trim().toUpperCase();
+        }
+    }
+
     const trackingPacco = elTracking && elTracking.value ? elTracking.value.trim().toUpperCase() : 'N/D';
 
-    // Genera il testo pronto per essere mandato su WhatsApp con i dettagli
+    // Messaggio WhatsApp con i dati letti direttamente dal form
     const messaggioWA = `🔒 *CENTRO POST@ ANACLERIO*\n` +
 `----------------------------------------\n` +
 `Gentile *${nomeCliente}*,\n\n` +
