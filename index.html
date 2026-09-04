@@ -4200,11 +4200,23 @@ function generaEInviaOTP() {
     otpGenerato = Math.floor(100000 + Math.random() * 900000).toString();
     otpStatoVerifica = "in_attesa";
 
-    // Genera il testo pronto per essere mandato su WhatsApp
+    // Recupero dinamico dei dati del pacco/cliente dai campi dell'interfaccia
+    const elNome = document.getElementById('ritiroNome') || document.getElementById('nome') || document.getElementById('cognome');
+    const elCorriere = document.getElementById('ritiroCorriere') || document.getElementById('corriere');
+    const elTracking = document.getElementById('ritiroTracking') || document.getElementById('codiceTracciabilita') || document.getElementById('tracking');
+
+    const nomeCliente = elNome && elNome.value ? elNome.value.trim().toUpperCase() : 'CLIENTE';
+    const corrierePacco = elCorriere && elCorriere.value ? elCorriere.value.trim().toUpperCase() : 'N/D';
+    const trackingPacco = elTracking && elTracking.value ? elTracking.value.trim().toUpperCase() : 'N/D';
+
+    // Genera il testo pronto per essere mandato su WhatsApp con i dettagli
     const messaggioWA = `🔒 *CENTRO POST@ ANACLERIO*\n` +
 `----------------------------------------\n` +
-`Gentile Cliente,\n\n` +
-`Il tuo codice di verifica per il *ritiro del pacco* è:\n\n` +
+`Gentile *${nomeCliente}*,\n\n` +
+`Dettagli spedizione in consegna:\n` +
+`📦 *Corriere:* ${corrierePacco}\n` +
+`🔎 *Tracking:* ${trackingPacco}\n\n` +
+`Il tuo codice OTP per autorizzare il *ritiro del pacco* è:\n\n` +
 `👉 *${otpGenerato}*\n\n` +
 `Comunichi questo codice all'operatore al momento del ritiro.\n` +
 `----------------------------------------\n` +
