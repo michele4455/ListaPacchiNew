@@ -2459,6 +2459,11 @@ function mostraConfermaContrassegnoGrafica(totale, callbackSuccesso) {
 
 function eseguiRitiroPacchi(selectedIds, tipo, ritiratoDa, pagato, dataScad, firmaData, dataAttuale) {
     const sessioneId = Date.now();
+    
+    // Recupera l'eventuale codice OTP generato/inserito a schermo (se presente)
+    const elOtp = document.getElementById('testoWhatsapp') || document.getElementById('inputCodiceOTP');
+    const codiceOtpUsato = elOtp ? elOtp.value : null;
+
     selectedIds.forEach(sid => {
         const px = pacchi.find(x => x.id === sid);
         px.ritirato = true;
@@ -2466,12 +2471,22 @@ function eseguiRitiroPacchi(selectedIds, tipo, ritiratoDa, pagato, dataScad, fir
         px.ritiratoDa = (tipo === 'cliente') ? ritiratoDa.toUpperCase() : "SISTEMA (SCADUTO)";
         px.isScaduto = (tipo === 'scaduto');
         px.firma = (tipo === 'cliente') ? firmaData : null;
+        
+        // --- MODIFICA OTP: Salva la modalità e il codice se non c'è una firma manuale ---
+        if (tipo === 'cliente' && (!firmaData || firmaData === "")) {
+            px.modalitaRitiro = "OTP";
+            px.codiceOTPUsato = codiceOtpUsato;
+        } else {
+            px.modalitaRitiro = "FIRMA";
+        }
+
         if(px.corriere === 'Corrieri No Pudo') px.pudoStatus = pagato ? 'pagato' : 'non_pagato';
         if(selectedIds.length > 1) px.sessioneRitiro = sessioneId;
         
         // Rimuove il pacco appena ritirato dalla lista temporanea se presente
         listaTemporaneaRitiro = listaTemporaneaRitiro.filter(x => x !== sid);
     });
+}
     
     // Reset grafico del contatore badge
     const btn = document.getElementById("cartBadgeBtn");
