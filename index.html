@@ -1133,7 +1133,10 @@
                             <!-- CAMPO NASCOSTO PER IL TESTO E PULSANTE COPIA VISIBILE -->
                             <div id="boxMessaggioWhatsapp" style="display: none; background: #e8f5e9; border: 1px solid #4caf50; border-radius: 8px; padding: 10px; margin-bottom: 12px; text-align: center;">
                                 <input type="hidden" id="testoWhatsapp">
-                                <button type="button" onclick="copiaTestoWhatsapp()" style="background: #25d366; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; width: 100%;">📋 Copia Messaggio WhatsApp</button>
+                                <div style="display: flex; gap: 8px;">
+                                    <button type="button" onclick="copiaTestoWhatsapp()" style="background: #25d366; color: white; border: none; padding: 8px 10px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; flex: 1;">📋 Copia Messaggio</button>
+                                    <button type="button" onclick="apriLinkWhatsapp()" style="background: #128c7e; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;" title="Apri direttamente WhatsApp">💬 Apri WhatsApp</button>
+                                </div>
                             </div>
 
                             <div id="boxInputOtp" style="display: none; text-align: center;">
@@ -2606,8 +2609,11 @@ function generaReport() {
 
 function mostraFirma(id) {
     const p = pacchi.find(x => x.id == id);
+    if (!p) return;
+
     const pacchiSessione = p.sessioneRitiro ? pacchi.filter(px => px.sessioneRitiro === p.sessioneRitiro) : [p];
     const win = window.open("", "Firma", "width=700,height=900");
+
     let righeTabella = pacchiSessione.map(px => {
         let detContr = (px.isContrassegno && px.importoContrassegno) ? `<span style="background:#ffe3e3; color:#c92a2a; padding:4px 8px; border-radius:5px; font-weight:bold; font-size:0.7rem; margin-left:5px;">CONTR. € ${px.importoContrassegno}</span>` : '';
         return `
@@ -2621,6 +2627,43 @@ function mostraFirma(id) {
             </tr>
         `;
     }).join('');
+
+    // --- GESTIONE ATTESTAZIONE OTP / FIRMA ---
+    let bloccoricevutaFirma = "";
+    const codiceOtp = p.codiceOTPUsato || p.otpCodice || p.otp; // Cerca la proprietà dove salvi il codice OTP
+
+    if (p.modalitaRitiro === "OTP" || codiceOtp) {
+        // Blocco Attestazione Ritiro OTP
+        bloccoricevutaFirma = `
+            <div class="signature-section">
+                <div style="border: 2px dashed #00b894; background-color: #e8f8f5; padding: 20px; border-radius: 12px; text-align: center; margin: 15px auto; width: 450px; max-width: 100%;">
+                    <h3 style="color: #00b894; margin: 0 0 8px 0; font-size: 1.1rem; text-transform: uppercase;">✅ ATTESTAZIONE RITIRO OTP</h3>
+                    <p style="margin: 5px 0 10px 0; font-size: 0.85rem; color: #2d3436;">
+                        Consegna convalidata con successo tramite verifica del codice OTP inviato al cliente.
+                    </p>
+                    <div style="font-size: 1rem; font-weight: bold; color: #003399;">
+                        CODICE OTP: <span style="background: #ffeaa7; padding: 4px 10px; border-radius: 6px; border: 1px solid #fdcb6e; font-size: 1.2rem; letter-spacing: 2px;">${codiceOtp || 'VERIFICATO'}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else if (p.firma) {
+        // Blocco Firma Autografa Tradizionale
+        bloccoricevutaFirma = `
+            <div class="signature-section">
+                <p style="margin:0; font-weight:bold; color:#666;">Firma per Ricevuta</p>
+                <div class="signature-box"><img src="${p.firma}" style="width:100%; height:auto; display:block;"></div>
+            </div>
+        `;
+    } else {
+        // Nessuna firma o OTP presente
+        bloccoricevutaFirma = `
+            <div class="signature-section">
+                <p style="color:#888; font-style:italic;">Nessuna firma o codice OTP registrato per questo ritiro.</p>
+            </div>
+        `;
+    }
+
     win.document.write(`
         <!DOCTYPE html>
         <html>
@@ -2653,25 +2696,23 @@ function mostraFirma(id) {
                 <div class="info-grid">
                     <div class="info-item"><label>Destinatario</label><span>${p.cognome.toUpperCase()} ${p.nome.toUpperCase()}</span></div>
                     <div class="info-item"><label>Data e Ora Ritiro</label><span>${p.dataRitiro}</span></div>
-                    <div class="info-item"><label>Ritirato da</label><span>${p.ritiratoDa.toUpperCase()}</span></div>
+                    <div class="info-item"><label>Ritirato da</label><span>${p.ritiratoDa ? p.ritiratoDa.toUpperCase() : 'CLIENTE'}</span></div>
                     <div class="info-item"><label>Totale Pacchi</label><span>${pacchiSessione.length}</span></div>
                 </div>
                 <table>
                     <thead><tr><th>ID</th><th>Corriere</th><th>Tracking Number</th><th>Servizi</th></tr></thead>
                     <tbody>${righeTabella}</tbody>
                 </table>
-                <div class="signature-section">
-                    <p style="margin:0; font-weight:bold; color:#666;">Firma per Ricevuta</p>
-                    <div class="signature-box"><img src="${p.firma}" style="width:100%; height:auto; display:block;"></div>
-                </div>
-                <div class="footer">Centro Post@ Anaclerio - Grazie per haverci scelto!</div>
+                
+                ${bloccoricevutaFirma}
+                
+                <div class="footer">Centro Post@ Anaclerio - Grazie per averci scelto!</div>
                 <button onclick="window.print()" class="btn-print">🖨️ STAMPA RICEVUTA</button>
             </div>
         </body>
         </html>
     `);
 }
-
 function showFeedback(tipo) {
     const card = document.getElementById('successCard');
     let icona = tipo === 'cliente' ? '✅' : '📦❌';
@@ -4223,12 +4264,26 @@ function generaEInviaOTP() {
 }
 
 function copiaTestoWhatsapp() {
-    const testoWA = document.getElementById('testoWhatsapp').value;
-    if (!testoWA) return;
-    
-    navigator.clipboard.writeText(testoWA).then(() => {
-        showAlert("Messaggio per WhatsApp copiato negli appunti!", "Copiato");
+    const testo = document.getElementById('testoWhatsapp').value;
+    if (!testo) return;
+    navigator.clipboard.writeText(testo).then(() => {
+        showAlert("Messaggio WhatsApp copiato negli appunti!", "Successo");
     });
+}
+
+// NUOVA FUNZIONE: Apre il link diretto a WhatsApp Web/App con il messaggio precompilato
+function apriLinkWhatsapp() {
+    const telefono = document.getElementById('otpTelefono').value.replace(/\D/g, ''); // Rimuove caratteri non numerici
+    const testo = document.getElementById('testoWhatsapp').value;
+    
+    if (!testo) {
+        showAlert("Genera prima il codice OTP per creare il messaggio.", "Attenzione");
+        return;
+    }
+    
+    // Costruisce l'URL ufficiale di WhatsApp
+    const url = `https://wa.me/${telefono}?text=${encodeURIComponent(testo)}`;
+    window.open(url, '_blank');
 }
 
 function resetCampiInputOtp() {
