@@ -1132,9 +1132,12 @@
 
                             <!-- CAMPO NASCOSTO PER IL TESTO E PULSANTE COPIA VISIBILE -->
                             <div id="boxMessaggioWhatsapp" style="display: none; background: #e8f5e9; border: 1px solid #4caf50; border-radius: 8px; padding: 10px; margin-bottom: 12px; text-align: center;">
-                                <input type="hidden" id="testoWhatsapp">
-                                <button type="button" onclick="copiaTestoWhatsapp()" style="background: #25d366; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; width: 100%;">📋 Copia Messaggio WhatsApp</button>
+                            <input type="hidden" id="testoWhatsapp">
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <button type="button" onclick="copiaTestoWhatsapp()" style="background: #25d366; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; flex: 1;">📋 Copia Messaggio WhatsApp</button>
+                                <button type="button" onclick="apriWhatsappDiretto()" title="Apri direttamente in WhatsApp" style="background: #25d366; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 1.1rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">📤</button>
                             </div>
+                        </div>
 
                             <div id="boxInputOtp" style="display: none; text-align: center;">
                                 <label style="font-size: 0.85rem; font-weight: bold; color: #333; display: block; margin-bottom: 8px;">Inserisci il codice a 6 cifre fornito dal cliente:</label>
@@ -4200,26 +4203,31 @@ function generaEInviaOTP() {
     otpGenerato = Math.floor(100000 + Math.random() * 900000).toString();
     otpStatoVerifica = "in_attesa";
 
-    // Messaggio pulito per WhatsApp (senza Corriere e Tracking)
+    // Messaggio elegante e ben formattato per WhatsApp
     const messaggioWA = `🔒 *CENTRO POST@ ANACLERIO*\n` +
-`----------------------------------------\n` +
+`━━━━━━━━━━━━━━━━━━━━━\n` +
 `Gentile Cliente,\n\n` +
-`Il tuo codice OTP per autorizzare il *ritiro del pacco* è:\n\n` +
+`Il suo codice OTP di verifica per autorizzare il *ritiro del pacco* è:\n\n` +
 `👉 *${otpGenerato}*\n\n` +
-`Comunichi questo codice all'operatore al momento del ritiro.\n` +
-`----------------------------------------\n` +
+`Comunichi questo codice all'operatore allo sportello.\n` +
+`━━━━━━━━━━━━━━━━━━━━━\n` +
 `ℹ️ *AVVISO PACCHI EXTRA:*\n` +
 `Per il ritiro di pacchi appartenenti a circuiti extra (*iMile, Paack, Amazon NON Hub, InPost NO PUDO*), è previsto un contributo di gestione pari a *€ 0,50* per pacco.`;
     
+    // Inserisce il testo nell'input nascosto e mostra il box dei pulsanti
     document.getElementById('testoWhatsapp').value = messaggioWA;
     document.getElementById('boxMessaggioWhatsapp').style.display = 'block';
     
-    // Mostra il box dell'OTP per la verifica a 6 cifre
+    // Mostra il box per la verifica dell'OTP a 6 cifre
     document.getElementById('boxInputOtp').style.display = 'block';
     resetCampiInputOtp();
     
-    document.getElementById('otpFeedback').innerText = "Codice generato! Copia il messaggio ed invialo su WhatsApp al cliente.";
-    document.getElementById('otpFeedback').style.color = "var(--primary)";
+    // Feedback aggiornato con riferimento anche al pulsante d'invio diretto
+    const feedbackEl = document.getElementById('otpFeedback');
+    if (feedbackEl) {
+        feedbackEl.innerText = "Codice generato! Copia il messaggio o usa il pulsante 📤 per inviarlo direttamente.";
+        feedbackEl.style.color = "var(--primary)";
+    }
 }
 
 function copiaTestoWhatsapp() {
@@ -4229,6 +4237,24 @@ function copiaTestoWhatsapp() {
     navigator.clipboard.writeText(testoWA).then(() => {
         showAlert("Messaggio per WhatsApp copiato negli appunti!", "Copiato");
     });
+}
+    function apriWhatsappDiretto() {
+    const telefonoInput = document.getElementById('otpTelefono').value.replace(/\D/g, ''); // Rimuove caratteri non numerici
+    const testoMsg = document.getElementById('testoWhatsapp').value;
+
+    if (!telefonoInput) {
+        showAlert("Inserisci prima il numero di telefono del cliente!");
+        return;
+    }
+
+    // Aggiunge il prefisso internazionale italiano +39 se non presente
+    let numeroCompleto = telefonoInput;
+    if (!numeroCompleto.startsWith('39') && numeroCompleto.length <= 10) {
+        numeroCompleto = '39' + numeroCompleto;
+    }
+
+    const urlWhatsapp = `https://wa.me/${numeroCompleto}?text=${encodeURIComponent(testoMsg)}`;
+    window.open(urlWhatsapp, '_blank');
 }
 
 function resetCampiInputOtp() {
