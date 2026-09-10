@@ -4242,7 +4242,7 @@ function copiaTestoWhatsapp() {
     });
 }
     function apriWhatsappDiretto() {
-    const telefonoInput = document.getElementById('otpTelefono').value.replace(/\D/g, ''); // Rimuove caratteri non numerici
+    const telefonoInput = document.getElementById('otpTelefono').value.replace(/\D/g, ''); // Mantiene solo le cifre
     const testoMsg = document.getElementById('testoWhatsapp').value;
 
     if (!telefonoInput) {
@@ -4250,13 +4250,22 @@ function copiaTestoWhatsapp() {
         return;
     }
 
-    // Aggiunge il prefisso internazionale italiano +39 se non presente
+    if (!testoMsg) {
+        showAlert("Genera prima il codice OTP!");
+        return;
+    }
+
+    // Aggiunge il prefisso +39 per l'Italia se non inserito
     let numeroCompleto = telefonoInput;
     if (!numeroCompleto.startsWith('39') && numeroCompleto.length <= 10) {
         numeroCompleto = '39' + numeroCompleto;
     }
 
-    const urlWhatsapp = `https://wa.me/${numeroCompleto}?text=${encodeURIComponent(testoMsg)}`;
+    // Codifica corretta per caratteri speciali ed emoji (UTF-8)
+    const testoCodificato = encodeURIComponent(testoMsg);
+
+    // Apre l'API di WhatsApp con il testo formattato
+    const urlWhatsapp = `https://api.whatsapp.com/send?phone=${numeroCompleto}&text=${testoCodificato}`;
     window.open(urlWhatsapp, '_blank');
 }
 
