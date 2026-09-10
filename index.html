@@ -4203,33 +4203,36 @@ function generaEInviaOTP() {
     otpGenerato = Math.floor(100000 + Math.random() * 900000).toString();
     otpStatoVerifica = "in_attesa";
 
-    // Messaggio elegante e ben formattato per WhatsApp
-    const messaggioWA = `🔒 *CENTRO POST@ ANACLERIO*\n` +
-`━━━━━━━━━━━━━━━━━━━━━\n` +
-`Gentile Cliente,\n\n` +
-`Il suo codice OTP di verifica per autorizzare il *ritiro del pacco* è:\n\n` +
+    // Calcola il saluto automatico in base all'ora corrente
+    const oraAttuale = new Date().getHours();
+    const saluto = (oraAttuale >= 5 && oraAttuale < 13) ? "Buongiorno" : "Buonasera";
+
+    // Cerca il codice di tracciamento se presente nella pagina (altrimenti lascia spazio generico)
+    const elTracking = document.getElementById('codiceTracking') || document.getElementById('tracking') || document.getElementById('codicePacco');
+    const codiceTracking = elTracking ? elTracking.value.trim() : '';
+    const infoPacco = codiceTracking ? `il tuo pacco *${codiceTracking}*` : 'il tuo pacco';
+
+    // 📩 MESSAGGIO WHATSAPP DINAMICO
+    const messaggioWA = `${saluto}, ${infoPacco} ti aspetta da *CENTRO POST@ ANACLERIO*.\n\n` +
+`Lun–Sab 07:00–13:00 / 16:00–20:00\n` +
+`🔑 *Codice OTP per il ritiro:*\n` +
 `👉 *${otpGenerato}*\n\n` +
-`Comunichi questo codice all'operatore allo sportello.\n` +
-`━━━━━━━━━━━━━━━━━━━━━\n` +
+`----------------------------------------\n` +
 `ℹ️ *AVVISO PACCHI EXTRA:*\n` +
 `Per il ritiro di pacchi appartenenti a circuiti extra (*iMile, Paack, Amazon NON Hub, InPost NO PUDO*), è previsto un contributo di gestione pari a *€ 0,50* per pacco.`;
     
-    // Inserisce il testo nell'input nascosto e mostra il box dei pulsanti
     document.getElementById('testoWhatsapp').value = messaggioWA;
     document.getElementById('boxMessaggioWhatsapp').style.display = 'block';
     
-    // Mostra il box per la verifica dell'OTP a 6 cifre
     document.getElementById('boxInputOtp').style.display = 'block';
     resetCampiInputOtp();
     
-    // Feedback aggiornato con riferimento anche al pulsante d'invio diretto
     const feedbackEl = document.getElementById('otpFeedback');
     if (feedbackEl) {
         feedbackEl.innerText = "Codice generato! Copia il messaggio o usa il pulsante 📤 per inviarlo direttamente.";
         feedbackEl.style.color = "var(--primary)";
     }
 }
-
 function copiaTestoWhatsapp() {
     const testoWA = document.getElementById('testoWhatsapp').value;
     if (!testoWA) return;
