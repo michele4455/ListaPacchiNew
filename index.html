@@ -2069,7 +2069,7 @@ function aggiornaVista(){
     if (contEl) {
         let htmlContenuto = "";
         
-        // Se ci sono pacchi in giacenza, mostra solo la minuscola freccia di controllo
+        // Se ci sono pacchi in giacenza, mostra la minuscola freccia di controllo
         if (inGiacenza.length > 0) {
             const etichettaCorriere = tabAttiva === 'Tutti' ? 'Tutti' : tabAttiva;
             htmlContenuto += `
@@ -2080,6 +2080,15 @@ function aggiornaVista(){
                     <div class="pdf-link-content" onclick="generaPdfListaPacchi()">
                         🖨️ Conferma: Genera PDF lista (${etichettaCorriere})
                     </div>
+                </div>
+            `;
+        } else if (search !== "" && inGiacenza.length === 0) {
+            // ---> MESSAGGIO DI ERRORE CURATO E BEN VISIBILE <---
+            htmlContenuto += `
+                <div style="background: #ffffff; border: 2px solid #ff4757; color: #c92a2a; padding: 35px 20px; border-radius: 15px; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(255,71,87,0.15);">
+                    <div style="font-size: 2.5rem; margin-bottom: 10px;">🔍</div>
+                    <h3 style="margin: 0 0 8px 0; font-size: 1.2rem; text-transform: uppercase; color: #ff4757;">Nessun risultato trovato</h3>
+                    <p style="margin: 0; font-size: 0.95rem; color: #555; font-weight: 500;">Nessun risultato con questo codice di tracciamento o con questa anagrafica</p>
                 </div>
             `;
         }
@@ -2242,6 +2251,10 @@ function apriModifica(id) {
                 <input type="text" id="editNoteAggiuntive" value="${p.noteAggiuntive || ''}" placeholder="Inserisci qui le note..." style="border-color:var(--primary);">
             </div>
         </div>
+        <!-- AGGIUNTA OPZIONE ELIMINA PACCO DEFINITIVAMENTE -->
+        <div style="grid-column: span 2; margin-top: 15px;">
+            <button type="button" onclick="eliminaPaccoDefinitivamente(${p.id})" style="background: #ff4757; color: white; width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase;">🗑️ Elimina pacco definitivamente</button>
+        </div>
     `;
 
     document.getElementById('editModal').style.display = 'flex';
@@ -2255,7 +2268,6 @@ function apriModifica(id) {
         p.scaffale = document.getElementById('editScaffale').value;
         p.grandezza = document.getElementById('editGrandezza').value;
         
-        // SALVATAGGIO STATO FERMOPOINT
         p.isFermopoint = document.getElementById('editIsFermopoint').checked;
         
         p.isContrassegno = document.getElementById('editIsContrassegno').checked;
@@ -4335,6 +4347,15 @@ function resetStatoOTP() {
     if (document.getElementById('otpFeedback')) document.getElementById('otpFeedback').innerText = "";
     
     resetCampiInputOtp();
+}
+    
+function eliminaPaccoDefinitivamente(id) {
+    if (confirm("Sei sicuro di voler eliminare definitivamente questo pacco per errore di inserimento?")) {
+        pacchi = pacchi.filter(x => x.id !== id);
+        salva();
+        closeEditModal();
+        aggiornaVista();
+    }
 }
     
 </script>
