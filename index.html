@@ -1273,7 +1273,10 @@
             <select id="corriereSelect"></select>
             <select id="scaffaleSelect">
                 <option value="">Scaffale...</option>
-                <script>for(let i=1;i<=12;i++) document.write(`<option value="Scaffale ${i}">Scaffale ${i}</option>`);</script>
+                <script>
+                    for(let i=1; i<=12; i++) document.write(`<option value="Scaffale ${i}">Scaffale ${i}</option>`);
+                    document.write(`<option value="PAVIMENTO(PACCO GRANDE)">PAVIMENTO(PACCO GRANDE)</option>`);
+                </script>
             </select>
             <select id="grandezzaSelect">
                 <option value="P">P</option><option value="M">M</option><option value="G">G</option>
@@ -3423,6 +3426,7 @@ document.getElementById('inventarioSearchInput').addEventListener('change', func
 let listaCorrieriDinamica = [...corrieri];
 let listaScaffaliDinamica = [];
 for(let i=1; i<=12; i++) listaScaffaliDinamica.push(`Scaffale ${i}`);
+listaScaffaliDinamica.push("PAVIMENTO(PACCO GRANDE)");
 
 db.ref('impostazioni/corrieri').on('value', (snap) => {
     if(snap.exists()) { listaCorrieriDinamica = snap.val(); } 
