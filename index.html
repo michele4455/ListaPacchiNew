@@ -4430,6 +4430,30 @@ function eliminaPaccoDefinitivamente(id) {
         aggiornaVista();
     }
 }
+// Gestisce l'incolla (paste) di tutto il codice OTP in un colpo solo
+document.addEventListener('DOMContentLoaded', () => {
+    const otpInputs = document.querySelectorAll('.otp-digit');
+    if (otpInputs.length > 0) {
+        otpInputs[0].addEventListener('paste', function(e) {
+            e.preventDefault();
+            const pasteData = e.clipboardData.getData('text').trim().replace(/[^0-9]/g, '');
+            
+            if (pasteData.length > 0) {
+                for (let i = 0; i < Math.min(pasteData.length, otpInputs.length); i++) {
+                    otpInputs[i].value = pasteData[i];
+                }
+                // Sposta il focus sull'ultimo elemento compilato o verifica direttamente
+                const ultimoIndice = Math.min(pasteData.length - 1, otpInputs.length - 1);
+                otpInputs[ultimoIndice].focus();
+                
+                // Esegue la verifica automatica
+                if (typeof verificaOTPAutomatico === 'function') {
+                    verificaOTPAutomatico();
+                }
+            }
+        });
+    }
+});
     
 </script>
     <button id="bellBtn" class="alert-bell-btn" onclick="apriStoricoAlert()" title="Storico Avvisi" style="display: none;">
