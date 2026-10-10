@@ -4294,12 +4294,12 @@ function generaEInviaOTP() {
 
     otpStatoVerifica = "in_attesa";
 
-    const oraAttuale = new Date().getHours();
-    const saluto = (oraAttuale >= 5 && oraAttuale < 13) ? "Buongiorno" : "Buonasera";
-    const infoPacco = paccoTarget && paccoTarget.codiceTracciabilita ? `il tuo pacco *${paccoTarget.codiceTracciabilita}*` : 'il tuo pacco';
+    // Estrae dati specifici del pacco per il messaggio
+    const corrierePacco = paccoTarget && paccoTarget.corriere ? paccoTarget.corriere : 'Corriere';
+    const trackingPacco = paccoTarget && paccoTarget.codiceTracciabilita ? paccoTarget.codiceTracciabilita : 'N/D';
 
-    const messaggioWA = `${saluto}, ${infoPacco} ti aspetta da *CENTRO POST@ ANACLERIO*.\n` +
-`Lun–Sab 07:00–13:00 / 16:00–20:00\n` +
+    // 📩 MESSAGGIO WHATSAPP AGGIORNATO (Senza orario, con corriere e tracking)
+    const messaggioWA = `Buongiorno, ti aspetta un pacco del corriere *${corrierePacco}* (Tracking: *${trackingPacco}*) da *CENTRO POST@ ANACLERIO*.\n\n` +
 `🔑 *Codice OTP per il ritiro:*\n` +
 `👉 *${otpGenerato}*\n\n` +
 `----------------------------------------\n` +
