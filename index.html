@@ -2516,6 +2516,10 @@ function mostraConfermaContrassegnoGrafica(totale, callbackSuccesso) {
 
 function eseguiRitiroPacchi(selectedIds, tipo, ritiratoDa, pagato, dataScad, firmaData, dataAttuale) {
     const sessioneId = Date.now();
+    
+    // Verifica se l'OTP è stato verificato con successo per questa sessione di ritiro
+    const eVerificatoOtp = (tipo === 'cliente' && otpStatoVerifica === "corretto");
+
     selectedIds.forEach(sid => {
         const px = pacchi.find(x => x.id === sid);
         px.ritirato = true;
@@ -2523,6 +2527,10 @@ function eseguiRitiroPacchi(selectedIds, tipo, ritiratoDa, pagato, dataScad, fir
         px.ritiratoDa = (tipo === 'cliente') ? ritiratoDa.toUpperCase() : "SISTEMA (SCADUTO)";
         px.isScaduto = (tipo === 'scaduto');
         px.firma = (tipo === 'cliente') ? firmaData : null;
+        
+        // ---> SALVA LO STATO DELLA VERIFICA OTP SUL PACCO <---
+        px.usatoOtp = eVerificatoOtp;
+
         if(px.corriere === 'Corrieri No Pudo') px.pudoStatus = pagato ? 'pagato' : 'non_pagato';
         if(selectedIds.length > 1) px.sessioneRitiro = sessioneId;
         
@@ -2667,6 +2675,11 @@ function generaReport() {
 function mostraFirma(id) {
     const p = pacchi.find(x => x.id == id);
     const pacchiSessione = p.sessioneRitiro ? pacchi.filter(px => px.sessioneRitiro === p.sessioneRitiro) : [p];
+    
+    // Controlla se almeno un pacco della sessione è stato ritirato tramite OTP
+    const haUsatoOtp = pacchiSessione.some(px => px.usatoOtp);
+    let boxInfoOtp = haUsatoOtp ? `<div style="grid-column: span 2; background: #e8f5e9; color: #2e7d32; border: 1px solid #2e7d32; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 0.9rem;">🔐 RITIRATO TRAMITE VERIFICA CON OTP</div>` : '';
+
     const win = window.open("", "Firma", "width=700,height=900");
     let righeTabella = pacchiSessione.map(px => {
         let detContr = (px.isContrassegno && px.importoContrassegno) ? `<span style="background:#ffe3e3; color:#c92a2a; padding:4px 8px; border-radius:5px; font-weight:bold; font-size:0.7rem; margin-left:5px;">CONTR. € ${px.importoContrassegno}</span>` : '';
@@ -2715,6 +2728,7 @@ function mostraFirma(id) {
                     <div class="info-item"><label>Data e Ora Ritiro</label><span>${p.dataRitiro}</span></div>
                     <div class="info-item"><label>Ritirato da</label><span>${p.ritiratoDa.toUpperCase()}</span></div>
                     <div class="info-item"><label>Totale Pacchi</label><span>${pacchiSessione.length}</span></div>
+                    ${boxInfoOtp}
                 </div>
                 <table>
                     <thead><tr><th>ID</th><th>Corriere</th><th>Tracking Number</th><th>Servizi</th></tr></thead>
@@ -2731,7 +2745,7 @@ function mostraFirma(id) {
         </html>
     `);
 }
-
+    
 function showFeedback(tipo) {
     const card = document.getElementById('successCard');
     let icona = tipo === 'cliente' ? '✅' : '📦❌';
