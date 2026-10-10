@@ -2350,6 +2350,37 @@ function handleRitira(id, forzaScaduto = false, usaCarrello = false) {
     });
     document.getElementById('modalText').innerHTML = htmlLista;
 
+    // --- GESTIONE TELEFONO AUTOMATICO DALL'ANAGRAFICA E PERSISTENZA OTP ---
+    if (stessiPacchi.length > 0) {
+        let pRef = stessiPacchi[0];
+        let keyAnag = `${pRef.cognome.toUpperCase()}_${pRef.nome.toUpperCase()}`;
+        let telSalvato = (anagraficaClienti[keyAnag] && anagraficaClienti[keyAnag].telefono) ? anagraficaClienti[keyAnag].telefono : '';
+        
+        const inputTel = document.getElementById('otpTelefono');
+        const btnCambia = document.getElementById('cambiaNumeroBtn');
+        if (inputTel) {
+            if (telSalvato && telSalvato !== '-') {
+                inputTel.value = telSalvato;
+                inputTel.setAttribute('readonly', true);
+                inputTel.style.backgroundColor = '#e9ecef';
+                if (btnCambia) btnCambia.style.display = 'inline';
+            } else {
+                inputTel.value = '';
+                inputTel.removeAttribute('readonly');
+                inputTel.style.backgroundColor = '#fff';
+                if (btnCambia) btnCambia.style.display = 'none';
+            }
+        }
+
+        // Se il pacco ha già un OTP generato e salvato in precedenza, lo recupera e lo rende attivo
+        if (pRef.otpCodice) {
+            otpGenerato = pRef.otpCodice;
+            if (pRef.otpTelefono && inputTel && !inputTel.value) {
+                inputTel.value = pRef.otpTelefono;
+            }
+        }
+    }
+
     const updatePudoBox = () => {
         const selectedIds = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked')).map(cb => parseInt(cb.dataset.id));
         const selectedCheckboxes = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked'));
@@ -2388,14 +2419,25 @@ function handleRitira(id, forzaScaduto = false, usaCarrello = false) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     document.getElementById('modalConfirmBtn').onclick = () => {
-        // Controllo di blocco se la verifica OTP è fallita o in corso
-        if (otpStatoVerifica === "in_attesa" || otpStatoVerifica === "errato") {
-            showAlert("Impossibile completare il ritiro: la verifica OTP è attiva ma il codice non è stato inserito correttamente.");
+        const selectedIds = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked')).map(cb => parseInt(cb.dataset.id));
+        if (selectedIds.length === 0) return showAlert("Seleziona almeno un pacco!");
+
+        // --- CONTROLLO OBBLIGATORIETÀ OTP ESCLUSIVAMENTE PER "Corrieri No Pudo" ---
+        const contieneNoPudo = selectedIds.some(sid => {
+            let px = pacchi.find(x => x.id === sid);
+            return px && px.corriere === 'Corrieri No Pudo';
+        });
+
+        if (contieneNoPudo && otpStatoVerifica !== "corretto") {
+            showAlert("ATTENZIONE: Per i pacchi dei 'Corrieri No Pudo' la verifica OTP è obbligatoria e il codice inserito non è corretto o mancante!");
             return;
         }
 
-        const selectedIds = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked')).map(cb => parseInt(cb.dataset.id));
-        if (selectedIds.length === 0) return showAlert("Seleziona almeno un pacco!");
+        // Controllo generale di blocco se la verifica OTP è stata avviata ma digitata in modo errato o incompleto
+        if (otpStatoVerifica === "in_attesa" || otpStatoVerifica === "errato") {
+            showAlert("Impossibile completare il ritiro: la verifica OTP non è stata completata correttamente.");
+            return;
+        }
 
         const tipo = document.getElementById('tipoUscita').value;
         const firmaData = canvas.toDataURL();
@@ -4206,29 +4248,56 @@ function toggleSezioneOtp() {
     }
 }
 
+function abilitaModificaNumeroTemporaneo() {
+    const inputTel = document.getElementById('otpTelefono');
+    if (inputTel) {
+        inputTel.removeAttribute('readonly');
+        inputTel.style.backgroundColor = '#fff';
+        inputTel.focus();
+        const btnCambia = document.getElementById('cambiaNumeroBtn');
+        if (btnCambia) btnCambia.style.display = 'none';
+    }
+}
+
 function generaEInviaOTP() {
     const elTel = document.getElementById('otpTelefono');
     const telInput = elTel ? elTel.value.trim() : '';
     
     if (!telInput) {
-        showAlert("Inserisci manualmente il numero di telefono del cliente.");
+        showAlert("Inserisci o verifica il numero di telefono del cliente.");
         return;
     }
 
-    // Genera il codice OTP a 6 cifre
-    otpGenerato = Math.floor(100000 + Math.random() * 900000).toString();
+    const selectedIds = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked')).map(cb => parseInt(cb.dataset.id));
+    if (selectedIds.length > 0) {
+        let primoPacco = pacchi.find(x => x.id === selectedIds[0]);
+        if (primoPacco) {
+            let keyAnag = `${primoPacco.cognome.toUpperCase()}_${primoPacco.nome.toUpperCase()}`;
+            if (anagraficaClienti[keyAnag]) {
+                anagraficaClienti[keyAnag].telefono = telInput;
+                salvaAnagrafica();
+            }
+        }
+    }
+
+    let paccoTarget = pacchi.find(x => x.id === selectedIds[0]);
+    if (paccoTarget) {
+        if (!paccoTarget.otpCodice) {
+            paccoTarget.otpCodice = Math.floor(100000 + Math.random() * 900000).toString();
+            paccoTarget.otpTelefono = telInput;
+            salva(); // Salva sul DB Firebase l'OTP associato al pacco
+        }
+        otpGenerato = paccoTarget.otpCodice;
+    } else {
+        otpGenerato = Math.floor(100000 + Math.random() * 900000).toString();
+    }
+
     otpStatoVerifica = "in_attesa";
 
-    // Calcola il saluto automatico in base all'ora corrente
     const oraAttuale = new Date().getHours();
     const saluto = (oraAttuale >= 5 && oraAttuale < 13) ? "Buongiorno" : "Buonasera";
+    const infoPacco = paccoTarget && paccoTarget.codiceTracciabilita ? `il tuo pacco *${paccoTarget.codiceTracciabilita}*` : 'il tuo pacco';
 
-    // Cerca il codice di tracciamento se presente nella pagina (altrimenti lascia spazio generico)
-    const elTracking = document.getElementById('codiceTracking') || document.getElementById('tracking') || document.getElementById('codicePacco');
-    const codiceTracking = elTracking ? elTracking.value.trim() : '';
-    const infoPacco = codiceTracking ? `il tuo pacco *${codiceTracking}*` : 'il tuo pacco';
-
-    // 📩 MESSAGGIO WHATSAPP DINAMICO
     const messaggioWA = `${saluto}, ${infoPacco} ti aspetta da *CENTRO POST@ ANACLERIO*.\n` +
 `Lun–Sab 07:00–13:00 / 16:00–20:00\n` +
 `🔑 *Codice OTP per il ritiro:*\n` +
@@ -4239,16 +4308,16 @@ function generaEInviaOTP() {
     
     document.getElementById('testoWhatsapp').value = messaggioWA;
     document.getElementById('boxMessaggioWhatsapp').style.display = 'block';
-    
     document.getElementById('boxInputOtp').style.display = 'block';
     resetCampiInputOtp();
     
     const feedbackEl = document.getElementById('otpFeedback');
     if (feedbackEl) {
-        feedbackEl.innerText = "Codice generato! Copia il messaggio o usa il pulsante 📤 per inviarlo direttamente.";
+        feedbackEl.innerText = "Codice OTP pronto e salvato per questo pacco!";
         feedbackEl.style.color = "var(--primary)";
     }
 }
+    
 function copiaTestoWhatsapp() {
     const testoWA = document.getElementById('testoWhatsapp').value;
     if (!testoWA) return;
