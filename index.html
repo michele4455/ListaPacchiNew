@@ -4312,10 +4312,13 @@ function generaEInviaOTP() {
     const corrierePacco = paccoTarget && paccoTarget.corriere ? paccoTarget.corriere : 'Corriere';
     const trackingPacco = paccoTarget && paccoTarget.codiceTracciabilita ? paccoTarget.codiceTracciabilita : 'N/D';
 
-    // 📩 MESSAGGIO WHATSAPP AGGIORNATO (Senza orario, con corriere e tracking)
-    const messaggioWA = `Buongiorno, ti aspetta un pacco del corriere *${corrierePacco}* (Tracking: *${trackingPacco}*) da *CENTRO POST@ ANACLERIO*.\n\n` +
+    // 📩 MESSAGGIO WHATSAPP FORMATTATO GRAFICAMENTE A CAPO
+    const messaggioWA = `📦 *CENTRO POST@ ANACLERIO*\n\n` +
+`Ti aspetta un pacco in giacenza:\n` +
+`• Corriere: *${corrierePacco}*\n` +
+`• Tracking: *${trackingPacco}*\n\n` +
 `🔑 *Codice OTP per il ritiro:*\n` +
-`👉 *${otpGenerato}*\n\n` +
+`👉 *[ ${otpGenerato} ]*\n\n` +
 `----------------------------------------\n` +
 `ℹ️ *AVVISO PACCHI EXTRA:*\n` +
 `Per il ritiro di pacchi appartenenti a circuiti extra (*iMile, Paack, Amazon NON Hub, InPost NO PUDO*), è previsto un contributo di gestione pari a *€ 0,50* per pacco.`;
