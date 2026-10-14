@@ -4273,31 +4273,12 @@ function abilitaModificaNumeroTemporaneo() {
     }
 }
 
-let otpGenerato = "";
-let otpStatoVerifica = "non_richiesto";
-
 function generaEInviaOTP() {
     const elTel = document.getElementById('otpTelefono');
-    let telInput = elTel ? elTel.value.trim() : '';
+    const telInput = elTel ? elTel.value.trim() : '';
     
-    // Se il campo è vuoto, prova a recuperarlo al volo dai pacchi selezionati o dall'anagrafica
     if (!telInput) {
-        const selectedIds = Array.from(document.querySelectorAll('.chk-multi-ritiro:checked')).map(cb => parseInt(cb.dataset.id));
-        if (selectedIds.length > 0) {
-            let primoPacco = pacchi.find(x => x.id === selectedIds[0]);
-            if (primoPacco) {
-                let keyAnag = `${primoPacco.cognome.toUpperCase()}_${primoPacco.nome.toUpperCase()}`;
-                if (anagraficaClienti[keyAnag] && anagraficaClienti[keyAnag].telefono && anagraficaClienti[keyAnag].telefono !== '-') {
-                    telInput = anagraficaClienti[keyAnag].telefono;
-                    elTel.value = telInput;
-                }
-            }
-        }
-    }
-
-    // Se continua a mancare il numero, avvisa chiaramente l'operatore
-    if (!telInput || telInput === '-') {
-        showAlert("Inserisci prima un numero di telefono valido nel campo sopra per inviare l'OTP.", "Numero Mancante");
+        showAlert("Inserisci o verifica il numero di telefono del cliente.");
         return;
     }
 
@@ -4318,7 +4299,7 @@ function generaEInviaOTP() {
         if (!paccoTarget.otpCodice) {
             paccoTarget.otpCodice = Math.floor(100000 + Math.random() * 900000).toString();
             paccoTarget.otpTelefono = telInput;
-            salva(); 
+            salva(); // Salva sul DB Firebase l'OTP associato al pacco
         }
         otpGenerato = paccoTarget.otpCodice;
     } else {
@@ -4327,19 +4308,15 @@ function generaEInviaOTP() {
 
     otpStatoVerifica = "in_attesa";
 
-    // Estrae i dettagli del pacco (Intestatario, Corriere, Tracking, Data Arrivo)
+    // Estrae dati specifici del pacco per il messaggio
     const corrierePacco = paccoTarget && paccoTarget.corriere ? paccoTarget.corriere : 'Corriere';
     const trackingPacco = paccoTarget && paccoTarget.codiceTracciabilita ? paccoTarget.codiceTracciabilita : 'N/D';
-    const intestatarioPacco = paccoTarget ? `${paccoTarget.cognome.toUpperCase()} ${paccoTarget.nome.toUpperCase()}` : 'N/D';
-    const dataArrivoPacco = paccoTarget && paccoTarget.dataTestoInserimento ? paccoTarget.dataTestoInserimento : 'N/D';
 
-    // 📩 MESSAGGIO WHATSAPP FORMATTATO CON TUTTI I DATI
+    // 📩 MESSAGGIO WHATSAPP FORMATTATO GRAFICAMENTE A CAPO
     const messaggioWA = `📦 *CENTRO POST@ ANACLERIO*\n\n` +
 `Ti aspetta un pacco in giacenza:\n` +
-`• Intestatario: *${intestatarioPacco}*\n` +
 `• Corriere: *${corrierePacco}*\n` +
-`• Tracking: *${trackingPacco}*\n` +
-`• Arrivato il: *${dataArrivoPacco}*\n\n` +
+`• Tracking: *${trackingPacco}*\n\n` +
 `🔑 *Codice OTP per il ritiro:*\n` +
 `👉 *[ ${otpGenerato} ]*\n\n` +
 `----------------------------------------\n` +
@@ -4354,7 +4331,7 @@ function generaEInviaOTP() {
     const feedbackEl = document.getElementById('otpFeedback');
     if (feedbackEl) {
         feedbackEl.innerText = "Codice OTP pronto e salvato per questo pacco!";
-        feedbackEl.style.color = "var(--success)";
+        feedbackEl.style.color = "var(--primary)";
     }
 }
     
