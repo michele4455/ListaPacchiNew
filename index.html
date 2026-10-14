@@ -4273,6 +4273,9 @@ function abilitaModificaNumeroTemporaneo() {
     }
 }
 
+let otpGenerato = "";
+let otpStatoVerifica = "non_richiesto";
+
 function generaEInviaOTP() {
     const elTel = document.getElementById('otpTelefono');
     let telInput = elTel ? elTel.value.trim() : '';
@@ -4330,7 +4333,7 @@ function generaEInviaOTP() {
     const intestatarioPacco = paccoTarget ? `${paccoTarget.cognome.toUpperCase()} ${paccoTarget.nome.toUpperCase()}` : 'N/D';
     const dataArrivoPacco = paccoTarget && paccoTarget.dataTestoInserimento ? paccoTarget.dataTestoInserimento : 'N/D';
 
-    // 📩 MESSAGGIO WHATSAPP CON INTESTATARIO E DATA ARRIVO
+    // 📩 MESSAGGIO WHATSAPP FORMATTATO CON TUTTI I DATI
     const messaggioWA = `📦 *CENTRO POST@ ANACLERIO*\n\n` +
 `Ti aspetta un pacco in giacenza:\n` +
 `• Intestatario: *${intestatarioPacco}*\n` +
