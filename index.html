@@ -4299,7 +4299,7 @@ function generaEInviaOTP() {
         if (!paccoTarget.otpCodice) {
             paccoTarget.otpCodice = Math.floor(100000 + Math.random() * 900000).toString();
             paccoTarget.otpTelefono = telInput;
-            salva(); // Salva sul DB Firebase l'OTP associato al pacco
+            salva(); 
         }
         otpGenerato = paccoTarget.otpCodice;
     } else {
@@ -4308,20 +4308,23 @@ function generaEInviaOTP() {
 
     otpStatoVerifica = "in_attesa";
 
-    // Estrae dati specifici del pacco per il messaggio
+    // Dati aggiuntivi del pacco
     const corrierePacco = paccoTarget && paccoTarget.corriere ? paccoTarget.corriere : 'Corriere';
     const trackingPacco = paccoTarget && paccoTarget.codiceTracciabilita ? paccoTarget.codiceTracciabilita : 'N/D';
+    const intestatarioPacco = paccoTarget ? `${paccoTarget.cognome.toUpperCase()} ${paccoTarget.nome.toUpperCase()}` : 'Cliente';
+    const dataArrivoPacco = paccoTarget && paccoTarget.dataTestoInserimento ? paccoTarget.dataTestoInserimento : 'N/D';
 
-    // 📩 MESSAGGIO WHATSAPP FORMATTATO GRAFICAMENTE A CAPO
+    // 📩 MESSAGGIO WHATSAPP AGGIORNATO (Intestatario, Data e Obbligatorietà OTP)
     const messaggioWA = `📦 *CENTRO POST@ ANACLERIO*\n\n` +
-`Ti aspetta un pacco in giacenza:\n` +
-`• Corriere: *${corrierePacco}*\n` +
-`• Tracking: *${trackingPacco}*\n\n` +
-`🔑 *Codice OTP per il ritiro:*\n` +
+`👤 Intestatario: *${intestatarioPacco}*\n` +
+`📦 Corriere: *${corrierePacco}*\n` +
+`🏷️ Tracking: *${trackingPacco}*\n` +
+`📅 Arrivato il: *${dataArrivoPacco}*\n\n` +
+`⚠️ *ATTENZIONE: CODICE OTP OBBLIGATORIO AL RITIRO*\n` +
+`Il seguente codice a 6 cifre è *obbligatorio* per procedere al ritiro del pacco in sede:\n` +
 `👉 *[ ${otpGenerato} ]*\n\n` +
 `----------------------------------------\n` +
-`ℹ️ *AVVISO PACCHI EXTRA:*\n` +
-`Per il ritiro di pacchi appartenenti a circuiti extra (*iMile, Paack, Amazon NON Hub, InPost NO PUDO*), è previsto un contributo di gestione pari a *€ 0,50* per pacco.`;
+`ℹ️ *NOTA:* Per i pacchi extra (*iMile, Paack, Amazon NON Hub, InPost NO PUDO*), è previsto un contributo di gestione di *€ 0,50*.`;
     
     document.getElementById('testoWhatsapp').value = messaggioWA;
     document.getElementById('boxMessaggioWhatsapp').style.display = 'block';
