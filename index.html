@@ -1919,19 +1919,20 @@ function logout() {
 }
 
 firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-        document.getElementById('loginPage').style.display = 'none';
-        document.getElementById('mainPage').style.display = 'block';
-        document.querySelector('.container').style.display = 'block';
-        document.body.style.overflow = 'auto';
-        
-        // --- NASCONDE E RIMUOVE L'ANIMAZIONE DEI PACCHI ---
+    // PROTEZIONE DI SICUREZZA: Rimuove comunque il caricamento dopo 1.5 secondi per evitare blocchi
+    setTimeout(() => {
         const loader = document.getElementById('loadingOverlay');
         if (loader) {
             loader.style.opacity = '0';
             setTimeout(() => loader.remove(), 500);
         }
-        // ------------------------------------------------
+    }, 1500);
+
+    if (user) {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('mainPage').style.display = 'block';
+        document.querySelector('.container').style.display = 'block';
+        document.body.style.overflow = 'auto';
         
         // Avvia la sincronizzazione unificata dell'anagrafica e dei pacchi storici
         inizializzaSincronizzazioneAnagrafica();
