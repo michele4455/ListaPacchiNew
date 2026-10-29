@@ -1346,7 +1346,7 @@
             <button id="btnAggiungiPacco" onclick="aggiungiPacco()">AGGIUNGI</button>
         </div>
 
-        <div class="status-bar" id="counter">Caricamento...</div>
+        <div class="status-bar" id="counter">Sincronizzazione in corso...</div>
         
         <div class="input-with-icon" style="margin-bottom:25px;">
             <input type="text" id="search" style="padding: 16px 55px 16px 20px; border-radius: 50px; width:100%" placeholder="🔍 Cerca cliente (Cognome e Nome), ID o Tracking..." oninput="aggiornaVista()">
@@ -1919,15 +1919,6 @@ function logout() {
 }
 
 firebase.auth().onAuthStateChanged((user) => {
-    // PROTEZIONE DI SICUREZZA: Rimuove comunque il caricamento dopo 1.5 secondi per evitare blocchi
-    setTimeout(() => {
-        const loader = document.getElementById('loadingOverlay');
-        if (loader) {
-            loader.style.opacity = '0';
-            setTimeout(() => loader.remove(), 500);
-        }
-    }, 1500);
-
     if (user) {
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainPage').style.display = 'block';
@@ -1945,11 +1936,19 @@ firebase.auth().onAuthStateChanged((user) => {
         
         resetInattivita();
         
-        // Sincronizza i pacchi in tempo reale per la vista principale delle giacenze
+        // Sincronizza i pacchi in tempo reale: l'animazione sparisce NON APPENA i dati arrivano!
         db.ref('pacchi').off('value');
         db.ref('pacchi').on('value', (snapshot) => {
             pacchi = snapshot.val() ? snapshot.val() : [];
             aggiornaVista();
+            
+            // --- L'ANIMAZIONE SPARISCE SOLO ORA CHE IL SITO E' PRONTO ---
+            const loader = document.getElementById('loadingOverlay');
+            if (loader) {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.remove(), 500);
+            }
+            // -------------------------------------------------------------
         });
         
         startClock();
