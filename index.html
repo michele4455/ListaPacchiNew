@@ -866,6 +866,7 @@
     color: var(--primary-dark);
 }
 /* --- ANIMAZIONE CARICAMENTO PACCHI --- */
+/* --- ANIMAZIONE CARICAMENTO PACCHI IN CERCHIO (360°) --- */
 #loadingOverlay {
     position: fixed;
     top: 0;
@@ -883,13 +884,19 @@
 
 .loader-container {
     display: flex;
-    gap: 20px;
-    margin-bottom: 20px;
+    gap: 25px;
+    margin-bottom: 25px;
 }
 
 .rotating-box {
-    font-size: 3rem;
-    animation: bounceAndRotate 1.2s infinite ease-in-out;
+    font-size: 3.5rem;
+    display: inline-block;
+    animation: spinCircle 1.2s infinite linear;
+}
+
+/* Sfasamento per creare l'effetto onda a cerchio tra i 3 pacchi */
+.rotating-box:nth-child(1) {
+    animation-delay: 0s;
 }
 
 .rotating-box:nth-child(2) {
@@ -900,12 +907,18 @@
     animation-delay: 0.4s;
 }
 
-@keyframes bounceAndRotate {
-    0%, 100% {
-        transform: translateY(0) rotate(0deg);
+@keyframes spinCircle {
+    0% {
+        transform: rotate(0deg) scale(0.9);
+        opacity: 0.7;
     }
     50% {
-        transform: translateY(-20px) rotate(180deg);
+        transform: rotate(180deg) scale(1.2);
+        opacity: 1;
+    }
+    100% {
+        transform: rotate(360deg) scale(0.9);
+        opacity: 0.7;
     }
 }
 
