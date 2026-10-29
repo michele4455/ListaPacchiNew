@@ -1932,14 +1932,6 @@ function logout() {
 }
 
 firebase.auth().onAuthStateChanged((user) => {
-    // --- RIMUOVE SEMPRE L'ANIMAZIONE NON APPENA FIREBASE RISPONDE ---
-    const loader = document.getElementById('loadingOverlay');
-    if (loader) {
-        loader.style.opacity = '0';
-        setTimeout(() => loader.remove(), 500);
-    }
-    // -------------------------------------------------------------
-
     if (user) {
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainPage').style.display = 'block';
@@ -1962,10 +1954,25 @@ firebase.auth().onAuthStateChanged((user) => {
         db.ref('pacchi').on('value', (snapshot) => {
             pacchi = snapshot.val() ? snapshot.val() : [];
             aggiornaVista();
+            
+            // --- L'ANIMAZIONE SPARISCE SOLO DOPO CHE I PACCHI SONO STATI CARICATI SULLO SCHERMO ---
+            const loader = document.getElementById('loadingOverlay');
+            if (loader) {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.remove(), 500);
+            }
+            // -------------------------------------------------------------------------------------
         });
         
         startClock();
     } else {
+        // Se non è loggato, rimuove l'animazione per mostrare subito la schermata di login
+        const loader = document.getElementById('loadingOverlay');
+        if (loader) {
+            loader.style.opacity = '0';
+            setTimeout(() => loader.remove(), 500);
+        }
+
         document.getElementById('loginPage').style.display = 'flex';
         document.getElementById('mainPage').style.display = 'none';
         document.querySelector('.container').style.display = 'none';
